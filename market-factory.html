@@ -149,6 +149,18 @@ But if you hold exactly 1 share at a stuck position → cannot sell.</code></pre
 
 <p><strong>Root cause:</strong> LMSR math in STX integers is too coarse. Each share costs ~0.5 STX, but the integer representation can't distinguish cost_tilde(N) from cost_tilde(N-1) when both round to the same integer.</p>
 
+<pre><code>;; The problematic sell path in do-sell:
+(let ((c1 (cost-tilde b qY      qN rY rN))
+      (c2 (cost-tilde b (- qY u1) qN rY rN)))
+  (let ((diff (- c1 c2)))           ;; ← integer subtraction
+    (asserts! (> diff u0) ERR-BAD-REFUND)  ;; ← reverts when diff = 0
+    ;; ...refund diff * UNIT uSTX to user
+  ))
+
+;; cost-tilde internally:
+;;   b * ln(exp(qY+rY)/b + exp(qN+rN)/b)
+;; All in STX integers — truncation at every step</code></pre>
+
 <p><strong>Fix:</strong> Run LMSR math in uSTX (multiply all quantities by UNIT) or use the 1e6 fixed-point scale for cost calculations before converting to transfer amounts.</p>
 </div>
 
@@ -196,6 +208,22 @@ But if you hold exactly 1 share at a stuck position → cannot sell.</code></pre
 <h3><span class="severity low">F-05: <code>ln-atanh</code> accuracy degrades at extreme inputs</span></h3>
 <p><strong>Location:</strong> <code>ln-atanh</code>, <code>ln-general</code></p>
 <p>The <code>ln(y)</code> implementation uses <code>2 * atanh((y-1)/(y+1))</code> with a 5th-order series (up to t⁹). Convergence requires t to be small, which means y should be near 1.0. The <code>ln-general</code> normalizer does 8 halving/doubling steps, covering a range of ~2⁸ = 256x. For markets with extreme imbalances (e.g., qY >> qN with large b), the inputs to <code>ln-sum-exp</code> could push beyond this range.</p>
+
+<pre><code>;; ln via atanh series:
+(define-read-only (ln-atanh (y uint))
+  (let ((t (/ (* SCALE (- y SCALE)) (+ y SCALE))))  ;; t = (y-1)/(y+1)
+    (let ((t2 (* t t)))
+      (* u2 (+ t                        ;; 2 * (t + t³/3 + t⁵/5 + t⁷/7 + t⁹/9)
+              (/ (* t t2) u3000000)
+              (/ (* t (* t2 t2)) u5000000)
+              (/ (* t (* t2 (* t2 t2))) u7000000)
+              (/ (* t (* t2 (* t2 (* t2 t2)))) u9000000))))))
+
+;; ln-general normalizes input to [0.5, 1.0] range:
+(define-read-only (ln-general (y uint))
+  ;; 8 halving steps: if y > SCALE, halve it and count doublings
+  ;; then ln(y) = ln(y_normalized) + count * ln(2)
+  ;; Range limited to ~256x — extreme inputs lose accuracy</code></pre>
 <p><strong>Impact:</strong> Mispricing on extreme-probability markets. Unlikely in practice with reasonable b values.</p>
 </div>
 
@@ -203,11 +231,23 @@ But if you hold exactly 1 share at a stuck position → cannot sell.</code></pre
 <h3><span class="severity low">F-06: Single admin, no multisig or timelock</span></h3>
 <p><strong>Location:</strong> <code>ADMIN</code> constant</p>
 <p>One hardcoded principal controls: market creation, resolution, pausing, fee configuration, surplus withdrawal. No oracle, no dispute mechanism, no timelock. Compromised admin key = incorrect resolutions + pool drainage.</p>
+
+<pre><code>(define-constant ADMIN 'SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA)
+
+;; Every privileged function:
+(asserts! (is-eq tx-sender ADMIN) (err u700))
+;; resolve-market, create-market, pause-market, set-fees,
+;; lock-fees-config, withdraw-surplus — all gated by same key</code></pre>
 </div>
 
 <div class="finding">
 <h3><span class="severity low">F-07: No share transfers</span></h3>
 <p>YES/NO holdings are maps with no transfer function. Positions are non-transferable — no secondary market, no composability, no recovery from lost keys.</p>
+
+<pre><code>;; Holdings stored as simple maps — no SIP-010 ft, no transfer function
+(define-map yes-holdings { m: uint, user: principal } uint)
+(define-map no-holdings  { m: uint, user: principal } uint)
+;; No (define-public (transfer-shares ...)) exists</code></pre>
 </div>
 
 <div class="finding">
