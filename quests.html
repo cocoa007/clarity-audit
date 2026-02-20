@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quests Contract Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.toc ul { list-style: none; padding-left: 0; }
+.toc li { margin-bottom: 0.4rem; }
+.toc li::before { content: "→ "; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory Audit</a>
+  <a href="/clarity-audit/quests.html" class="active">Quests Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Quests Contract — Audit</h1>
+<p class="subtitle">
+  <code>SushilBro/quests-contract</code> (4 contracts: quests, treasury, helper-contract, quest-test)<br>
+  Audited: February 20, 2026 · By: cocoa007<br>
+  <a href="https://github.com/SushilBro/quests-contract" target="_blank">View source on GitHub ↗</a>
+</p>
+
+<h2>Overview</h2>
+<p>A quest/challenge system where creators lock a commitment deposit, participants lock tokens to join, and completing 3 activities triggers an automatic refund. A treasury contract holds creator deposits and can distribute rewards to winners. Integrates with ZADAO token whitelist for allowed tokens.</p>
+
+<p><strong>Key properties:</strong></p>
+<ul>
+  <li>Quest creation with creator commitment deposit → treasury</li>
+  <li>Participants lock tokens on join, auto-refunded after 3 activity completions</li>
+  <li>Treasury distributes 50% of balance to winners, 50% to platform</li>
+  <li>Helper contract wraps calls with hardcoded wSTX token</li>
+  <li>External dependency: ZADAO token whitelist (v1 in quests, v2 in treasury)</li>
+</ul>
+
+<div class="toc">
+  <strong>Findings Summary</strong>
+  <ul>
+    <li><span class="severity critical">CRITICAL</span> Anyone can self-certify activity completion — no verification</li>
+    <li><span class="severity critical">CRITICAL</span> Unconditional refund lets participants exit without completing quest</li>
+    <li><span class="severity critical">CRITICAL</span> Treasury reward accounting bug — balance zeroed but tokens still sent</li>
+    <li><span class="severity medium">MEDIUM</span> Treasury <code>deposit</code> doesn't verify sender — anyone can deposit on behalf of others</li>
+    <li><span class="severity medium">MEDIUM</span> Token whitelist version mismatch between quests (v1) and treasury (v2)</li>
+    <li><span class="severity medium">MEDIUM</span> Cancelled quest doesn't refund participants' locked tokens</li>
+    <li><span class="severity low">LOW</span> No time bounds on quests — active forever</li>
+    <li><span class="severity low">LOW</span> <code>quest-counter</code> is unused (quest IDs are caller-supplied UUIDs)</li>
+    <li><span class="severity info">INFO</span> Helper contract hardcodes wSTX address</li>
+    <li><span class="severity good">GOOD</span> Post-conditions used on token transfers</li>
+  </ul>
+</div>
+
+<h2>Architecture</h2>
+
+<pre><code>┌──────────────────┐     deposit/withdraw     ┌──────────────────┐
+│   quests.clar    │ ──────────────────────── │  treasury.clar   │
+│                  │                           │                  │
+│  create-quest ───┼─── deposit ──────────────►│  token-balances  │
+│  cancel-quest ───┼─── withdraw ─────────────►│  (per-token map) │
+│                  │                           │                  │
+│  join-quest      │   reward-random-winners   │  admins map      │
+│  complete-activity                           │  treasury-owner  │
+│  refund-participant                          └──────────────────┘
+│                  │
+│  participants map│     ┌──────────────────┐
+│  quests map      │     │ helper-contract  │
+└──────────────────┘     │ (wSTX wrapper)   │
+                         └──────────────────┘
+                               │
+                         ┌─────┴─────────────────────────────────┐
+                         │ ZADAO-token-whitelist-v1 (quests)     │
+                         │ ZADAO-token-whitelist-v2 (treasury)   │
+                         └───────────────────────────────────────┘</code></pre>
+
+<h2>Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">F-01: Anyone can self-certify activity completion</span></h3>
+<p><strong>Location:</strong> <code>quests.clar</code> → <code>complete-activity</code></p>
+
+<pre><code>(define-public (complete-activity
+    (quest-id (string-ascii 36))
+    (use-token &lt;token&gt;)
+  )
+  (let (
+      ;; ...
+      (completed-count (get activities-completed participant))
+      (new-count (+ completed-count u1))
+      (is-completed (is-eq new-count ACTIVITIES_PER_QUEST))
+    )
+    (asserts! (is-eq tx-sender contract-caller) ERR_UNAUTHORIZED)
+    ;; ← No verification that an activity was actually performed!
+    ;; ← No oracle, no admin signature, no proof
+    ;; Anyone who joined can call this 3 times and get auto-refunded
+    ;; ...
+  ))</code></pre>
+
+<p><strong>Impact:</strong> The entire quest incentive model is broken. A participant can:</p>
+<ol>
+  <li>Call <code>join-quest</code> to lock tokens</li>
+  <li>Call <code>complete-activity</code> 3 times in the same block</li>
+  <li>Get auto-refunded immediately — no activities performed</li>
+</ol>
+<p><strong>Fix:</strong> Activity completion should require admin/oracle authorization. Options:</p>
+<ul>
+  <li>Only quest creator or admin can call <code>complete-activity</code> for a participant</li>
+  <li>Require a signed message from an off-chain oracle attesting to completion</li>
+  <li>Add a cooldown between activity completions (e.g., minimum blocks between calls)</li>
+</ul>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">F-02: Unconditional refund defeats the quest model</span></h3>
+<p><strong>Location:</strong> <code>quests.clar</code> → <code>refund-participant</code></p>
+
+<pre><code>(define-public (refund-participant
+    (quest-id (string-ascii 36))
+    (use-token &lt;token&gt;)
+  )
+  (let (
+      (quest (unwrap! (map-get? quests quest-id) ERR_INVALID_QUEST))
+      (participant-key { quest-id: quest-id, participant: tx-sender })
+      (participant (unwrap! (map-get? participants participant-key) ERR_NOT_PARTICIPATING))
+    )
+    ;; Only checks: tx-sender == contract-caller, token matches, amount is locked
+    ;; Does NOT check: quest status, activities completed, time elapsed
+    ;; Any participant can refund at any time, for any reason
+    (asserts! (get amount-locked participant) ERR_AMOUNT_NOT_LOCKED)
+    ;; ... transfers locked-amount back to participant
+  ))</code></pre>
+
+<p><strong>Impact:</strong> Combined with F-01, participants have zero risk. They can always get their tokens back — either by self-completing activities (F-01) or by calling <code>refund-participant</code> directly. The "commitment" is meaningless.</p>
+<p><strong>Fix:</strong> Refunds should be restricted:</p>
+<ul>
+  <li>Only allow refund if quest is cancelled</li>
+  <li>Or add a time-lock: no refund until quest expires</li>
+  <li>Or require admin approval for early refunds</li>
+</ul>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">F-03: Treasury reward accounting — balance zeroed incorrectly</span></h3>
+<p><strong>Location:</strong> <code>treasury.clar</code> → <code>process-token-winners</code></p>
+
+<pre><code>(let ((amount-per-winner (/ fee winners-count)))
+  (match (fold transfer-to-winner winners
+    (ok { index: u0, token-contract: token-contract, amount: amount-per-winner }))
+
+    transfer-result (begin
+      ;; After distributing amount-per-winner to EACH winner...
+      ;; ...ALSO sends 'fee' (50% of balance) to treasury-owner:
+      (try! (as-contract?
+        (try! (contract-call? token-contract transfer fee tx-sender
+          (var-get treasury-owner) none))))
+
+      ;; Then zeros the balance:
+      (map-set token-balances token-principal (- balance balance))
+      ;; ← (- balance balance) is ALWAYS 0, regardless of what was actually sent
+    )))</code></pre>
+
+<p><strong>Impact:</strong> The math is wrong. With balance=1000 and 2 winners:</p>
+<ul>
+  <li><code>fee = 1000 / 2 = 500</code></li>
+  <li><code>amount-per-winner = 500 / 2 = 250</code></li>
+  <li>Sent to winners: 250 × 2 = 500 tokens</li>
+  <li>Sent to owner: 500 tokens</li>
+  <li>Total sent: 1000 tokens ✓</li>
+  <li>Balance set to: 0 (via <code>balance - balance</code>)</li>
+</ul>
+<p>This works when distributing all tokens, but the accounting is fragile. If any <code>transfer-to-winner</code> fails mid-fold, the balance map is never updated (the function errors). But if integer division leaves dust (e.g., 3 winners with fee=500 → 166 each = 498 sent, 2 dust lost), <code>balance - balance = 0</code> hides the discrepancy. The real balance should be <code>balance - (amount-per-winner * winners-count) - fee</code>.</p>
+<p>More importantly: the contract sends <code>fee</code> (50%) to the owner as a <em>separate transfer</em> after already distributing <code>fee / winners-count</code> to each winner. This means 100% of the balance is always distributed (50% to winners + 50% to owner). The "rest remains as platform balance" comment in the code is misleading.</p>
+<p><strong>Fix:</strong> Use explicit accounting: <code>(map-set token-balances token-principal (- balance (+ (* amount-per-winner winners-count) fee)))</code></p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">F-04: Treasury <code>deposit</code> doesn't verify sender</span></h3>
+<p><strong>Location:</strong> <code>treasury.clar</code> → <code>deposit</code></p>
+
+<pre><code>(define-public (deposit
+    (amount uint)
+    (sender principal)      ;; ← caller-supplied, not verified
+    (token-contract &lt;token&gt;)
+  )
+  ;; No check: (asserts! (is-eq sender tx-sender) ...)
+  ;; Post-conditions may catch this, but the function signature
+  ;; allows anyone to specify any sender
+  (try! (contract-call? token-contract transfer amount sender current-contract none))
+  ;; ...
+)</code></pre>
+
+<p><strong>Impact:</strong> The <code>sender</code> parameter is passed directly to <code>transfer</code>. In Clarity, <code>ft-transfer?</code> requires the sender to be <code>tx-sender</code>, so this will fail for unauthorized callers in practice. However, the function design is misleading — it <em>looks</em> like you can deposit on behalf of others. If called through an intermediary contract, <code>tx-sender</code> propagation could create unexpected behavior.</p>
+<p><strong>Fix:</strong> Add <code>(asserts! (is-eq sender tx-sender) ERR_UNAUTHORIZED)</code> or remove the <code>sender</code> param and use <code>tx-sender</code> directly.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">F-05: Token whitelist version mismatch</span></h3>
+<p><strong>Location:</strong> <code>quests.clar</code> line 276 vs <code>treasury.clar</code> line 214</p>
+
+<pre><code>;; In quests.clar:
+(define-private (is-token-enabled (token-id principal))
+  (contract-call?
+    'SP2GW18TVQR75W1VT53HYGBRGKFRV5BFYNAF5SS5J.ZADAO-token-whitelist-v1
+    is-token-enabled token-id))
+
+;; In treasury.clar:
+(define-private (is-token-enabled (token-id principal))
+  (contract-call?
+    'SP2GW18TVQR75W1VT53HYGBRGKFRV5BFYNAF5SS5J.ZADAO-token-whitelist-v2
+    is-token-enabled token-id))</code></pre>
+
+<p><strong>Impact:</strong> A token could be enabled in v1 but not v2 (or vice versa). This means <code>create-quest</code> could succeed (quests checks v1) but <code>deposit</code> in treasury could fail (treasury checks v2). Or a token could pass treasury's <code>reward-random-winners</code> check but not be valid for quest creation.</p>
+<p><strong>Fix:</strong> Both contracts should use the same whitelist version.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">F-06: Cancelled quest doesn't refund participants</span></h3>
+<p><strong>Location:</strong> <code>quests.clar</code> → <code>cancel-quest</code></p>
+
+<pre><code>(define-public (cancel-quest
+    (quest-id (string-ascii 36))
+    (use-token &lt;token&gt;)
+  )
+  ;; Only refunds the CREATOR's commitment from treasury
+  (try! (contract-call? .treasury withdraw (get commitment-amount quest) tx-sender use-token))
+  ;; Sets status to QUEST_CANCELLED
+  (ok (map-set quests quest-id (merge quest { status: QUEST_CANCELLED })))
+  ;; ← Participants' locked tokens are NOT refunded
+  ;; ← And complete-activity checks (is-eq status QUEST_ACTIVE), so it will FAIL
+  ;; ← Participants must call refund-participant individually (which works due to F-02)
+)</code></pre>
+
+<p><strong>Impact:</strong> When a creator cancels, participants' tokens remain locked in the quests contract. They can't complete activities (quest is no longer active). They <em>can</em> call <code>refund-participant</code> individually, but there's no batch refund and participants may not know the quest was cancelled.</p>
+<p><strong>Fix:</strong> Either batch-refund all participants on cancellation, or emit an event so participants know to claim refunds.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">F-07: No time bounds on quests</span></h3>
+<p>Quests have a <code>created-time</code> but no expiry. A quest stays <code>QUEST_ACTIVE</code> forever unless the creator cancels. Participants' tokens can be locked indefinitely. No mechanism for expiry-based resolution or automatic cleanup.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">F-08: <code>quest-counter</code> is unused</span></h3>
+<pre><code>(define-data-var quest-counter uint u0)
+;; Incremented in create-quest but never read for logic
+;; Quest IDs are caller-supplied 36-char strings (UUIDs)
+;; Counter serves no purpose — remove or use as auto-increment ID</code></pre>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">F-09: Helper contract hardcodes wSTX address</span></h3>
+<p><code>helper-contract.clar</code> wraps all quests functions with hardcoded <code>'SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ.wstx</code>. This is fine for a convenience wrapper but means it can't be used with other tokens. Not a bug — just a design note.</p>
+</div>
+
+<h2>What's Done Well</h2>
+
+<div class="finding">
+<h3><span class="severity good">Post-conditions on transfers</span></h3>
+<p>The contract uses <code>restrict-assets?</code> / <code>with-ft</code> / <code>with-stx</code> post-conditions on token transfers. This is good defensive practice — even if logic is wrong, post-conditions bound the damage.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity good"><code>tx-sender == contract-caller</code> check</span></h3>
+<p>All public functions verify <code>(is-eq tx-sender contract-caller)</code>, preventing intermediary contracts from acting on behalf of users without their direct involvement. This blocks a class of phishing attacks where a malicious contract calls quest functions.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity good">Clean separation of concerns</span></h3>
+<p>Treasury handles token custody, quests handles game logic, helper provides convenience. The treasury only accepts withdrawals from the quests contract (<code>(asserts! (is-eq contract-caller .quests) ...)</code>). Good modular design.</p>
+</div>
+
+<h2>Methodology</h2>
+<p>Full source read from GitHub (<a href="https://github.com/SushilBro/quests-contract">SushilBro/quests-contract</a>). Manual trace of all public functions. No numerical simulation needed (no complex math). Focus on access control, token flow, and incentive alignment.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">Back to all audits</a></p>
+</footer>
+
+</body>
+</html>
