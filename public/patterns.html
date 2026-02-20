@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clarity Patterns — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.pattern { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.pattern h3 { margin-top: 0; color: var(--accent); }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75rem; background: var(--border); color: var(--text-muted); margin-right: 0.25rem; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; } .nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/">Home</a>
+  <a href="/market-factory.html">Market Factory Audit</a>
+  <a href="/patterns.html" class="active">Clarity Patterns</a>
+</nav>
+
+<h1>Clarity Patterns</h1>
+<p class="subtitle">23 patterns extracted from production Stacks contracts</p>
+
+<h2>sBTC Token <span style="color: var(--text-muted); font-size: 0.85rem;">SM3VDX...sbtc-token</span></h2>
+
+<div class="pattern">
+<h3>#1 — Dual-Token Lock/Unlock</h3>
+<span class="tag">token</span> <span class="tag">state-machine</span>
+<p>Instead of tracking locked amounts in a map, mint a separate <code>sbtc-token-locked</code> fungible token. Lock = burn liquid + mint locked. Elegant state machine.</p>
+<pre><code>(define-fungible-token sbtc-token)
+(define-fungible-token sbtc-token-locked)
+
+(define-public (protocol-lock (amount uint) (owner principal) ...)
+  (begin
+    (try! (ft-burn? sbtc-token amount owner))
+    (ft-mint? sbtc-token-locked amount owner)))</code></pre>
+</div>
+
+<div class="pattern">
+<h3>#2 — Authorization: tx-sender OR contract-caller</h3>
+<span class="tag">auth</span> <span class="tag">composability</span>
+<pre><code>(asserts! (or (is-eq tx-sender sender) (is-eq contract-caller sender)) ERR_NOT_OWNER)</code></pre>
+<p>Allows both direct calls and contract-mediated transfers. Critical for composability — other contracts can move tokens on behalf of users.</p>
+</div>
+
+<div class="pattern">
+<h3>#3 — Protocol Registry</h3>
+<span class="tag">auth</span> <span class="tag">access-control</span>
+<pre><code>(try! (contract-call? .sbtc-registry is-protocol-caller contract-flag contract-caller))</code></pre>
+<p>Centralized access control via a registry contract. <code>contract-flag</code> (buff 1) = granular permissions per protocol contract. Better than hardcoding authorized addresses.</p>
+</div>
+
+<div class="pattern">
+<h3>#4 — Batch Operations with Indexed Errors</h3>
+<span class="tag">batch</span> <span class="tag">error-handling</span>
+<pre><code>(define-constant ERR_TRANSFER_INDEX_PREFIX u1000)
+;; Error u1003 = transfer at index 3 failed</code></pre>
+<p>Processes up to 200 transfers per tx. Error includes the index that failed (1000 + index). Uses fold with accumulator tracking position.</p>
+</div>
+
+<div class="pattern">
+<h3>#5 — SIP-010 Compliance</h3>
+<span class="tag">standard</span>
+<p>Standard interface: <code>transfer</code>, <code>get-name</code>, <code>get-symbol</code>, <code>get-decimals</code>, <code>get-balance</code>, <code>get-total-supply</code>, <code>get-token-uri</code>. Memo is <code>(optional (buff 34))</code> — just printed for indexers.</p>
+</div>
+
+<div class="pattern">
+<h3>#6 — Mutable Metadata</h3>
+<span class="tag">upgradeable</span>
+<p><code>token-name</code>, <code>token-symbol</code>, <code>token-uri</code> are <code>define-data-var</code>, not constants. Protocol can update without redeploying.</p>
+</div>
+
+<h2>ALEX AMM Pool v2 <span style="color: var(--text-muted); font-size: 0.85rem;">SP102V...amm-pool-v2-01</span></h2>
+
+<div class="pattern">
+<h3>#7 — Registry/Vault Separation (Controller Pattern)</h3>
+<span class="tag">architecture</span> <span class="tag">upgradeable</span>
+<p>AMM has zero state vars for pool data. All reads/writes delegated to a registry contract, all funds in a vault contract. Deploy new AMM logic without migrating state or funds.</p>
+<pre><code>;; AMM = logic only
+(define-read-only (get-pool-details ...)
+    (contract-call? .amm-registry-v2-01 get-pool-details ...))
+(as-contract (try! (contract-call? .amm-vault-v2-01 transfer-ft ...)))</code></pre>
+</div>
+
+<div class="pattern">
+<h3>#8 — Fixed-Point Math (8 Decimals)</h3>
+<span class="tag">math</span>
+<pre><code>(define-constant ONE_8 u100000000)
+(define-private (mul-down (a uint) (b uint)) (/ (* a b) ONE_8))
+(define-private (mul-up (a uint) (b uint))
+    (let ((product (* a b)))
+        (if (is-eq product u0) u0 (+ u1 (/ (- product u1) ONE_8)))))</code></pre>
+<p><code>mul-down</code>/<code>mul-up</code> and <code>div-down</code>/<code>div-up</code> for directional rounding. Convention: fees use <code>mul-up</code> (round against user), outputs use <code>mul-down</code>.</p>
+</div>
+
+<div class="pattern">
+<h3>#9 — On-Chain ln/exp/pow</h3>
+<span class="tag">math</span> <span class="tag">advanced</span>
+<p>Full natural log, exponential, and arbitrary power functions in Clarity. Uses lookup tables for powers of 2 + Taylor series. <code>MILD_EXPONENT_BOUND</code> prevents overflow.</p>
+</div>
+
+<div class="pattern">
+<h3>#10 — Switchable AMM Invariant</h3>
+<span class="tag">amm</span> <span class="tag">math</span>
+<pre><code>(define-read-only (get-invariant (balance-x uint) (balance-y uint) (t uint))
+    (if (>= t (get-switch-threshold))
+        ;; Stable-like: linear + product
+        (+ (mul-down (- ONE_8 t) (+ balance-x balance-y))
+           (mul-down t (mul-down balance-x balance-y)))
+        ;; Weighted: sum of powers (Balancer-style)
+        (+ (pow-down balance-x (- ONE_8 t))
+           (pow-down balance-y (- ONE_8 t)))))</code></pre>
+<p>Single <code>factor</code> parameter morphs between weighted pool and stable pool. One contract, two AMM types.</p>
+</div>
+
+<div class="pattern">
+<h3>#11 — Multi-Hop Routing</h3>
+<span class="tag">composability</span> <span class="tag">amm</span>
+<p>Built-in up to 4-pool routes in a single tx. Read-only helpers (<code>get-helper-a/b/c</code>) for quoting, public helpers (<code>swap-helper-a/b/c</code>) for execution. Fee aggregation helpers sum fees across hops.</p>
+</div>
+
+<div class="pattern">
+<h3>#12 — Ratio Limits + Slippage + Blocklist</h3>
+<span class="tag">safety</span>
+<pre><code>(asserts! (< dx (mul-down (get balance-x pool) (get max-in-ratio pool))) ERR-MAX-IN-RATIO)
+(asserts! (< dy (mul-down (get balance-y pool) (get max-out-ratio pool))) ERR-MAX-OUT-RATIO)
+(asserts! (<= (default-to u0 min-dy) dy) ERR-EXCEEDS-MAX-SLIPPAGE)</code></pre>
+<p>Layered safety: ratio limits (cap trade size vs pool), slippage (user-set), blocklist (deny-list), time windows (start/end block), global pause.</p>
+</div>
+
+<div class="pattern">
+<h3>#13 — Oracle (EMA)</h3>
+<span class="tag">oracle</span>
+<p>Exponential moving average price oracle. <code>oracle-average</code> weights historical vs instant. Updated every swap. Opt-in per pool.</p>
+</div>
+
+<div class="pattern">
+<h3>#14 — LP Position: Invariant-Based Initial Mint</h3>
+<span class="tag">amm</span> <span class="tag">lp</span>
+<p>First LP gets tokens equal to the invariant value (not sqrt like Uniswap). Subsequent LPs: proportional to share of balance-x. Auto-calculates dy to match pool ratio.</p>
+</div>
+
+<div class="pattern">
+<h3>#15 — Fee Rebate to LPs</h3>
+<span class="tag">fees</span>
+<p>Fees split: <code>fee-rebate</code> portion stays in pool (goes to LPs), rest goes to protocol reserve. Configurable per pool.</p>
+</div>
+
+<h2>Market Factory v18-bias <span style="color: var(--text-muted); font-size: 0.85rem;">SP3N5C...market-factory-v18-bias</span></h2>
+
+<div class="pattern">
+<h3>#16 — LMSR Cost Function</h3>
+<span class="tag">math</span> <span class="tag">prediction-market</span>
+<pre><code>;; cost_tilde = cost(qY+rY, qN+rN) - cost(rY, rN)
+;; cost = b * ln(exp(qY/b) + exp(qN/b))</code></pre>
+<p>Logarithmic Market Scoring Rule with bias offset. <code>b</code> = liquidity depth. The tilde version subtracts the bias baseline so virtual shares only affect pricing.</p>
+</div>
+
+<div class="pattern">
+<h3>#17 — Fixed-Point at 1e6 Scale</h3>
+<span class="tag">math</span>
+<p>6-decimal fixed point (vs ALEX's 8-decimal). Smaller numbers, less overflow risk. exp via range reduction: <code>exp(x) = 2^k * exp(r)</code> where r ∈ [-ln2, ln2). <code>bit-shift-left</code> for powers of 2.</p>
+</div>
+
+<div class="pattern">
+<h3>#18 — Dual-Unit System (STX Math, uSTX Transfers)</h3>
+<span class="tag">architecture</span>
+<pre><code>(define-constant UNIT u1000000)
+(define-private (stx->ustx (amt-stx uint)) (* amt-stx UNIT))
+(define-private (ustx->stx (amt-ustx uint)) (/ amt-ustx UNIT))</code></pre>
+<p>Clean boundary: LMSR math in integer STX, all money movement in uSTX. Convert at the edge, never mix.</p>
+</div>
+
+<div class="pattern">
+<h3>#19 — Bias via Virtual Liquidity</h3>
+<span class="tag">prediction-market</span>
+<pre><code>;; rDiff = b * ln(pYes / (1 - pYes))
+;; If pYes > 50%: rY = rDiff, rN = 0
+;; If pYes < 50%: rY = 0, rN = rDiff</code></pre>
+<p>Set initial probability (1-99%) before trading. Bias locks after setting. Only affects pricing — redemption always pays 1 STX/share.</p>
+</div>
+
+<div class="pattern">
+<h3>#20 — Closed-Form Buy Inversion</h3>
+<span class="tag">math</span> <span class="tag">optimization</span>
+<pre><code>;; Given budget, compute shares: x = b * ln(E(1+D) - D)
+;; Then refine ±1 for rounding</code></pre>
+<p>Analytical inverse of LMSR cost function. No binary search needed. 2-step refinement handles integer rounding. Much more gas-efficient.</p>
+</div>
+
+<div class="pattern">
+<h3>#21 — Per-Trade Solvency Guard</h3>
+<span class="tag">safety</span>
+<pre><code>(asserts! (and (>= pool1 (* ys1 UNIT)) (>= pool1 (* ns1 UNIT)))
+    ERR-TRADE-INSOLVENT)</code></pre>
+<p>After every trade: pool must cover ALL outstanding shares at 1 STX each. Catches integer rounding before it compounds into insolvency.</p>
+</div>
+
+<div class="pattern">
+<h3>#22 — Fee Splitting with Lockable Config</h3>
+<span class="tag">fees</span> <span class="tag">governance</span>
+<p>Protocol fee splits 3 ways (drip + BRC-20 + team, must sum to 100%). <code>lock-fees-config</code> is a one-way irreversible lock. Sell fees clamped via <code>minu(fee, base)</code>.</p>
+</div>
+
+<div class="pattern">
+<h3>#23 — Map-Based Multi-Market Factory</h3>
+<span class="tag">architecture</span>
+<pre><code>(define-map m-status  { m: uint } { s: (string-ascii 10) })
+(define-map yes-holdings { m: uint, user: principal } { bal: uint })</code></pre>
+<p>One contract serves unlimited markets. Composite keys for per-user-per-market state. No per-market deployments needed.</p>
+</div>
+
+<h2>Lessons</h2>
+<ul>
+  <li><strong>Separate state from logic from custody</strong> — makes upgrades safe (ALEX pattern)</li>
+  <li><strong>Always have mul-down/mul-up pairs</strong> — directional rounding prevents value leakage</li>
+  <li><strong>You can build ln/exp/pow in Clarity</strong> — lookup tables + Taylor series work</li>
+  <li><strong>Integer granularity matters</strong> — STX-scale math is too coarse for sub-STX pricing</li>
+  <li><strong>Per-trade solvency checks > global invariants</strong> — catches rounding before it compounds</li>
+  <li><strong>One-way locks are simple trust primitives</strong> — irreversible fee locks work</li>
+  <li><strong>Closed-form > iterative</strong> — analytical inverses save gas on-chain</li>
+  <li><strong>Bias as virtual liquidity</strong> — clean separation of pricing from settlement</li>
+</ul>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/">Back to all audits</a></p>
+</footer>
+
+</body>
+</html>
