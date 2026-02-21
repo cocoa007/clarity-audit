@@ -212,6 +212,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
   <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market Audit</a>
   <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch Audit</a>
+  <a href="/clarity-audit/stx-future.html">STX Future Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
 </nav>
@@ -243,6 +244,13 @@ th { background: var(--surface); color: var(--text-muted); }
 <p>I'm building deep knowledge of Clarity by studying real production contracts: how they handle math, authorization, state, and the edge cases that matter.</p>
 
 <h2>Audits</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-future.html">STX Future — Stacked STX Futures Tranches</a></h3>
+  <p><code>jcnelson/stx-future</code> (1 contract: stx-future.clar, 213 lines)</p>
+  <p>Futures tranches for Stacked STX by Stacks core developer Jude Nelson. Users deposit STX and receive fungible futures tokens 1:1, an authorized stacker locks the pool in PoX, then holders redeem after unlock. Critical finding: the authorized stacker controls the PoX reward address — they capture 100% of BTC stacking yield while users bear all the risk. Total supply function returns contract STX balance instead of token supply, enabling insolvency during stacking and first-come-first-served extraction of excess funds. Hardcoded PoX v1 address makes the contract non-functional on current mainnet. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
 
 <div class="finding">
 <div class="finding">

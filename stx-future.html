@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STX Future Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-box .number { font-size: 1.5rem; font-weight: 700; }
+.stat-box .label { font-size: 0.8rem; color: var(--text-muted); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+th { color: var(--text-muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/stx-future.html" class="active">STX Future Audit</a>
+</nav>
+
+<h1>STX Future — Stacked STX Futures Tranches</h1>
+<p class="subtitle">
+  Security audit of <a href="https://github.com/jcnelson/stx-future">jcnelson/stx-future</a><br>
+  Commit: <code><a href="https://github.com/jcnelson/stx-future/tree/22b4155e78d9d66ae7869844a532748326de2caf">22b4155</a></code> (2021-09-03) · Audited: February 21, 2026 · Clarity version: 1 (pre-Clarity 4)
+</p>
+
+<h2>Overview</h2>
+<p>A Clarity smart contract for creating futures tranches from Stacked STX. Users deposit STX and receive fungible <code>stx-future</code> tokens 1:1. An authorized stacker locks the pooled STX in PoX (Proof of Transfer) for a configured reward cycle. After the lock period ends, token holders redeem their futures for the underlying STX. Written by Jude Nelson, a Stacks core developer.</p>
+
+<p>The contract implements a simple but elegant mechanism: STX-in → futures tokens → Stack → unlock → redeem STX. It includes a SIP-010-like token interface, authorized stacker list, and self-consistency checks at deployment.</p>
+
+<div class="stat-grid">
+  <div class="stat-box"><div class="number" style="color: var(--red)">2</div><div class="label">Critical</div></div>
+  <div class="stat-box"><div class="number" style="color: #da3633">2</div><div class="label">High</div></div>
+  <div class="stat-box"><div class="number" style="color: var(--yellow)">3</div><div class="label">Medium</div></div>
+  <div class="stat-box"><div class="number" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-box"><div class="number" style="color: var(--text-muted)">2</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Priority Matrix Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — DeFi/staking, holds STX in PoX</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>2 — has tests, README, by core dev</td><td>2</td><td>4</td></tr>
+  <tr><td>Code Complexity</td><td>2 — 213 lines, PoX integration</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>2 — 15 stars, 4 forks</td><td>1.5</td><td>3</td></tr>
+  <tr><td>Novelty</td><td>3 — unique futures tranche mechanism</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Raw Score</strong></td><td><strong>2.45</strong></td></tr>
+  <tr><td colspan="3">Clarity version penalty (pre-v4)</td><td>-0.50</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>1.95 ✅</strong></td></tr>
+</table>
+
+<h2>Architecture</h2>
+<p>Single contract with three functional areas:</p>
+<ul>
+  <li><strong>Futures lifecycle</strong>: <code>buy-stx-futures</code> → <code>stack-stx-tranche</code> → <code>redeem-stx-futures</code></li>
+  <li><strong>Access control</strong>: Hardcoded <code>AUTHORIZED-STACKERS</code> list checked via fold</li>
+  <li><strong>Token interface</strong>: Partial SIP-010 (<code>transfer</code>, <code>get-balance-of</code>, <code>get-name</code>, etc.)</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-01: Authorized Stacker Controls All PoX Reward Destination</h3>
+<p><strong>Location:</strong> <code>stack-stx-tranche</code> (line 150-185)</p>
+<p><strong>Description:</strong> The <code>stack-stx-tranche</code> function accepts an arbitrary <code>pox-addr</code> parameter from the caller. Any authorized stacker can direct ALL PoX stacking rewards (paid in BTC) to their own Bitcoin address. Futures token holders contribute the STX capital but receive zero yield — they can only redeem their original deposit.</p>
+<pre><code>(define-public (stack-stx-tranche (pox-addr { version: (buff 1), hashbytes: (buff 20) }))
+    (if (is-authorized tx-sender)
+        ;; stacker provides ANY pox-addr — all BTC rewards go there
+        ...
+        (pox-result (as-contract
+            (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox stack-stx
+                contract-balance pox-addr burn-block-height REWARD-CYCLE-LOCK-PERIOD)))
+        )
+</code></pre>
+<p><strong>Impact:</strong> Complete theft of stacking yield. Users contribute capital, authorized stacker takes all BTC rewards. This is the fundamental economic flaw — the contract creates a futures instrument with no yield mechanism for token holders.</p>
+<p><strong>Recommendation:</strong> Either hardcode the pox-addr at deployment (like AUTHORIZED-STACKERS), implement a reward-sharing mechanism, or require multi-sig approval for the reward address.</p>
+</div>
+
+<!-- C-02 -->
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-02: <code>get-total-supply</code> Returns Wrong Value — Insolvency Risk</h3>
+<p><strong>Location:</strong> <code>get-total-supply</code> (line 205)</p>
+<p><strong>Description:</strong> The function returns <code>stx-get-balance</code> of the contract instead of <code>ft-get-supply stx-future</code>. These values diverge in critical scenarios:</p>
+<ul>
+  <li>During stacking: contract STX balance = 0 (locked in PoX), but token supply &gt; 0</li>
+  <li>If extra STX is sent to the contract: balance inflates beyond token supply</li>
+  <li>External integrations relying on total supply see incorrect data</li>
+</ul>
+<pre><code>(define-public (get-total-supply)
+    (ok (stx-get-balance (as-contract tx-sender))))
+;; Should be: (ok (ft-get-supply stx-future))
+</code></pre>
+<p><strong>Impact:</strong> During the stacking period, the token appears to have zero supply. After unlock, if any extra STX arrives at the contract address, early redeemers can drain more than their fair share (first-come-first-served extraction of excess). DEX integrations using this function will price the token incorrectly.</p>
+<p><strong>Recommendation:</strong> Use <code>(ft-get-supply stx-future)</code> instead. Make it <code>define-read-only</code>.</p>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-01: No Yield Distribution — Futures are Strictly Worse Than Holding STX</h3>
+<p><strong>Location:</strong> Contract architecture</p>
+<p><strong>Description:</strong> The contract creates a futures instrument where users deposit STX and receive tokens, but there is no mechanism to distribute PoX stacking rewards to token holders. Users take on counterparty risk (authorized stacker, lock-up period, smart contract risk) for zero additional yield. The futures token is economically inferior to simply holding STX and stacking directly.</p>
+<p><strong>Impact:</strong> No rational user would buy futures tokens. The contract's economic model is broken — it socializes risk without socializing rewards. The authorized stacker captures 100% of the yield.</p>
+<p><strong>Recommendation:</strong> Implement a reward distribution mechanism. Options: (a) have the stacker deposit BTC rewards back to the contract, (b) use a separate reward pool with pro-rata claims, or (c) accept additional STX from rewards and increase the redemption ratio.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-02: No Cancellation or Refund Before Stacking Lock</h3>
+<p><strong>Location:</strong> <code>buy-stx-futures</code> / <code>redeem-stx-futures</code></p>
+<p><strong>Description:</strong> Once a user buys futures tokens, they cannot redeem until either (a) the stacking lock ends, or (b) the stacker fails to stack and the reward cycle begins. If the authorized stacker delays stacking, users' STX is locked in the contract with no exit mechanism until <code>FIRST-REWARD-CYCLE</code> starts.</p>
+<pre><code>;; Redemption requires:
+(asserts! (or (>= cur-reward-cycle unlock-cycle)
+              (and (>= cur-reward-cycle FIRST-REWARD-CYCLE) (not locked?)))
+    (err ERR-NOT-YET-REDEEMABLE))
+</code></pre>
+<p><strong>Impact:</strong> Illiquidity risk. Users cannot exit their position before the lock period. Combined with the tradeable token interface, this creates a secondary market where the futures would trade at a significant discount due to illiquidity and zero yield.</p>
+<p><strong>Recommendation:</strong> Add a <code>cancel-futures</code> function that allows users to redeem before stacking occurs (while <code>locked</code> is still false).</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-01: SIP-010 Non-Compliance — Missing <code>memo</code> Parameter</h3>
+<p><strong>Location:</strong> <code>transfer</code> (line 192)</p>
+<p><strong>Description:</strong> The <code>transfer</code> function is missing the required <code>memo</code> parameter from SIP-010. The standard requires <code>(transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))</code>.</p>
+<pre><code>;; Current:
+(define-public (transfer (amount uint) (from principal) (to principal))
+;; SIP-010 requires:
+;; (define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
+</code></pre>
+<p><strong>Impact:</strong> Incompatible with SIP-010 trait. Cannot be listed on DEXs or used with standard tooling that expects the trait. Wallets cannot send memos with transfers.</p>
+<p><strong>Recommendation:</strong> Add the <code>memo</code> parameter and implement SIP-010 trait.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-02: Read-Only Functions Defined as Public — Gas Waste</h3>
+<p><strong>Location:</strong> <code>get-name</code>, <code>get-symbol</code>, <code>get-decimals</code>, <code>get-balance-of</code>, <code>get-total-supply</code>, <code>get-token-uri</code> (lines 195-210)</p>
+<p><strong>Description:</strong> Six functions that return static/read-only data are defined as <code>define-public</code> instead of <code>define-read-only</code>. This means callers must submit a transaction (with fees) to read token metadata.</p>
+<p><strong>Impact:</strong> Unnecessary transaction costs. Users/contracts calling these functions pay gas for read operations. SIP-010 specifies these as read-only.</p>
+<p><strong>Recommendation:</strong> Change all six to <code>define-read-only</code>.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-03: Hardcoded PoX v1 Contract — Incompatible with Current Mainnet</h3>
+<p><strong>Location:</strong> <code>burn-height-to-reward-cycle</code>, <code>reward-cycle-to-burn-height</code>, <code>stack-stx-tranche</code></p>
+<p><strong>Description:</strong> The contract hardcodes <code>'SP000000000000000000002Q6VF78.pox</code> (PoX v1). Stacks mainnet has since upgraded through PoX v2, v3, and PoX-4. The v1 contract is no longer active — calls to it will fail.</p>
+<pre><code>(contract-call? 'SP000000000000000000002Q6VF78.pox get-pox-info)
+(contract-call? 'SP000000000000000000002Q6VF78.pox stack-stx ...)
+</code></pre>
+<p><strong>Impact:</strong> Contract is non-functional on current mainnet without updating the PoX contract reference. Deployment would fail or stacking would revert.</p>
+<p><strong>Recommendation:</strong> Update to current PoX version. Consider using a configurable trait for PoX to allow future upgrades.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-01: Uses Legacy <code>as-contract</code> — No Asset Allowances</h3>
+<p><strong>Location:</strong> Multiple (lines 82, 104, 107, 159, 175)</p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> (legacy) instead of Clarity 4's <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>). The legacy form grants blanket authority over all contract assets within the block.</p>
+<p><strong>Impact:</strong> If composed with other contracts, the blanket <code>as-contract</code> could be exploited. Clarity 4's restricted form (<code>as-contract? (with-stx amount)</code>) limits the blast radius.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit allowances.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-02: <code>unwrap-panic</code> Used for Recoverable Errors</h3>
+<p><strong>Location:</strong> <code>buy-stx-futures</code> (lines 82-83), <code>redeem-stx-futures</code> (lines 104, 107), <code>stack-stx-tranche</code> (line 175)</p>
+<p><strong>Description:</strong> Multiple uses of <code>unwrap-panic</code> where <code>unwrap!</code> with a proper error code would be safer. If any of these operations fail unexpectedly, the entire transaction aborts with a runtime panic instead of a clean error.</p>
+<p><strong>Impact:</strong> Poor error handling. Debugging failed transactions is harder. In <code>buy-stx-futures</code>, the STX transfer succeeding but NFT mint failing triggers a panic abort (though the transaction atomically reverts, the user experience is degraded).</p>
+<p><strong>Recommendation:</strong> Replace <code>unwrap-panic</code> with <code>unwrap!</code> and appropriate error codes.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-01: No Events Emitted</h3>
+<p><strong>Location:</strong> All public functions</p>
+<p><strong>Description:</strong> The contract emits no <code>print</code> events for buy, redeem, stack, or transfer operations. Off-chain indexers and UIs cannot easily track contract activity.</p>
+<p><strong>Recommendation:</strong> Add <code>(print { event: "buy", amount: amount-ustx, buyer: tx-sender })</code> style events to all state-changing functions.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-02: Authorization Check via Linear Fold</h3>
+<p><strong>Location:</strong> <code>is-authorized</code> / <code>auth-check</code> (lines 118-130)</p>
+<p><strong>Description:</strong> The authorization check iterates through <code>AUTHORIZED-STACKERS</code> using <code>fold</code>. While functional, this is O(n) and allocates intermediate data structures. For a small hardcoded list this is acceptable, but a map-based lookup would be more idiomatic.</p>
+<p><strong>Recommendation:</strong> Use a <code>define-map</code> for authorized stackers, or simply chain <code>(or (is-eq tx-sender s1) (is-eq tx-sender s2) ...)</code>.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Self-consistency checks at deployment</strong>: The contract validates its configuration constants at deploy time — if <code>FIRST-REWARD-CYCLE</code> is in the past or <code>REWARD-CYCLE-LOCK-PERIOD</code> is out of range, deployment fails. This is excellent defensive practice.</li>
+  <li><strong>Clean state machine</strong>: The <code>locked</code> flag prevents double-stacking, and the reward cycle checks create clear phase transitions (buy → stack → redeem).</li>
+  <li><strong>Atomic buy</strong>: STX transfer and token minting are in the same transaction — partial execution is impossible.</li>
+  <li><strong>Author transparency</strong>: The alpha-quality disclaimer at the top is honest and appropriate.</li>
+</ul>
+
+<h2>Recommendations Summary</h2>
+<ol>
+  <li><strong>Hardcode or restrict the PoX reward address</strong> — the single most impactful change. Without it, the authorized stacker captures all yield.</li>
+  <li><strong>Fix <code>get-total-supply</code></strong> to use <code>ft-get-supply</code> — prevents insolvency reporting and first-come-first-served extraction.</li>
+  <li><strong>Add a cancellation mechanism</strong> — allow futures holders to redeem before stacking locks occur.</li>
+  <li><strong>Implement proper SIP-010</strong> — add memo parameter, change public getters to read-only.</li>
+  <li><strong>Update PoX contract reference</strong> — v1 is no longer active on mainnet.</li>
+  <li><strong>Migrate to Clarity 4</strong> — use <code>as-contract?</code> with explicit asset allowances.</li>
+</ol>
+
+<hr style="margin-top: 3rem; border-color: var(--border);">
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">
+Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+<a href="https://cocoa007.github.io/clarity-audit">Full audit portfolio</a>
+</p>
+</body>
+</html>
