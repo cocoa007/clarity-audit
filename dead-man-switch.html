@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dead Man's Switch Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/dead-man-switch.html" class="active">Dead Man's Switch Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Dead Man's Switch — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/CMPGFB/Dead-Man-Switch-Contracts">CMPGFB/Dead-Man-Switch-Contracts</a> ·
+  Commit: <code><a href="https://github.com/CMPGFB/Dead-Man-Switch-Contracts/tree/b2840d44bf531735ecef699dd9b659d3fb7d43db">b2840d4</a></code> (2025-03-12) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>Dead Man's Switch is a two-contract system on the Stacks blockchain that allows a user to set up automatic asset transfer to a beneficiary if the owner fails to check in within a configurable timeout period. The system supports STX, SIP-010 tokens, and includes a second contract for Bitcoin UTXO integration.</p>
+<p>The codebase spans 2 Clarity files (~300 lines total). The main contract (<code>deadmanswitch.clar</code>) handles STX and SIP-010 token custody with initialization, check-in, deposits, withdrawals, and beneficiary claims. The UTXO variant (<code>utxodeadmanswitch.clar</code>) attempts Bitcoin UTXO integration but uses non-existent Clarity functions.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — Holds STX + SIP-010 tokens, asset custody with timed release</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>2 — Has README, multi-chain versions (Clarity + Solidity + Miniscript)</td><td>4</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>2 — 300 lines, 2 contracts, trait usage, signature patterns</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>1 — 2 stars</td><td>1.5</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>3 — Dead man's switch — unique mechanism, first audit of this category</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>23 / 10 = 2.3 ≥ 1.8 ✓</strong></td></tr>
+</table>
+<p><em>No Clarity version specified (pre-Clarity 4). Uses legacy <code>as-contract</code> throughout.</em></p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Anyone Can Front-Run Initialization to Hijack Contract</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>UTXO Contract Uses Non-Existent <code>send-bitcoin</code> Function</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Owner Can Drain All Funds After Timeout Without Beneficiary Knowledge</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>Token Allowlist Not Enforced on Withdrawal or Claim</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Owner Can Change Beneficiary and Timeout After Expiry</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Transfer-Ownership Resets Dead Man's Switch Guarantees</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>Single-Use Contract — Only One Dead Man's Switch Per Deployment</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>UTXO Contract Has Inconsistent Initial Owner</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>contract-event Is Public and Callable by Anyone</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>No Event Emission in UTXO Contract</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>principal-to-string and to-string Are Not Standard Clarity Functions</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-01</span> Anyone Can Front-Run Initialization to Hijack Contract</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>initialize</code> function</p>
+<p><strong>Description:</strong> The contract uses a two-step pattern: deploy first, then call <code>initialize</code> to set the owner, beneficiary, and timeout. Since <code>initialize</code> is a public function with no access control (anyone can call it as long as <code>initialized</code> is false), an attacker who monitors the mempool can front-run the deployer's initialization transaction.</p>
+<p>The attacker calls <code>initialize</code> with themselves as <code>tx-sender</code> (which becomes the owner) and their own address as the beneficiary. When the deployer's <code>initialize</code> arrives, it fails with <code>ERR-ALREADY-INITIALIZED</code>. The attacker now owns the contract and is also the beneficiary.</p>
+<pre><code>(define-public (initialize (new-beneficiary principal) (time-blocks uint))
+  (begin
+    (asserts! (not (var-get initialized)) ERR-ALREADY-INITIALIZED)
+    ;; No access control — anyone can be the first caller
+    (var-set owner tx-sender)  ;; Attacker becomes owner
+    ...</code></pre>
+<p><strong>Impact:</strong> Complete contract takeover. Any STX or tokens deposited after deployment can be drained by the attacker via <code>withdraw-stx</code> or <code>withdraw-token</code>. The intended owner has no recourse.</p>
+<p><strong>Recommendation:</strong> Set <code>owner</code> to <code>tx-sender</code> at contract deployment time (as a constant or in the data-var initializer), and restrict <code>initialize</code> to only the deployer. Better yet, take all parameters at deploy time and remove the initialize pattern entirely.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-02</span> UTXO Contract Uses Non-Existent <code>send-bitcoin</code> Function</h3>
+<p><strong>Location:</strong> <code>utxodeadmanswitch.clar</code> — <code>trigger-switch</code> function</p>
+<p><strong>Description:</strong> The <code>trigger-switch</code> function calls <code>send-bitcoin</code>, which does not exist in Clarity. Clarity is a smart contract language on the Stacks L2 — it can <em>read</em> Bitcoin state (via <code>get-burn-block-info?</code>) but cannot create Bitcoin transactions. This entire contract is non-functional.</p>
+<pre><code>(unwrap! (send-bitcoin
+  (unwrap! btc-recipient "Invalid BTC address")
+  (unwrap! btc-utxo-data.value ERR-NO-BITCOIN-UTXO)))</code></pre>
+<p>Additionally, the function uses string error messages (<code>(err "BTC beneficiary not set")</code>) which are invalid in Clarity — error responses must be <code>(err uint)</code> or <code>(err bool)</code>. The <code>unwrap!</code> on <code>btc-utxo-data.value</code> is also incorrect — <code>.value</code> on a tuple field returns a <code>uint</code>, not an optional. This contract would fail to deploy.</p>
+<p><strong>Impact:</strong> The UTXO contract cannot compile, cannot deploy, and even if it could, cannot send Bitcoin. It's entirely non-functional. The <code>register-btc-utxo</code> function misleadingly suggests UTXO tracking capability that doesn't exist.</p>
+<p><strong>Recommendation:</strong> Remove the UTXO contract entirely, or redesign it to use an off-chain relay/bridge pattern. The dead man's switch for Bitcoin would need to use pre-signed transactions held off-chain, or a HTLC/multisig pattern at the Bitcoin script level (as the Miniscript version in this repo attempts).</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-01</span> Owner Can Drain All Funds After Timeout Without Beneficiary Knowledge</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>withdraw-stx</code>, <code>withdraw-token</code>, <code>update-beneficiary</code>, <code>update-timeout</code></p>
+<p><strong>Description:</strong> The owner retains full control of all funds even after the timeout has expired. There is no state transition that locks the owner out when the switch triggers. The owner can:</p>
+<ol>
+  <li>Call <code>withdraw-stx</code> to drain all STX even after expiry</li>
+  <li>Call <code>withdraw-token</code> to drain all tokens even after expiry</li>
+  <li>Call <code>update-beneficiary</code> to change the beneficiary to themselves</li>
+  <li>Call <code>update-timeout</code> to extend the timeout indefinitely</li>
+  <li>Call <code>check-in</code> to reset the timer</li>
+</ol>
+<p>This means the dead man's switch doesn't actually enforce anything — the owner can always override it. The "dead" state should disable owner functions.</p>
+<pre><code>;; Owner can withdraw even after expiry — no is-expired check
+(define-public (withdraw-stx (amount uint))
+  (begin
+    (try! (assert-initialized))
+    (try! (assert-owner))
+    ;; Missing: (asserts! (not (is-expired)) ERR-TIMEOUT-REACHED)
+    ...</code></pre>
+<p><strong>Impact:</strong> The core promise of the dead man's switch is broken. The beneficiary has no guarantee they'll receive funds because the owner can always drain, redirect, or reset. In a real scenario where the owner is incapacitated but not dead (e.g., hospitalized with device access), someone with the owner's keys could drain everything before the beneficiary claims.</p>
+<p><strong>Recommendation:</strong> Add an expiry check to all owner-only functions: <code>(asserts! (not (is-expired)) ERR-SWITCH-TRIGGERED)</code>. Once the timeout passes, only beneficiary claim functions should work. The owner's recourse should be limited to <code>check-in</code> (which resets the timer) while the switch is still active.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-02</span> Token Allowlist Not Enforced on Withdrawal or Claim</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>allowed-tokens</code> map, <code>withdraw-token</code>, <code>claim-token</code></p>
+<p><strong>Description:</strong> The contract maintains an <code>allowed-tokens</code> map and an <code>allow-token</code> function to register approved token contracts. However, neither <code>withdraw-token</code> nor <code>claim-token</code> checks this map. Any SIP-010 token contract can be passed, including malicious ones.</p>
+<pre><code>(define-map allowed-tokens principal bool)
+
+;; allow-token sets the allowlist...
+(define-public (allow-token (token-contract principal))
+  (begin
+    (try! (assert-initialized))
+    (try! (assert-owner))
+    (map-set allowed-tokens token-contract true)
+    ...))
+
+;; ...but withdraw-token and claim-token never check it
+(define-public (withdraw-token (token-contract &lt;sip-010-trait&gt;) (amount uint))
+  (begin
+    (try! (assert-initialized))
+    (try! (assert-owner))
+    ;; Missing: (asserts! (default-to false (map-get? allowed-tokens (contract-of token-contract))) ERR-TOKEN-NOT-ALLOWED)
+    (try! (as-contract (contract-call? token-contract transfer ...)))
+    ...</code></pre>
+<p><strong>Impact:</strong> A malicious token contract could be passed that executes arbitrary logic in its <code>transfer</code> function (e.g., re-entering the dead man's switch contract, emitting fake events, or calling other contracts with the switch contract's authority via <code>as-contract</code>). The allowlist feature gives a false sense of security.</p>
+<p><strong>Recommendation:</strong> Add allowlist validation: <code>(asserts! (default-to false (map-get? allowed-tokens (contract-of token-contract))) ERR-TOKEN-NOT-ALLOWED)</code> to both <code>withdraw-token</code> and <code>claim-token</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-01</span> Owner Can Change Beneficiary and Timeout After Expiry</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>update-beneficiary</code>, <code>update-timeout</code></p>
+<p><strong>Description:</strong> Even after the dead man's switch has "triggered" (timeout expired), the owner can change the beneficiary to a different address or extend the timeout. This creates a race condition: the beneficiary sees the switch is expired and prepares to claim, but the owner (or someone with the owner's keys) changes the beneficiary at the last moment.</p>
+<p><strong>Impact:</strong> Beneficiary's claim can be front-run by a beneficiary-change transaction. The timeout extension can retroactively "un-trigger" the switch, denying the beneficiary access to funds they were promised.</p>
+<p><strong>Recommendation:</strong> Freeze all owner configuration functions once <code>is-expired</code> returns true. Only <code>check-in</code> should work (to reset the timer while the owner is still alive).</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-02</span> Transfer-Ownership Resets Dead Man's Switch Guarantees</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>transfer-ownership</code></p>
+<p><strong>Description:</strong> The <code>transfer-ownership</code> function changes the owner to a new principal, but does not reset the <code>last-check-in</code> timer. The new owner inherits the previous owner's check-in state. If the previous owner checked in recently, the new owner has a full timeout period. If the previous owner was inactive, the new owner might immediately be in an expired state. Conversely, the new owner might be a contract or an unreachable address, permanently bricking the dead man's switch.</p>
+<p><strong>Impact:</strong> Unexpected timing behavior after ownership transfer. The new owner might not realize they need to check in immediately, or the transfer could be used to extend the switch by having a fresh principal "take over."</p>
+<p><strong>Recommendation:</strong> Reset <code>last-check-in</code> to <code>block-height</code> on ownership transfer, and consider requiring the new owner to explicitly accept the transfer.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-03</span> Single-Use Contract — Only One Dead Man's Switch Per Deployment</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — overall architecture</p>
+<p><strong>Description:</strong> The contract uses global data variables (<code>owner</code>, <code>beneficiary</code>, <code>timeout</code>, etc.) instead of a map-based design. This means only one dead man's switch can exist per deployed contract instance. Each user who wants a dead man's switch must deploy their own copy of the contract, paying full deployment costs.</p>
+<p><strong>Impact:</strong> Poor scalability and high cost per user. Each switch requires a separate contract deployment (~0.5 STX+ on mainnet). A factory pattern with a map of switches would allow unlimited users on a single deployment.</p>
+<p><strong>Recommendation:</strong> Refactor to use a <code>define-map</code> keyed by switch ID or owner principal, with a create function that initializes new entries. This allows multiple switches per contract deployment.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-01</span> UTXO Contract Has Inconsistent Initial Owner</h3>
+<p><strong>Location:</strong> <code>utxodeadmanswitch.clar</code> — data variable declarations</p>
+<p><strong>Description:</strong> The main contract initializes <code>owner</code> to a zero address (<code>'ST000000000000000000000000000000000000000</code>), preventing pre-init owner actions. The UTXO contract initializes <code>owner</code> to <code>tx-sender</code> (the deployer), but the <code>check-in</code> function checks <code>is-eq tx-sender (var-get owner)</code> without requiring initialization. This means the deployer can check in before the contract is initialized.</p>
+<pre><code>;; Main contract: safe — zero address
+(define-data-var owner principal 'ST000000000000000000000000000000000000000)
+
+;; UTXO contract: unsafe — deployer is owner immediately
+(define-data-var owner principal tx-sender)</code></pre>
+<p><strong>Impact:</strong> Minor inconsistency. The UTXO contract allows pre-initialization check-ins, but since the contract can't deploy anyway (C-02), the practical impact is nil.</p>
+<p><strong>Recommendation:</strong> Use consistent initialization patterns across both contracts.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-02</span> <code>contract-event</code> Is Public and Callable by Anyone</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — <code>contract-event</code> function</p>
+<p><strong>Description:</strong> The <code>contract-event</code> function is defined as <code>define-public</code> with no access control. Anyone can call it to emit arbitrary event data that appears to come from the contract.</p>
+<pre><code>(define-public (contract-event (event-type (string-ascii 50)) (event-data (string-utf8 500)))
+  (ok true))</code></pre>
+<p><strong>Impact:</strong> Fake events can confuse off-chain indexers or UIs monitoring the contract. An attacker could emit fake "check-in", "claim-stx", or "transfer-ownership" events to mislead watchers.</p>
+<p><strong>Recommendation:</strong> Make this function <code>define-private</code> since it's only used internally, or add an owner/beneficiary check.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-01</span> No Event Emission in UTXO Contract</h3>
+<p><strong>Location:</strong> <code>utxodeadmanswitch.clar</code></p>
+<p><strong>Description:</strong> The main contract emits events via <code>contract-event</code> for all state changes. The UTXO contract emits no events at all, making it impossible for off-chain systems to track state changes.</p>
+<p><strong>Recommendation:</strong> Add <code>print</code> statements (the standard Clarity pattern) for all state mutations.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-02</span> <code>principal-to-string</code> and <code>to-string</code> Are Not Standard Clarity Functions</h3>
+<p><strong>Location:</strong> <code>deadmanswitch.clar</code> — multiple event calls</p>
+<p><strong>Description:</strong> The contract uses <code>principal-&gt;string</code> and <code>to-string</code> in event data construction. These are not standard Clarity built-in functions. <code>principal-&gt;string</code> doesn't exist in any Clarity version. This would cause deployment failure.</p>
+<pre><code>(try! (contract-event "initialize"
+  (concat (concat "owner: " (principal->string tx-sender))
+          (concat ", beneficiary: " (principal->string new-beneficiary)))))</code></pre>
+<p><strong>Impact:</strong> The contract cannot deploy as-is. All functions that emit events would fail at the event call.</p>
+<p><strong>Recommendation:</strong> Use <code>(print { event: "initialize", owner: tx-sender, beneficiary: new-beneficiary })</code> instead of string concatenation. The <code>print</code> function accepts any Clarity value and is the standard event pattern.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+<ul>
+  <li><strong>Initialization pattern:</strong> Uses a deploy-then-initialize two-step that is inherently vulnerable to front-running (C-01). The Clarity best practice is to use <code>define-constant</code> for the deployer and take constructor-like parameters at deploy time.</li>
+  <li><strong>As-contract usage:</strong> The contract correctly uses <code>as-contract</code> for custody transfers. It wraps outbound STX and token transfers in <code>as-contract</code> blocks, which is the right pattern for a custodial contract. However, it should migrate to Clarity 4's <code>as-contract?</code> with explicit asset allowances.</li>
+  <li><strong>Trait definition:</strong> The contract defines its own <code>sip-010-trait</code> inline instead of importing the canonical SIP-010 trait. This works but means the trait signature may drift from the standard.</li>
+  <li><strong>Multi-chain approach:</strong> The repo includes Solidity and Miniscript versions alongside Clarity, showing serious intent to deploy across chains. The Clarity version is the most feature-complete.</li>
+</ul>
+
+<h2>Recommendations Summary</h2>
+<ol>
+  <li><strong>[CRITICAL]</strong> Replace the initialize pattern with deploy-time initialization using <code>define-constant contract-owner tx-sender</code></li>
+  <li><strong>[CRITICAL]</strong> Remove or redesign the UTXO contract — it cannot compile</li>
+  <li><strong>[HIGH]</strong> Add expiry checks to all owner functions — the owner must be locked out once the switch triggers</li>
+  <li><strong>[HIGH]</strong> Enforce the token allowlist in <code>withdraw-token</code> and <code>claim-token</code></li>
+  <li><strong>[MEDIUM]</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset restrictions</li>
+  <li>Replace <code>principal-&gt;string</code>/<code>to-string</code> with <code>print</code> for events</li>
+  <li>Consider a factory pattern for multi-user scalability</li>
+</ol>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007/clarity-audit">Source</a></p>
+</footer>
+
+</body>
+</html>

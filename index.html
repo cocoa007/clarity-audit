@@ -211,6 +211,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/stackhub.html">StackHub Audit</a>
   <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
   <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market Audit</a>
+  <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
 </nav>
@@ -220,7 +221,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">44</div>
+    <div class="num">46</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -228,11 +229,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">205</div>
+    <div class="num">216</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">37</div>
+    <div class="num">39</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -244,6 +245,13 @@ th { background: var(--surface); color: var(--text-muted); }
 <h2>Audits</h2>
 
 <div class="finding">
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch — Timed Asset Transfer</a></h3>
+  <p><code>CMPGFB/Dead-Man-Switch-Contracts</code> (2 contracts: main dead man switch + UTXO variant)</p>
+  <p>Dead man's switch for automatic asset transfer to a beneficiary if the owner fails to check in. The initialize function has no access control — anyone can front-run deployment to hijack the contract and become the owner. The UTXO contract calls non-existent <code>send-bitcoin</code> function and uses invalid string error types, making it undeployable. The owner retains full withdrawal access even after the switch triggers, defeating the core mechanism. Token allowlist is defined but never enforced. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
 <div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market — Bitcoin-Anchored Prediction Market</a></h3>
   <p><code>phessophissy/btc-prediction-market</code> (5 contracts: v1 + v2 + v3 + PMT token + SIP-010 trait)</p>
