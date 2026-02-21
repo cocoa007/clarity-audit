@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAO Governance Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>DAO Governance — veToken Model</h1>
+<p class="subtitle">serayd61/stacks-dao-governance · 5 contracts · ~929 lines · February 21, 2026</p>
+
+<h2>Overview</h2>
+<p>A Curve-inspired veToken DAO governance system with five contracts: governance token (SIP-010 with delegation), proposal manager, timelock, treasury, and voting escrow. The architecture aims for a full governance stack — lock tokens for time-weighted voting power, create and vote on proposals, queue through a timelock, and manage treasury spending.</p>
+
+<p>The system is <strong>non-functional</strong>. The voting escrow contains an infinitely recursive function that aborts every lock attempt. The proposal manager has its threshold check commented out and uses hardcoded voting power. The five contracts are not integrated with each other.</p>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="severity critical">CRITICAL</span></td><td>3</td></tr>
+<tr><td><span class="severity high">HIGH</span></td><td>4</td></tr>
+<tr><td><span class="severity medium">MEDIUM</span></td><td>4</td></tr>
+<tr><td><span class="severity low">LOW</span> / <span class="severity info">INFO</span></td><td>3</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-1</span> Infinite Recursion in <code>to-int</code> — Voting Escrow Completely Broken</h3>
+<p><strong>Contract:</strong> voting-escrow.clar</p>
+<p>The <code>to-int</code> helper function shadows the Clarity built-in and calls itself unconditionally:</p>
+<pre>(define-private (to-int (value uint))
+  (if (&lt; value u9223372036854775807)
+    (to-int value)   ;; ← recursive call to itself, NOT the built-in
+    0))</pre>
+<p>This function is called by <code>checkpoint</code>, which is called by <code>create-lock</code>, <code>increase-amount</code>, and <code>increase-unlock-time</code>. Every attempt to lock tokens hits the runtime recursion limit and aborts. <strong>No locks can ever be created</strong>, making the entire veToken model non-functional.</p>
+<p><strong>Fix:</strong> Remove the wrapper entirely and use the built-in <code>to-int</code> directly in checkpoint, or rename the helper to avoid shadowing.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-2</span> Hardcoded Voting Power — Governance Token Meaningless</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<p>Every voter receives exactly 1,000,000 votes regardless of actual token holdings:</p>
+<pre>(define-public (vote (proposal-id uint) (support bool))
+  (let (
+    (voter-power u1000000) ;; Simplified - would call governance-token
+  )</pre>
+<p>This makes the governance token pointless. One address = one million votes. A sybil attack with N addresses yields N million votes, trivially overwhelming any legitimate governance.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-3</span> Proposal Threshold Completely Disabled</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<p>The minimum token requirement to create proposals is commented out:</p>
+<pre>;; (asserts! (&gt;= (contract-call? .governance-token get-voting-power tx-sender) 
+;;              (var-get proposal-threshold)) 
+;;           ERR_INSUFFICIENT_VOTING_POWER)</pre>
+<p>Anyone — with zero tokens — can create unlimited proposals. Combined with C-2, a single attacker with no tokens can create and pass proposals at will.</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+<h3><span class="severity high">H-1</span> Delegation Double-Counting Inflates Voting Power</h3>
+<p><strong>Contract:</strong> governance-token.clar</p>
+<p><code>update-voting-power</code> adds the delegator's balance to the delegate's power but never subtracts it when re-delegating:</p>
+<pre>(map-set voting-power delegate-to 
+  (+ (get-voting-power delegate-to) balance))</pre>
+<p>If Alice (100 tokens) delegates to Bob, Bob gets +100. If Alice later re-delegates to Carol, Carol gets +100 but Bob's extra 100 is never removed. After N re-delegations, total voting power inflates by N × balance. This is trivially exploitable: delegate in a loop to manufacture unlimited voting power.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-2</span> Quorum Check Missing from Finalization</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<p>Despite configuring a <code>quorum-percentage</code> of 10%, <code>finalize-proposal</code> only checks vote direction:</p>
+<pre>(if (&gt; (get for-votes proposal) (get against-votes proposal))
+  (map-set proposals proposal-id (merge proposal { state: STATE_SUCCEEDED }))
+  ...)</pre>
+<p>A single vote can pass any proposal. Combined with C-2 (hardcoded 1M votes), one address can unilaterally control governance.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-3</span> Permissionless Proposal Queue and Execution</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<p><code>queue-proposal</code> and <code>execute-proposal</code> have no access control checks. While sometimes intentional, combined with C-2, C-3, and H-2, a single attacker can run the full governance lifecycle: create → vote → finalize → queue → execute in ~1,442 blocks with no tokens.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-4</span> Treasury Balance Tracking Desync</h3>
+<p><strong>Contract:</strong> treasury-manager.clar</p>
+<p>The treasury tracks its balance via a <code>data-var</code> separate from the actual STX balance held by the contract:</p>
+<pre>(var-set treasury-balance (+ (var-get treasury-balance) amount))</pre>
+<p>Direct STX transfers to the contract address, or partial failures during <code>stx-transfer?</code>, cause the tracked balance to diverge from reality. The spending-check against <code>treasury-balance</code> can then block valid withdrawals or approve impossible ones.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+<h3><span class="severity medium">M-1</span> Voting Escrow total-supply Stale Immediately After Checkpoint</h3>
+<p><strong>Contract:</strong> voting-escrow.clar</p>
+<p><code>total-supply</code> is a point-in-time snapshot set during checkpoint, but voting power decays linearly with every block. The stored value becomes stale immediately, making <code>get-total-voting-power</code> and <code>get-voting-power-percentage</code> inaccurate. In a real veToken system, this must be recomputed or tracked with slope changes.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-2</span> execute-proposal Is a No-Op</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<pre>;; Execute actions would go here</pre>
+<p>The entire governance lifecycle — create, vote, finalize, queue, execute — results in a state flag set to <code>STATE_EXECUTED</code> with <strong>zero on-chain effect</strong>. There's no mechanism to attach executable actions (contract calls, parameter changes, transfers) to proposals. The governance system governs nothing.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-3</span> Timelock Not Connected to DAO</h3>
+<p><strong>Contract:</strong> timelock.clar</p>
+<p>The timelock only accepts transactions from <code>CONTRACT_OWNER</code>, not from the proposal manager. The governance flow and the timelock are completely independent systems. Proposals don't create timelock entries, and timelock execution doesn't verify proposal approval. Two disconnected security mechanisms.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-4</span> get-voting-power-at Uses Current State, Not Historical</h3>
+<p><strong>Contract:</strong> voting-escrow.clar</p>
+<pre>(define-read-only (get-voting-power-at (user principal) (target-block uint))
+  ...
+  (calculate-voting-power (get amount lock) (get end lock)))</pre>
+<p>This reads the current lock state rather than the state at <code>target-block</code>. It also calls <code>calculate-voting-power</code> which uses the current <code>block-height</code> for decay, not the target block. Historical queries return present-day power, making snapshot-based governance impossible.</p>
+</div>
+
+<h2>Low / Informational</h2>
+
+<div class="finding">
+<h3><span class="severity low">L-1</span> Checkpoint Requires Exact Block Match</h3>
+<p><strong>Contract:</strong> governance-token.clar</p>
+<p><code>get-past-votes</code> uses a map keyed on exact block numbers. Unless a checkpoint was created at that precise block, it returns <code>u0</code>. There's no nearest-checkpoint search. Real governance systems need binary search over epoch arrays.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-2</span> No Bounds on Governance Parameters</h3>
+<p><strong>Contract:</strong> proposal-manager.clar</p>
+<p><code>set-voting-period</code> and <code>set-timelock-delay</code> accept any uint with no minimum or maximum bounds. The owner can set the voting period to <code>u0</code> (instant voting) or timelock delay to <code>u0</code> (no delay), silently disabling both safeguards.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">L-3</span> Implicit Self-Delegation Never Checkpointed</h3>
+<p><strong>Contract:</strong> governance-token.clar</p>
+<p><code>get-delegate</code> returns the account itself when no delegation is set, and <code>update-voting-power</code> handles this case correctly. However, the initial voting power is never checkpointed until the user explicitly acts (delegates or transfers), creating a gap in historical records.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><span class="severity good">GOOD</span> veToken concept (lock duration × amount = voting power) is architecturally sound when functional</li>
+  <li><span class="severity good">GOOD</span> Clean separation into 5 focused contracts with clear responsibilities</li>
+  <li><span class="severity good">GOOD</span> Timelock has proper grace period and expiry — a good security pattern</li>
+  <li><span class="severity good">GOOD</span> Treasury spending requires explicit approval → execution two-step flow</li>
+  <li><span class="severity good">GOOD</span> Linear decay formula <code>amount × time_remaining / max_time</code> is correct</li>
+</ul>
+
+<h2>Verdict</h2>
+<p>This DAO governance system is <strong>non-functional at every layer</strong>. The voting escrow — the architectural centerpiece — cannot create locks due to infinite recursion in a helper function. The proposal manager bypasses its own token-gating (commented out) and uses hardcoded voting power, making governance trivially attackable by a single address. The five contracts exist as isolated modules: the timelock is owner-only, proposals don't execute actions, and the treasury operates independently of governance approval.</p>
+<p>The conceptual architecture (veToken + proposals + timelock + treasury) is sound and follows well-known patterns from Curve/Compound. But every integration point is missing or broken. <strong>Not safe for any use.</strong> Requires: fix <code>to-int</code> recursion, implement actual cross-contract calls for voting power, add quorum enforcement, connect timelock to proposal flow, and implement proposal execution.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a></p>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Built with real contract reads, not vibes</p>
+</footer>
+
+</body>
+</html>
