@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sBTC Prediction Market Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/sbtcmarket.html" class="active">sBTC Market Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>sBTC Prediction Market v0 — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/kai-builder/sbtcmarket-v0">kai-builder/sbtcmarket-v0</a> ·
+  Commit: <code><a href="https://github.com/kai-builder/sbtcmarket-v0/tree/2f2806e4f98ebad2adae814c554f7195e2f4a9a2">2f2806e</a></code> (2025-10-14) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>sBTC Prediction Market v0 is a binary outcome prediction market built on Stacks using sBTC as collateral. It implements a complete-set AMM design: users mint YES+NO share pairs backed 1:1 by sBTC, then trade via a constant-product swap. Markets resolve against Pyth oracle price feeds within a 2-block window, or can be cancelled and refunded if the window is missed.</p>
+<p>The contract is 1,568 lines of well-documented Clarity. The architecture is sound — complete-set issuance with proportional redemption is a proven design. However, the codebase contains a <strong>catastrophic backdoor</strong> in the form of an unrestricted mock-resolve function, several arithmetic edge cases, and insufficient protection against over-issuance impacts.</p>
+
+<h2>Findings Summary</h2>
+<table>
+<tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+<tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Unrestricted <code>mock-resolve-market</code> allows anyone to steal all vault funds</td></tr>
+<tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td><code>refund-shares</code> underflow reverts block refunds for swap-derived positions</td></tr>
+<tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td><code>mul-down</code> overflow silently returns max-uint, corrupting AMM pricing</td></tr>
+<tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>No slippage protection on swaps, buys, or sells</td></tr>
+<tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>2-block resolution window is dangerously narrow</td></tr>
+<tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Rounding truncation in proportional redemption permanently locks dust</td></tr>
+<tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>Tax-on-sell double-charges AMM fee + tax without disclosure</td></tr>
+<tr><td>L-01</td><td><span class="severity low">LOW</span></td><td><code>set-tax-recipient</code> event logs new value as old recipient</td></tr>
+<tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>Fee-on-swap can round to zero for small trades</td></tr>
+<tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Hardcoded tax recipient address</td></tr>
+<tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>Over-issuance risk is documented but has no circuit breaker</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-01</span> Unrestricted <code>mock-resolve-market</code> allows anyone to steal all vault funds</h3>
+<p><strong>Location:</strong> <code>sbtcmarket-v0.clar</code>, line ~1490 (<code>mock-resolve-market</code>)</p>
+<p><strong>Description:</strong> The contract includes a testing function <code>mock-resolve-market</code> that resolves any open market with an arbitrary outcome. It has <strong>zero access control</strong> — any principal can call it. An attacker can:</p>
+<ol>
+<li>Buy YES shares on an active market</li>
+<li>Call <code>mock-resolve-market(market-id, true)</code> to force a YES outcome</li>
+<li>Redeem shares to drain the vault</li>
+</ol>
+<pre><code>;; NO ACCESS CONTROL — anyone can call this!
+(define-public (mock-resolve-market (market-id uint) (winner bool))
+  (let ((market (try! (require-market-open market-id))))
+    (map-set markets { id: market-id }
+      (merge market {
+        resolved: true,
+        outcome: (some winner),
+      })
+    )
+    (ok winner)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> Complete theft of all vault funds across all markets. This is a total loss scenario.</p>
+<p><strong>Recommendation:</strong> Remove <code>mock-resolve-market</code> entirely before deployment. If needed for testing, gate it behind <code>(try! (ensure (is-eq tx-sender (var-get contract-owner)) ERR-UNAUTHORIZED))</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-02</span> <code>refund-shares</code> underflow reverts, blocking refunds for swap-derived positions</h3>
+<p><strong>Location:</strong> <code>sbtcmarket-v0.clar</code>, <code>refund-shares</code> function</p>
+<p><strong>Description:</strong> When a market is cancelled, <code>refund-shares</code> calculates <code>complete-sets-burned = min(yes-balance, no-balance)</code> and subtracts it from <code>yes-issued</code>/<code>no-issued</code>. But after AMM swaps, users can hold more shares on one side than were ever issued via complete sets. Multiple users calling refund will eventually cause <code>yes-issued</code> to underflow past zero, reverting the transaction.</p>
+<pre><code>;; If total complete-sets-burned across all users > yes-issued, this underflows and REVERTS
+(yes-issued: (- (get yes-issued post-burn) complete-sets-burned),
+ no-issued: (- (get no-issued post-burn) complete-sets-burned),)</code></pre>
+<p><strong>Impact:</strong> After sufficient swap activity, some users will be permanently unable to claim refunds on cancelled markets. Their sBTC is locked forever.</p>
+<p><strong>Recommendation:</strong> Cap the issued-count reduction: <code>(min-uint complete-sets-burned (get yes-issued post-burn))</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-01</span> <code>mul-down</code> overflow silently returns max-uint, corrupting AMM pricing</h3>
+<p><strong>Location:</strong> <code>mul-down</code> helper, used by <code>calculate-amount-out</code></p>
+<p><strong>Description:</strong> When <code>a * b</code> overflows uint128, <code>mul-down</code> returns <code>u340282366920938463463374607431768211455</code> (max uint128) instead of reverting. This corrupted product is then used as <code>k</code> in the AMM formula, causing <code>new-to = max-uint / new-from</code> to return an astronomically large value.</p>
+<pre><code>(define-private (mul-down (a uint) (b uint))
+  (let ((product (* a b)))
+    (if (or (is-eq a u0) (is-eq (/ product a) b))
+      product
+      u340282366920938463463374607431768211455  ;; RETURNS THIS INSTEAD OF ERRORING
+    )
+  )
+)</code></pre>
+<p><strong>Impact:</strong> With large enough reserves (e.g., virtual-liquidity &gt; ~18.4 billion), swaps will produce wildly incorrect outputs. Could be exploited by creating a market with very high virtual-liquidity.</p>
+<p><strong>Recommendation:</strong> Return <code>(err ERR-INVALID-V-LIQUIDITY)</code> on overflow instead of a sentinel value.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-02</span> No slippage protection on swaps, buys, or sells</h3>
+<p><strong>Location:</strong> <code>swap-shares</code>, <code>buy-shares</code>, <code>sell-shares</code></p>
+<p><strong>Description:</strong> None of the trading functions accept a <code>min-amount-out</code> parameter. Users submit transactions that may sit in the mempool while other trades move the price. By the time their transaction executes, they may receive significantly fewer shares than expected.</p>
+<p><strong>Impact:</strong> Users are vulnerable to sandwich attacks and unfavorable price movements.</p>
+<p><strong>Recommendation:</strong> Add <code>min-amount-out</code> parameter to all trading functions. Revert if output is below the minimum.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-01</span> 2-block resolution window is dangerously narrow</h3>
+<p><strong>Location:</strong> <code>resolve-market</code>, <code>CANCEL-TIMEOUT-BLOCKS = u2</code></p>
+<p><strong>Description:</strong> Markets can only be resolved during a 2 Bitcoin-block window (<code>resolution-block</code> to <code>resolution-block + 1</code>). Bitcoin blocks average 10 minutes but can take over an hour. If the resolver misses this window, the market cannot be resolved and must be cancelled.</p>
+<p><strong>Impact:</strong> High probability of markets failing to resolve, especially if oracle data isn't available at exactly the right block.</p>
+<p><strong>Recommendation:</strong> Increase resolution window to 10+ blocks and increase cancel timeout to 50+ blocks.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-02</span> Rounding truncation in proportional redemption permanently locks dust</h3>
+<p><strong>Location:</strong> <code>redeem-shares</code>, <code>refund-shares</code></p>
+<p><strong>Description:</strong> The formula <code>payout = (user-shares * vault-balance) / total-circulating</code> truncates (rounds down). After all users redeem, residual sats remain in the vault with no mechanism to recover them.</p>
+<p><strong>Impact:</strong> Small amounts of sBTC permanently locked per market. Individually minor but accumulates.</p>
+<p><strong>Recommendation:</strong> Allow the last redeemer to claim remaining vault balance, or add an admin sweep function.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-03</span> Tax-on-sell double-charges AMM fee + tax without disclosure</h3>
+<p><strong>Location:</strong> <code>sell-shares</code></p>
+<p><strong>Description:</strong> <code>sell-shares</code> first calls <code>swap-shares</code> (which charges the AMM fee), then deducts a 1% tax on the burn amount. Users pay both the swap fee AND the tax. Effective cost is ~1.3% but this isn't transparent.</p>
+<p><strong>Impact:</strong> Users pay more in fees than they expect.</p>
+<p><strong>Recommendation:</strong> Document the total fee structure clearly. Consider applying tax only once per direction.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-01</span> <code>set-tax-recipient</code> event logs new value as old recipient</h3>
+<p><strong>Location:</strong> <code>set-tax-recipient</code></p>
+<pre><code>(var-set tax-recipient new-recipient)  ;; Sets FIRST
+(print {
+  old-recipient: (var-get tax-recipient),  ;; Reads NEW value!
+  new-recipient: new-recipient,
+})</code></pre>
+<p><strong>Impact:</strong> Misleading event data for off-chain indexers.</p>
+<p><strong>Recommendation:</strong> Cache the old value in a <code>let</code> before calling <code>var-set</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-02</span> Fee-on-swap can round to zero for small trades</h3>
+<p><strong>Location:</strong> <code>swap-shares</code></p>
+<p><strong>Description:</strong> <code>fee-share = (amount-in * fee-bps) / FEE-DENOMINATOR</code>. For trades where <code>amount-in * fee-bps &lt; 10000</code>, the fee rounds to zero. Small trades pay no fee.</p>
+<p><strong>Impact:</strong> Fee leakage. Could be exploited by splitting large trades into many small ones.</p>
+<p><strong>Recommendation:</strong> Set a minimum fee of 1 sat, or round up.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-01</span> Hardcoded tax recipient address</h3>
+<p><strong>Location:</strong> <code>(define-data-var tax-recipient principal 'ST5X3MK1FVHW52WRZN720041Y138263QSS9NR9AE)</code></p>
+<p><strong>Description:</strong> Initial tax recipient is hardcoded to a testnet address. Will collect tax if not changed after deployment.</p>
+<p><strong>Recommendation:</strong> Set initial tax-recipient to <code>tx-sender</code> (deployer).</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-02</span> Over-issuance risk is documented but has no circuit breaker</h3>
+<p><strong>Description:</strong> The contract documents that swaps can create net new shares beyond vault collateral. While proportional redemption handles this fairly, there is no maximum over-issuance ratio or warning mechanism.</p>
+<p><strong>Recommendation:</strong> Add a <code>get-collateralization-ratio</code> read-only function. Consider a max over-issuance threshold that pauses swaps.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+<p>The core design — complete-set AMM with proportional redemption — is well-architected. The developer clearly understands the over-issuance tradeoff and documents it thoroughly. Code quality is above average for Clarity projects.</p>
+<p>The critical issues are both fixable: remove the mock function and cap the issued-count subtraction. With those fixes plus slippage protection, this would be a solid prediction market contract.</p>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><span class="severity good">GOOD</span> Proportional redemption eliminates race-to-withdraw attacks</li>
+<li><span class="severity good">GOOD</span> Complete-set invariant validation after every mint/burn</li>
+<li><span class="severity good">GOOD</span> Extensive inline documentation of architecture and risks</li>
+<li><span class="severity good">GOOD</span> Cancellation mechanism provides safety net for unresolvable markets</li>
+<li><span class="severity good">GOOD</span> Re-fetches market state after mutations to avoid stale-state bugs</li>
+</ul>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007</a> ☕ · <a href="/clarity-audit/">All Audits</a> · February 21, 2026</p>
+</footer>
+
+</body>
+</html>
