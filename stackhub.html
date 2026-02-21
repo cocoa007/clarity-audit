@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackHub DeFi Platform Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/stackhub.html" class="active">StackHub Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>StackHub — Multi-Contract DeFi Platform Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/AdekunleBamz/stackhub">AdekunleBamz/stackhub</a> ·
+  Commit: <code><a href="https://github.com/AdekunleBamz/stackhub/tree/0d78d371dd2d318617d469f384a9ce160a996cfc">0d78d37</a></code> (2026-02-19) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>StackHub is a DeFi platform on Stacks consisting of four fee-generating smart contracts:</p>
+<ul>
+  <li><strong>NFT Marketplace</strong> — Mint, list, buy, and transfer NFTs with 1.25% platform fee</li>
+  <li><strong>Token Launchpad</strong> — Create custom tokens with 5 STX creation fee</li>
+  <li><strong>Staking Vault</strong> — Stake STX with 0.5% withdrawal / 2.5% early unstake fee</li>
+  <li><strong>Service Registry</strong> — List and pay for services with 2.5 STX listing fee + 1.5% tx fee</li>
+</ul>
+<p>Total lines of Clarity: ~446 across 4 contracts. No Clarity version specified (defaults to Clarity 1).</p>
+
+<h2>Priority Matrix Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — holds/transfers STX, staking, marketplace</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>2 — has frontend, README, multi-contract</td><td>2</td><td>4</td></tr>
+  <tr><td>Code Complexity</td><td>3 — 4 contracts, 446 lines, multi-module</td><td>2</td><td>6</td></tr>
+  <tr><td>User Exposure</td><td>1 — 2 stars, recently active</td><td>1.5</td><td>1.5</td></tr>
+  <tr><td>Novelty</td><td>2 — multi-contract DeFi hub, new category</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total (pre-penalty)</strong></td><td><strong>2.35</strong></td></tr>
+  <tr><td colspan="3">Clarity version penalty (no Clarity 4)</td><td>-0.5</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>1.85 ✓</strong></td></tr>
+</table>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th><th>Contract</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Staking Vault is custodial — funds sent to owner, not contract</td><td>staking-vault</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>Token Launchpad creates fake tokens — no actual FT minting</td><td>token-launchpad</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Re-staking resets lock timer, enabling early-fee griefing</td><td>staking-vault</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>NFT marketplace buy has no price slippage protection</td><td>nft-marketplace</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Immutable owner across all contracts — no transfer mechanism</td><td>all</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Staking vault balance tracking can desync from actual state</td><td>staking-vault</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>No royalty support for NFT creators on secondary sales</td><td>nft-marketplace</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>Zero-amount transfers and mints allowed in launchpad</td><td>token-launchpad</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>No event emission for critical state changes</td><td>all</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>No Clarity version specified — defaults to Clarity 1</td><td>all</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>No SIP trait compliance (SIP-009, SIP-010)</td><td>nft-marketplace, token-launchpad</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> Staking Vault is Custodial — Funds Sent to Owner, Not Contract</h3>
+  <p><strong>Location:</strong> <code>stackhub-staking-vault.clar</code>, <code>stake()</code> function</p>
+  <p><strong>Description:</strong> The <code>stake</code> function transfers STX directly to <code>CONTRACT-OWNER</code> (the deployer's wallet), not to the contract itself. This means the contract never holds any staked funds. The <code>process-unstake</code> function requires the owner to send funds back from their personal balance. If the owner spends the STX, stakers permanently lose their funds.</p>
+  <p>This is not a vault — it's a custodial deposit system where the owner has full, unrestricted access to all staked funds with no on-chain enforcement of return obligations.</p>
+  <pre><code>;; stake() sends funds to owner, not contract:
+(try! (stx-transfer? amount tx-sender CONTRACT-OWNER))
+
+;; process-unstake() requires owner to pay from personal funds:
+(asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-OWNER)
+(try! (stx-transfer? payout tx-sender staker))</code></pre>
+  <p><strong>Impact:</strong> Total loss of staked funds. The owner can accept stakes and never process unstake requests. This is architecturally a rug-pull vector — users believe they're interacting with a trustless vault, but they're sending STX directly to someone's wallet.</p>
+  <p><strong>Recommendation:</strong> Use <code>as-contract</code> to hold STX in the contract's own address. Funds should only leave via contract logic, not owner discretion:</p>
+  <pre><code>;; Stake INTO the contract:
+(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+
+;; Unstake FROM the contract (no owner involvement):
+(as-contract (stx-transfer? payout tx-sender staker))</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> Token Launchpad Creates Fake Tokens — No Actual FT Minting</h3>
+  <p><strong>Location:</strong> <code>stackhub-token-launchpad.clar</code>, <code>create-token()</code>, <code>transfer-token()</code></p>
+  <p><strong>Description:</strong> The contract defines a single <code>(define-fungible-token stackhub-ft)</code> but never calls <code>ft-mint?</code>. The <code>create-token</code> function only writes to a <code>balances</code> map and <code>token-info</code> map — it doesn't create actual on-chain fungible tokens. Users pay 5 STX for an entry in a map that has no real token representation.</p>
+  <p>The <code>transfer-token</code> function manipulates map entries, not actual token balances. These "tokens" cannot be used with any other contract, have no SIP-010 interface, and don't appear in wallet balances or block explorers.</p>
+  <pre><code>;; "Creates" a token but just writes to maps:
+(map-set token-info id { name: name, symbol: symbol, ... })
+(map-set balances {token-id: id, owner: tx-sender} initial-supply)
+
+;; stackhub-ft is defined but NEVER minted:
+(define-fungible-token stackhub-ft)  ;; unused</code></pre>
+  <p><strong>Impact:</strong> Users pay real STX (5 STX) for worthless map entries. The "tokens" exist only within this contract's internal bookkeeping and have zero interoperability. This is functionally a fee collection mechanism with no real deliverable.</p>
+  <p><strong>Recommendation:</strong> Either implement proper SIP-010 compliant tokens with <code>ft-mint?</code>, <code>ft-transfer?</code>, <code>ft-burn?</code>, or clearly document that "tokens" are contract-internal accounting units, and reduce/remove the creation fee.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-01</span> Re-staking Resets Lock Timer, Enabling Early-Fee Griefing</h3>
+  <p><strong>Location:</strong> <code>stackhub-staking-vault.clar</code>, <code>stake()</code></p>
+  <p><strong>Description:</strong> When a user stakes additional STX, the <code>start-block</code> is reset to <code>stacks-block-height</code>. This means adding even 1 uSTX resets the 144-block lock timer for the entire staked balance, re-exposing all funds to the 2.5% early unstake penalty.</p>
+  <pre><code>(match current-stake
+  existing (map-set stakes tx-sender {
+    amount: (+ (get amount existing) amount),
+    start-block: stacks-block-height  ;; RESETS for entire balance
+  })
+  ...)</code></pre>
+  <p><strong>Impact:</strong> Users who incrementally add to their stake are perpetually trapped in the early-fee window. In a custodial design (C-01), the owner could deliberately time <code>process-unstake</code> calls right after users re-stake to maximize fees.</p>
+  <p><strong>Recommendation:</strong> Track weighted average start-block or maintain separate stake entries per deposit.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-02</span> NFT Marketplace Buy Has No Price Slippage Protection</h3>
+  <p><strong>Location:</strong> <code>stackhub-nft-marketplace.clar</code>, <code>buy-nft()</code></p>
+  <p><strong>Description:</strong> The <code>buy-nft</code> function takes only a token ID — there's no <code>max-price</code> parameter. While there's no direct <code>update-listing</code> function, a seller can unlist and relist at a higher price in the same block. If the buyer's transaction executes after the relist, they pay the inflated price.</p>
+  <pre><code>;; Buyer cannot specify maximum acceptable price:
+(define-public (buy-nft (id uint))
+  (let (
+    (listing (unwrap! (map-get? listings id) ERR-NOT-LISTED))
+    (price (get price listing))  ;; whatever the current price is
+    ...</code></pre>
+  <p><strong>Impact:</strong> Buyers can pay more than expected if listing price changes between transaction submission and mining. In high-value NFT sales, this could mean significant unexpected costs.</p>
+  <p><strong>Recommendation:</strong> Add an <code>expected-price</code> parameter: <code>(asserts! (<= price expected-price) ERR-PRICE)</code></p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> Immutable Owner Across All Contracts</h3>
+  <p><strong>Location:</strong> All four contracts — <code>(define-constant CONTRACT-OWNER tx-sender)</code></p>
+  <p><strong>Description:</strong> All contracts set <code>CONTRACT-OWNER</code> as a constant equal to <code>tx-sender</code> at deployment. Constants cannot be changed. If the deployer's private key is compromised, all admin functions (price setting, fee withdrawal, unstake processing) are permanently controlled by the attacker with no recovery path.</p>
+  <p><strong>Impact:</strong> No disaster recovery, no key rotation, no multisig upgrade path. A single key compromise captures all platform revenue and admin control permanently.</p>
+  <p><strong>Recommendation:</strong> Use a <code>define-data-var</code> for the owner with a <code>transfer-ownership</code> function protected by the current owner.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> Staking Vault Balance Tracking Can Desync</h3>
+  <p><strong>Location:</strong> <code>stackhub-staking-vault.clar</code>, <code>total-staked</code> and <code>vault-balance</code></p>
+  <p><strong>Description:</strong> The contract maintains <code>total-staked</code> and <code>vault-balance</code> variables that are updated manually. Since funds go to <code>CONTRACT-OWNER</code> (C-01), these variables track nothing real. Even if the contract were fixed to hold funds, the variables would drift if STX is sent directly to the contract outside of <code>stake()</code>.</p>
+  <p><strong>Impact:</strong> Accounting variables don't reflect actual state. Any UI or logic depending on these values would display incorrect information.</p>
+  <p><strong>Recommendation:</strong> Use <code>stx-get-balance</code> on the contract address for real balance checks rather than manual tracking.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-03</span> No Royalty Support for NFT Creators on Secondary Sales</h3>
+  <p><strong>Location:</strong> <code>stackhub-nft-marketplace.clar</code>, <code>buy-nft()</code></p>
+  <p><strong>Description:</strong> The <code>nft-data</code> map stores a <code>creator</code> field, but <code>buy-nft</code> only splits payment between seller and platform. The original creator receives nothing on secondary sales.</p>
+  <p><strong>Impact:</strong> Creators have no incentive to use the platform since they earn nothing after the initial sale. This is a significant missing feature for an NFT marketplace.</p>
+  <p><strong>Recommendation:</strong> Add a creator royalty (e.g., 2.5%) on secondary sales paid from the sale proceeds.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-01</span> Zero-Amount Transfers and Mints Allowed in Launchpad</h3>
+  <p><strong>Location:</strong> <code>stackhub-token-launchpad.clar</code>, <code>transfer-token()</code>, <code>mint-tokens()</code></p>
+  <p><strong>Description:</strong> Neither function validates that <code>amount > 0</code>. Zero-amount operations succeed, polluting event logs and enabling spam.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (> amount u0) ERR-ZERO)</code> to both functions.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-02</span> No Event Emission for Critical State Changes</h3>
+  <p><strong>Location:</strong> All contracts except staking-vault's <code>request-unstake</code></p>
+  <p><strong>Description:</strong> Only <code>request-unstake</code> emits a <code>print</code> event. NFT mints, sales, token transfers, service payments, and staking/unstaking emit no events. This makes off-chain indexing and monitoring impossible.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print ...)</code> calls for all significant state transitions.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">I-01</span> No Clarity Version Specified</h3>
+  <p><strong>Location:</strong> <code>Clarinet.toml</code>, all contract files</p>
+  <p><strong>Description:</strong> No <code>clarity_version</code> is specified in Clarinet.toml or contract files. The contracts default to Clarity 1, missing safety features from Clarity 2+ (e.g., <code>as-contract?</code> with explicit asset allowances in Clarity 4).</p>
+  <p><strong>Recommendation:</strong> Specify <code>clarity_version = 3</code> at minimum, and consider Clarity 4 for <code>restrict-assets?</code> and <code>as-contract?</code>.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">I-02</span> No SIP Trait Compliance</h3>
+  <p><strong>Location:</strong> <code>stackhub-nft-marketplace.clar</code>, <code>stackhub-token-launchpad.clar</code></p>
+  <p><strong>Description:</strong> The NFT contract does not implement SIP-009 (the <code>transfer</code> function signature differs — missing <code>memo</code> parameter). The token launchpad doesn't implement SIP-010. Without trait compliance, these contracts cannot interoperate with the broader Stacks ecosystem (wallets, explorers, other contracts).</p>
+  <p><strong>Recommendation:</strong> Implement the standard SIP-009 and SIP-010 trait interfaces.</p>
+</div>
+
+<h2>Architecture Observations</h2>
+<ul>
+  <li><strong>Fee collection model:</strong> All fees flow directly to <code>CONTRACT-OWNER</code> via <code>stx-transfer?</code>. No treasury contract, no fee distribution mechanism.</li>
+  <li><strong>No inter-contract integration:</strong> Despite being a "platform," the 4 contracts are completely independent. There's no shared token, no cross-contract discounts for stakers, no unified identity.</li>
+  <li><strong>Centralization risk:</strong> Every admin function is gated by <code>(is-eq tx-sender CONTRACT-OWNER)</code> with an immutable constant. The owner controls all pricing, fee rates, and unstake processing.</li>
+  <li><strong>Missing pause mechanism:</strong> None of the contracts have a circuit breaker or pause function. If a vulnerability is discovered post-deployment, there's no way to halt operations.</li>
+</ul>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This is a security review, not an endorsement. Always do your own research.</p>
+</footer>
+
+</body>
+</html>

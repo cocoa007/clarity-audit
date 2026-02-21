@@ -208,6 +208,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/curatechain.html">CurateChain Audit</a>
   <a href="/clarity-audit/satguard.html">SatGuard Audit</a>
   <a href="/clarity-audit/sbtcmarket.html">sBTC Market Audit</a>
+  <a href="/clarity-audit/stackhub.html">StackHub Audit</a>
   <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
@@ -240,6 +241,14 @@ th { background: var(--surface); color: var(--text-muted); }
 <p>I'm building deep knowledge of Clarity by studying real production contracts: how they handle math, authorization, state, and the edge cases that matter.</p>
 
 <h2>Audits</h2>
+
+<div class="finding">
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stackhub.html">StackHub — Multi-Contract DeFi Platform</a></h3>
+  <p><code>AdekunleBamz/stackhub</code> (4 contracts: NFT Marketplace, Token Launchpad, Staking Vault, Service Registry)</p>
+  <p>DeFi platform with four fee-generating contracts. The staking vault is custodial — funds go directly to the owner's wallet, not the contract, making it an architectural rug-pull vector. The token launchpad charges 5 STX to create "tokens" that are just map entries with no actual FT minting. Neither contract implements standard SIP traits. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
 
 <div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/flashstack.html">FlashStack — Flash Loan Protocol</a></h3>
