@@ -188,7 +188,7 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
     (try! (as-contract (contract-call? token-contract transfer ...)))
     ...</code></pre>
 <p><strong>Impact:</strong> A malicious token contract could be passed that executes arbitrary logic in its <code>transfer</code> function (e.g., re-entering the dead man's switch contract, emitting fake events, or calling other contracts with the switch contract's authority via <code>as-contract</code>). The allowlist feature gives a false sense of security.</p>
-<p><strong>Recommendation:</strong> Add allowlist validation: <code>(asserts! (default-to false (map-get? allowed-tokens (contract-of token-contract))) ERR-TOKEN-NOT-ALLOWED)</code> to both <code>withdraw-token</code> and <code>claim-token</code>.</p>
+<p><strong>Recommendation:</strong> Add allowlist validation: <code>(asserts! (default-to false (map-get? allowed-tokens (contract-of token-contract))) ERR-TOKEN-NOT-ALLOWED)</code> to both <code>withdraw-token</code> and <code>claim-token</code>. In Clarity 4, an even stronger approach is to use <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-nft</code>) — this enforces at the language level which tokens the contract can move, making the allowlist redundant and eliminating the risk of malicious token contracts executing arbitrary logic under <code>as-contract</code> authority.</p>
 </div>
 
 <div class="finding">
