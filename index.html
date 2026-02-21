@@ -210,6 +210,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/sbtcmarket.html">sBTC Market Audit</a>
   <a href="/clarity-audit/stackhub.html">StackHub Audit</a>
   <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
+  <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
 </nav>
@@ -243,6 +244,13 @@ th { background: var(--surface); color: var(--text-muted); }
 <h2>Audits</h2>
 
 <div class="finding">
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market — Bitcoin-Anchored Prediction Market</a></h3>
+  <p><code>phessophissy/btc-prediction-market</code> (5 contracts: v1 + v2 + v3 + PMT token + SIP-010 trait)</p>
+  <p>Decentralized prediction market using Bitcoin block hashes for settlement. The claim-winnings function sends payouts back to the contract instead of the user due to tx-sender resolving to the contract address inside as-contract. The owner can drain all user deposits via withdraw-fees with no limit check. V2 and V3 are incomplete — they accept creation fees but have no betting, settlement, or claim functions. Emergency withdrawal has no timelock, enabling instant rug pulls. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
 <div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stackhub.html">StackHub — Multi-Contract DeFi Platform</a></h3>
   <p><code>AdekunleBamz/stackhub</code> (4 contracts: NFT Marketplace, Token Launchpad, Staking Vault, Service Registry)</p>

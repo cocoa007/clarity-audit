@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Prediction Market Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/btc-prediction-market.html" class="active">BTC Prediction Market Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>BTC Prediction Market — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/phessophissy/btc-prediction-market">phessophissy/btc-prediction-market</a> ·
+  Commit: <code><a href="https://github.com/phessophissy/btc-prediction-market/tree/c94ab895240282ecede66a57c769f8c9da60ad1b">c94ab89</a></code> (2026-02-05) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>BTC Prediction Market is a decentralized prediction market built on Stacks that uses Bitcoin block hashes for provably fair settlement. Users create binary or multi-outcome markets, bet STX on outcomes, and the winning outcome is determined by the Bitcoin block hash at a predetermined height. The project includes three contract versions (v1, v2, v3), a SIP-010 reward token (PMT), a frontend, SDK, and CLI tools.</p>
+<p>The codebase spans 5 Clarity contracts totaling ~1,464 lines. The contracts claim Clarity 4 features (bitwise operations, <code>tenure-height</code>, <code>get-burn-block-info?</code>) but still use the legacy <code>as-contract</code> instead of Clarity 4's <code>as-contract?</code>.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — DeFi prediction market, holds/transfers STX bet pools</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>2 — Has frontend, SDK, CLI, mainnet deployment plan</td><td>4</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>3 — 5 contracts, 1464 lines, multi-version architecture</td><td>6</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>1 — 3 stars, 2 forks</td><td>1.5</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>3 — Bitcoin-hash-based prediction market, unique settlement</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>25 / 10 = 2.5 ≥ 1.8 ✓</strong></td></tr>
+</table>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>claim-winnings sends payout to contract, not user</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>withdraw-fees drains user bet deposits</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Emergency withdrawal enables rug pull of all user funds</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>V2 and V3 are incomplete — missing bet/settle/claim functions</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>V1 ignores platform-paused flag on betting and market creation</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Integer division truncation leaks dust in payout calculation</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>V1 creation fee bypasses contract — sent directly to deployer</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>Participant list silently drops users after 500</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>No market cancellation — unsettled markets lock funds forever</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Uses legacy as-contract instead of Clarity 4 as-contract?</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>Prediction token (PMT) not integrated with market contracts</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-01</span> claim-winnings sends payout to contract, not user</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code> — <code>claim-winnings</code> function</p>
+<p><strong>Description:</strong> The payout transfer uses an obfuscated pattern to resolve the recipient. Inside <code>as-contract</code>, <code>tx-sender</code> resolves to the <em>contract principal itself</em>, not the calling user. The code constructs <code>(list tx-sender)</code> then indexes into it — this evaluates to the contract's own address. The STX is transferred from the contract <em>back to the contract</em>, meaning winners can never actually receive their funds.</p>
+<pre><code>;; Inside as-contract block, tx-sender = contract address
+(try! (as-contract (stx-transfer? net-payout tx-sender
+  (unwrap! (element-at? (list tx-sender) u0) ERR-TRANSFER-FAILED))))
+;;                           ^^^^^^^^^^ = contract address, NOT user</code></pre>
+<p><strong>Impact:</strong> All winning payouts are permanently locked in the contract. No user can ever claim their winnings. The total-pool STX accumulates with no way to extract it (except via the owner's <code>withdraw-fees</code> — see C-02).</p>
+<p><strong>Recommendation:</strong> Capture the caller's address before entering <code>as-contract</code>:</p>
+<pre><code>(let ((claimer tx-sender))
+  ...
+  (try! (as-contract (stx-transfer? net-payout tx-sender claimer))))</code></pre>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-02</span> withdraw-fees drains user bet deposits</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code>, <code>btc-prediction-market-v2.clar</code>, <code>btc-prediction-market-v3.clar</code> — <code>withdraw-fees</code> function</p>
+<p><strong>Description:</strong> The <code>withdraw-fees</code> function allows the contract owner to transfer any <code>amount</code> of STX from the contract to any <code>recipient</code>. There is no check that the amount is limited to collected fees — the owner can withdraw the entire contract balance, including all user bet deposits from active, unsettled markets.</p>
+<pre><code>(define-public (withdraw-fees (amount uint) (recipient principal))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    ;; No check: amount <= actual fees. Can drain everything.
+    (as-contract (stx-transfer? amount tx-sender recipient))))</code></pre>
+<p><strong>Impact:</strong> Contract owner can steal all user deposits at any time. Combined with C-01 (payouts going back to contract), the owner is the only entity that can ever extract funds.</p>
+<p><strong>Recommendation:</strong> Track fee revenue separately and enforce <code>(asserts! (&lt;= amount (var-get withdrawable-fees)) ERR-INSUFFICIENT-FUNDS)</code>. Decrement the tracked fees after withdrawal.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-01</span> Emergency withdrawal enables rug pull of all user funds</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market-v2.clar</code>, <code>btc-prediction-market-v3.clar</code> — <code>emergency-withdraw-all</code>, <code>emergency-withdraw</code></p>
+<p><strong>Description:</strong> The owner can unilaterally enable emergency mode and immediately drain all contract funds. There is no timelock, no multi-sig requirement, and no user notification period. Emergency mode is a single boolean flip that enables unrestricted withdrawals.</p>
+<pre><code>;; Step 1: Owner flips emergency mode on
+(define-public (enable-emergency-mode) ...)
+
+;; Step 2: Owner drains everything (same transaction possible)
+(define-public (emergency-withdraw-all)
+  (let ((contract-balance (stx-get-balance (as-contract tx-sender))))
+    (asserts! (is-eq tx-sender (var-get contract-owner)) ERR-NOT-AUTHORIZED)
+    (asserts! (var-get emergency-mode) ERR-NOT-AUTHORIZED)
+    (try! (as-contract (stx-transfer? contract-balance tx-sender (var-get contract-owner))))
+    ...))</code></pre>
+<p><strong>Impact:</strong> Owner can rug-pull all user funds instantly with no warning or recourse.</p>
+<p><strong>Recommendation:</strong> Add a timelock (e.g., 144 Bitcoin blocks ≈ 1 day) between enabling emergency mode and withdrawing. Allow users to claim their positions during the grace period. Consider requiring a multi-sig or DAO vote.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-02</span> V2 and V3 are incomplete — missing core functions</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market-v2.clar</code>, <code>btc-prediction-market-v3.clar</code></p>
+<p><strong>Description:</strong> V2 and V3 only implement <code>create-binary-market</code>, ownership transfer, and emergency functions. They are entirely missing: <code>place-bet-internal</code> (and all bet-outcome-* functions), <code>settle-market</code>, and <code>claim-winnings</code>. Markets can be created but nobody can bet, settle, or claim. The mainnet deployment plan (<code>deployments/default.mainnet-plan.yaml</code>) deploys all three versions.</p>
+<p><strong>Impact:</strong> If V2 or V3 are deployed and used, user creation fees (0.1 STX) are collected but markets are non-functional. Funds paid as creation fees are unrecoverable by the creator since markets can never complete.</p>
+<p><strong>Recommendation:</strong> Either complete V2/V3 with all necessary functions, or remove them from the deployment plan. Do not deploy incomplete contracts that accept user funds.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-01</span> V1 ignores platform-paused flag on betting and market creation</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code> — <code>create-binary-market</code>, <code>create-multi-market</code>, <code>place-bet-internal</code></p>
+<p><strong>Description:</strong> V1 defines <code>platform-paused</code> and <code>set-platform-paused</code> but never checks the flag in any market creation or betting function. The admin pause mechanism is dead code — setting it to <code>true</code> has no effect on user operations. (V2 and V3 do check it in <code>create-binary-market</code>.)</p>
+<p><strong>Impact:</strong> Admin cannot halt operations during an incident. If a bug is discovered, there's no way to stop users from continuing to bet.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (not (var-get platform-paused)) ERR-NOT-AUTHORIZED)</code> to all state-changing functions in V1.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-02</span> Integer division truncation leaks dust in payout calculation</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code> — <code>claim-winnings</code></p>
+<p><strong>Description:</strong> The payout formula <code>(/ (* user-winning-amount total-pool) winning-pool)</code> performs integer division, truncating any remainder. Over many claims, the accumulated rounding error ("dust") remains locked in the contract with no mechanism to recover it.</p>
+<pre><code>(gross-payout (if (is-eq winning-pool u0)
+                 u0
+                 (/ (* user-winning-amount total-pool) winning-pool)))</code></pre>
+<p><strong>Impact:</strong> Small amounts of STX are permanently locked after every market settlement. While individually insignificant, this accumulates over time. In extreme cases (very small bets relative to pool), users may receive 0 payout due to truncation.</p>
+<p><strong>Recommendation:</strong> Use a higher-precision intermediate calculation (multiply by 1e6 first, then divide), or implement a "last claimer gets remainder" pattern.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-03</span> V1 creation fee bypasses contract — sent directly to deployer</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code> — <code>create-binary-market</code>, <code>create-multi-market</code></p>
+<p><strong>Description:</strong> Market creation fees are transferred directly to <code>CONTRACT-OWNER</code> (the deployer's address), not to the contract. The <code>total-fees-collected</code> variable is incremented but tracks phantom revenue — the contract never held these fees. This means <code>withdraw-fees</code> would need to draw from user deposits to honor the tracked amount.</p>
+<pre><code>(try! (stx-transfer? MARKET-CREATION-FEE tx-sender CONTRACT-OWNER))
+;; Fee goes directly to deployer, never touches the contract
+(var-set total-fees-collected (+ (var-get total-fees-collected) MARKET-CREATION-FEE))
+;; But this counter claims the contract collected it</code></pre>
+<p><strong>Impact:</strong> Accounting mismatch. <code>get-total-fees-collected</code> reports a higher number than the contract actually holds, misleading integrators and users.</p>
+<p><strong>Recommendation:</strong> Either send creation fees to the contract (via <code>as-contract tx-sender</code>) and track them properly, or remove the fee counter when fees go directly to the owner.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-01</span> Participant list silently drops users after 500</h3>
+<p><strong>Location:</strong> <code>btc-prediction-market.clar</code> — <code>add-participant</code></p>
+<p><strong>Description:</strong> The <code>market-participants</code> map stores a <code>(list 500 principal)</code>. The <code>add-participant</code> function uses <code>as-max-len?</code> which returns <code>none</code> when the list is full, causing the <code>unwrap!</code> to return <code>false</code> — silently failing. Users who bet after the 500th unique participant are not recorded in the participants list.</p>
+<pre><code>(map-set market-participants market-id
+  (unwrap! (as-max-len? (append current-participants user) u500) false))
+;;                                                               ^^^^^ silent failure</code></pre>
+<p><strong>Impact:</strong> Late participants are invisible in the participant list. If any off-chain system uses this list for airdrops, notifications, or analytics, it will miss users.</p>
+<p><strong>Recommendation:</strong> Return an error or use a separate counter-based map for participant tracking that doesn't have a fixed size limit.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-02</span> No market cancellation — unsettled markets lock funds forever</h3>
+<p><strong>Location:</strong> All market contracts</p>
+<p><strong>Description:</strong> There is no function to cancel a market or allow users to withdraw their bets from an unsettled market. If <code>get-burn-block-info?</code> returns <code>none</code> for the settlement height (e.g., the block hash is pruned or unavailable), the market can never be settled and all deposited funds are permanently locked.</p>
+<p><strong>Impact:</strong> Users lose their deposits if settlement becomes impossible. There is no admin or user-initiated refund mechanism.</p>
+<p><strong>Recommendation:</strong> Add a <code>cancel-market</code> function (admin-only or after a timeout) that refunds all bettors proportionally. Add a <code>withdraw-bet</code> function for markets that pass a deadline without settlement.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-01</span> Uses legacy as-contract instead of Clarity 4 as-contract?</h3>
+<p><strong>Location:</strong> All contracts</p>
+<p><strong>Description:</strong> Despite claiming to be "Built with Clarity 4 features" and using Clarity 4 builtins like <code>tenure-height</code> and bitwise operations, all contracts use the legacy <code>as-contract</code> instead of the safer <code>as-contract?</code> with explicit asset allowances introduced in Clarity 4.</p>
+<p><strong>Impact:</strong> Missed opportunity for defense-in-depth. <code>as-contract?</code> with <code>with-stx</code> allowances would limit the blast radius of bugs like C-01 and C-02.</p>
+<p><strong>Recommendation:</strong> Migrate to <code>(as-contract? (with-stx amount) ...)</code> for all STX transfers. This explicitly declares which assets the contract context can move.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-02</span> Prediction token (PMT) not integrated with market contracts</h3>
+<p><strong>Location:</strong> <code>prediction-token.clar</code></p>
+<p><strong>Description:</strong> The PMT reward token is fully implemented with mint/burn/batch-reward functions, but no market contract ever calls it. The <code>use-trait sip-010-trait</code> import in v1 is unused. The token exists in isolation with no connection to the prediction market ecosystem.</p>
+<p><strong>Impact:</strong> Dead code. The token serves no purpose in the current system.</p>
+<p><strong>Recommendation:</strong> Either integrate PMT rewards into market participation (e.g., mint tokens on bet placement or correct predictions), or remove the token contract to reduce attack surface.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+<ul>
+  <li><strong>Settlement mechanism:</strong> Bitcoin block hash at a predetermined height determines outcomes. Binary markets use even/odd on the last byte; multi-outcome markets use the first byte modulo number of outcomes. This is deterministic and verifiable but predictable — miners can observe the hash before settlement is called.</li>
+  <li><strong>Version progression:</strong> V1 is the complete contract. V2 adds ownership transfer + emergency functions but removes core betting logic. V3 is identical to V2 with reduced fees (0.1 STX creation fee vs 5 STX, 10k sat min bet vs 1 STX). Neither V2 nor V3 is functional.</li>
+  <li><strong>Fee model:</strong> 3% platform fee on winning payouts (in all versions), plus market creation fees. V1 sends creation fees to deployer wallet; V2/V3 send them to the mutable owner.</li>
+</ul>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is informational and does not constitute financial advice. Smart contracts should be professionally audited before deployment.</p>
+</footer>
+
+</body>
+</html>
