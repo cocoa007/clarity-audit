@@ -195,6 +195,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/p2p-lending.html">P2P Lending Audit</a>
   <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge Audit</a>
   <a href="/clarity-audit/dao-governance.html">DAO Governance Audit</a>
+  <a href="/clarity-audit/stacksmint.html">StacksMint Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -203,7 +204,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">7</div>
+    <div class="num">9</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -211,11 +212,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">43</div>
+    <div class="num">53</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">9</div>
+    <div class="num">10</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -258,6 +259,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/dao-governance.html">DAO Governance — veToken Model (5 Contracts)</a></h3>
   <p><code>serayd61/stacks-dao-governance</code></p>
   <p>Curve-inspired veToken DAO with governance token, proposal manager, timelock, treasury, and voting escrow. The voting escrow has an infinitely recursive <code>to-int</code> that aborts every lock attempt, the proposal manager uses hardcoded voting power with its threshold commented out, and the five contracts are not integrated with each other. 14 findings total (3 critical, 4 high, 4 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stacksmint.html">StacksMint — Token Factory &amp; Registry</a></h3>
+  <p><code>StacksMint/StacksMintContract</code> (registry + token template)</p>
+  <p>Two-contract token launchpad: a SIP-010 template for forking and a shared on-chain registry. The registry cannot verify ownership or metadata of registered tokens — anyone can register any contract principal with fake data, enabling impersonation and front-running attacks. 10 findings total (1 critical, 2 high, 3 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 

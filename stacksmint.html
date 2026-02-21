@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StacksMint Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>StacksMint — Token Factory &amp; Registry</h1>
+<p class="subtitle">StacksMint/StacksMintContract · 2 contracts · ~300 lines · February 21, 2026</p>
+
+<h2>Overview</h2>
+<p>StacksMint is a two-contract token launchpad for the Stacks blockchain. The <code>token-template.clar</code> is a SIP-010 fungible token that creators fork and deploy. The <code>stacksmint.clar</code> registry is a shared on-chain directory where deployed tokens are listed with metadata (name, symbol, supply, URI).</p>
+
+<p>The core issue: the registry is a <strong>trust-me directory with no on-chain verification</strong>. Anyone can register any contract principal with arbitrary metadata, enabling impersonation and front-running attacks. The token template itself is a competent SIP-010 implementation with a few design concerns.</p>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="severity critical">CRITICAL</span></td><td>1</td></tr>
+<tr><td><span class="severity high">HIGH</span></td><td>2</td></tr>
+<tr><td><span class="severity medium">MEDIUM</span></td><td>3</td></tr>
+<tr><td><span class="severity low">LOW</span> / <span class="severity info">INFO</span></td><td>4</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-1</span> Registry Has No Ownership Verification — Full Impersonation Possible</h3>
+<p><strong>Contract:</strong> stacksmint.clar · <code>register-token</code></p>
+<p>The <code>register-token</code> function accepts any <code>token-contract</code> principal and arbitrary metadata with zero on-chain verification:</p>
+<pre>(define-public (register-token
+    (token-contract principal)
+    (name (string-ascii 32))
+    (symbol (string-ascii 10))
+    (decimals uint)
+    (total-supply uint)
+    (token-uri (optional (string-utf8 256))))
+  (let ((caller tx-sender) ...)
+    ;; No verification that caller deployed token-contract
+    ;; No contract-call? to verify metadata matches
+    ;; owner is set to tx-sender, not the contract's deployer
+    (map-set token-registry token-contract
+      { ... owner: caller ... })))</pre>
+<p><strong>Attack vectors:</strong></p>
+<ul>
+<li><strong>Impersonation:</strong> Register sBTC's contract principal with fake metadata (e.g., name: "sBTC", symbol: "sBTC", but with attacker as owner)</li>
+<li><strong>Front-running:</strong> Watch mempool for <code>deploy-contract</code> txs, immediately register the new contract principal — the real deployer gets <code>ERR-ALREADY-REGISTERED</code></li>
+<li><strong>Metadata fraud:</strong> Register a legitimate contract with inflated supply or misleading name/symbol</li>
+</ul>
+<p>The registry cannot call <code>(contract-call? token-contract get-name)</code> to verify because the token principal is a runtime parameter, not a known contract. This is a fundamental design limitation — the registry architecture cannot provide trustworthy data.</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+<h3><span class="severity high">H-1</span> Registration Fee Is Zero Despite Anti-Spam Claims</h3>
+<p><strong>Contract:</strong> stacksmint.clar</p>
+<p>The README advertises "STX registration fee (anti-spam)" as a feature. The code says otherwise:</p>
+<pre>;; Registration is free -- no STX fee required
+(define-constant REGISTRATION-FEE u0)</pre>
+<p>With zero cost and no verification, an attacker can flood the registry with thousands of fake entries in a single block. The <code>total-fees-collected</code> data var increments by zero — pure dead code. The registry becomes trivially unusable as a discovery tool.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-2</span> Front-Running Token Registration — Permanent Griefing</h3>
+<p><strong>Contract:</strong> stacksmint.clar</p>
+<p>Since <code>register-token</code> sets the <code>owner</code> field to <code>tx-sender</code> (not the token contract's actual deployer), and registration is free, a front-running attack is trivial:</p>
+<ol>
+<li>Attacker monitors mempool for <code>deploy-contract</code> transactions</li>
+<li>Attacker submits <code>register-token</code> with the victim's contract principal</li>
+<li>Victim's later <code>register-token</code> call fails with <code>ERR-ALREADY-REGISTERED (u200)</code></li>
+<li>Only the attacker (fake owner) can call <code>update-token-uri</code></li>
+</ol>
+<p>There is no admin override, no dispute mechanism, and no deregistration function. The legitimate creator is permanently locked out of their registry entry.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+<h3><span class="severity medium">M-1</span> <code>tx-sender</code> Auth Limits Composability</h3>
+<p><strong>Contract:</strong> token-template.clar · <code>transfer</code></p>
+<pre>(asserts! (is-eq tx-sender sender) ERR-NOT-TOKEN-OWNER)</pre>
+<p>Using <code>tx-sender</code> instead of <code>contract-caller</code> means no smart contract can transfer tokens on behalf of a user. DEXes, vaults, and any intermediary contract calling <code>transfer</code> will fail. This is SIP-010 compliant but breaks DeFi composability. The standard allows either approach — this is the safer but more restrictive choice.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-2</span> Unguarded Burn — Any Holder Can Deflate Supply</h3>
+<p><strong>Contract:</strong> token-template.clar · <code>burn</code></p>
+<pre>(define-public (burn (amount uint) (sender principal))
+  (begin
+    (asserts! (is-eq tx-sender sender) ERR-NOT-TOKEN-OWNER)
+    (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+    (ft-burn? stacksmint-token amount sender)))</pre>
+<p>Any holder can burn their own tokens at will. Unlike minting (which has a <code>mintable</code> flag), there is no <code>burnable</code> control. For tokens where supply determines governance weight or economic value, unchecked burning by individual holders can skew distribution. Template users may not realize this is enabled by default.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-3</span> Globally Writable Counter Utility — No Access Control</h3>
+<p><strong>Contract:</strong> token-template.clar · <code>increment</code> / <code>decrement</code></p>
+<pre>(define-public (increment)
+  (begin
+    (var-set utility-counter (+ (var-get utility-counter) u1))
+    (ok (var-get utility-counter))))</pre>
+<p>The counter is a public function with no access control, sharing a single <code>utility-counter</code> across all callers. Anyone can increment/decrement it at any time. If any frontend or integration relies on this value, it's trivially manipulable. This pollutes the contract's ABI with a function that has no practical production use.</p>
+</div>
+
+<h2>Low / Informational Findings</h2>
+
+<div class="finding">
+<h3><span class="severity low">L-1</span> Registry Owner Cannot Be Transferred</h3>
+<p><code>(define-constant registry-owner tx-sender)</code> — immutable. No ownership transfer function exists. Currently the owner has no admin functions, but if fee collection or entry management is added later, the owner is permanently fixed to the deploy-time principal.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-2</span> Token Owner Cannot Be Transferred</h3>
+<p>Same issue in token-template.clar: <code>(define-constant contract-owner tx-sender)</code>. If the deployer's key is lost, mint control is permanently inaccessible.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-3</span> No Token Deregistration or Metadata Correction</h3>
+<p>Registry entries are permanent. <code>update-token-uri</code> exists, but name, symbol, decimals, and total-supply are immutable after registration. Typos, malicious registrations, and stale data have no correction path.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-1</span> Unlimited Minting When Enabled</h3>
+<p>When the <code>mintable</code> flag is set to <code>true</code>, the owner can mint unlimited tokens with no maximum supply cap. This is a known trust assumption but should be prominently documented for token holders evaluating the contract.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><span class="severity good">GOOD</span> Clean, well-documented code with clear section headers</li>
+<li><span class="severity good">GOOD</span> SIP-010 trait properly implemented with all required functions</li>
+<li><span class="severity good">GOOD</span> <code>mintable</code> defaults to <code>false</code> — secure by default</li>
+<li><span class="severity good">GOOD</span> Proper input validation: name length, symbol length, supply &gt; 0</li>
+<li><span class="severity good">GOOD</span> <code>as-max-len?</code> correctly used for owner-tokens list bounds</li>
+<li><span class="severity good">GOOD</span> Event emission via <code>print</code> for off-chain indexing</li>
+</ul>
+
+<h2>Architecture Assessment</h2>
+<p>The two-contract architecture (template + registry) is a reasonable approach given Clarity's lack of dynamic contract deployment. However, the registry has a fundamental problem: it <strong>cannot verify anything about the contracts it lists</strong>. Since the token principal is a runtime parameter, the registry can't call trait functions on it to verify metadata or ownership.</p>
+
+<p>This means the registry is only as trustworthy as its participants — which, on a permissionless blockchain with zero registration cost, means it's not trustworthy at all. A frontend built on this registry would need its own off-chain verification layer, at which point the on-chain registry adds little value.</p>
+
+<p><strong>Verdict:</strong> The token template is a solid SIP-010 base suitable for simple tokens. The registry, however, is architecturally unable to fulfill its stated purpose as a trusted token directory.</p>
+
+<footer>
+<p><a href="/clarity-audit/">← Back to index</a> · cocoa007 ☕ · February 21, 2026</p>
+</footer>
+
+</body>
+</html>
