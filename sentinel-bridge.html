@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelBridge Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory</a>
+  <a href="/clarity-audit/quests.html">Quests</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sentinel-bridge.html" class="active">SentinelBridge</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>SentinelBridge Audit</h1>
+<p class="subtitle">AI-Guided Cross-Chain Bridge Security · <a href="https://github.com/Smithkeem/SentinelBridge">Smithkeem/SentinelBridge</a> · February 21, 2026</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">11</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">2</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">3</div>
+    <div class="label">High</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">3</div>
+    <div class="label">Medium</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>SentinelBridge implements an AI-guided cross-chain bridge security system on Stacks. An off-chain AI agent assesses transfer risk in real-time, can pause the bridge, dynamically adjust limits, and block malicious addresses. The contract manages transfer requests with per-chain volume tracking and a multi-level incident response system.</p>
+<p>The architecture separates three roles: <strong>Contract Owner</strong> (admin), <strong>AI Agent</strong> (risk assessment), and <strong>Security Guardians</strong> (emergency address blocking). Transfer requests go through risk scoring before approval.</p>
+
+<h2>Contract Architecture</h2>
+<ul>
+  <li><strong>Transfer lifecycle:</strong> <code>initiate-transfer</code> → AI calls <code>submit-risk-assessment</code> → status becomes APPROVED/REJECTED/FLAGGED</li>
+  <li><strong>Incident response:</strong> <code>analyze-incident-report</code> takes threat vectors + metrics, triggers graduated response (NORMAL → WARNING → CRITICAL)</li>
+  <li><strong>Access control:</strong> Owner-only admin, AI-agent-only risk assessment, guardian address blocking</li>
+  <li><strong>Per-chain config:</strong> Each supported chain has independent limits, volume tracking, and risk scores</li>
+</ul>
+
+<h2>Findings</h2>
+
+<table>
+  <tr><th>#</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>1</td><td><span class="severity critical">CRITICAL</span></td><td>No actual token transfers — bridge is pure bookkeeping</td></tr>
+  <tr><td>2</td><td><span class="severity critical">CRITICAL</span></td><td>Transfer limit ratchets to zero permanently</td></tr>
+  <tr><td>3</td><td><span class="severity high">HIGH</span></td><td>Daily volume limits never reset</td></tr>
+  <tr><td>4</td><td><span class="severity high">HIGH</span></td><td>Risk assessment overwrites previous decisions</td></tr>
+  <tr><td>5</td><td><span class="severity high">HIGH</span></td><td>Volume counted on initiation, never refunded on rejection</td></tr>
+  <tr><td>6</td><td><span class="severity medium">MEDIUM</span></td><td>tx-sender auth for AI agent bypassable</td></tr>
+  <tr><td>7</td><td><span class="severity medium">MEDIUM</span></td><td>Immutable contract owner — no transfer function</td></tr>
+  <tr><td>8</td><td><span class="severity medium">MEDIUM</span></td><td>Hardcoded limit recovery ignores configured values</td></tr>
+  <tr><td>9</td><td><span class="severity low">LOW</span></td><td>No transfer execution function</td></tr>
+  <tr><td>10</td><td><span class="severity low">LOW</span></td><td>Asymmetric guardian permissions</td></tr>
+  <tr><td>11</td><td><span class="severity info">INFO</span></td><td>No events for administrative changes</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> #1 — No Actual Token Transfers</h3>
+  <p><code>initiate-transfer</code> never calls <code>stx-transfer?</code> or any token transfer function. The bridge records transfer requests but never locks, escrows, or moves any funds.</p>
+  <pre><code>(define-public (initiate-transfer (amount uint) (target-chain (string-ascii 10)) (target-address (string-ascii 42)))
+    (let (...)
+        ;; Creates a record... but never transfers tokens
+        (map-set transfer-requests request-id { ... })
+        (ok request-id)))</code></pre>
+  <p><strong>Impact:</strong> The entire bridge is non-functional. An "approved" transfer has zero on-chain effect — no funds are secured, locked, or transferred. Users can initiate transfers for amounts they don't hold.</p>
+  <p><strong>Fix:</strong> Add <code>(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))</code> to lock funds on initiation, and an <code>execute-transfer</code> function to release them on approval.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> #2 — Transfer Limit Ratchets to Zero Permanently</h3>
+  <p>In <code>analyze-incident-report</code>, warning-level incidents divide the global transfer limit by 4:</p>
+  <pre><code>(var-set global-transfer-limit (/ (var-get global-transfer-limit) u4))</code></pre>
+  <p>Due to Clarity's integer floor division, repeated warnings cause irreversible decay:</p>
+  <pre><code>u10000 → u2500 → u625 → u156 → u39 → u9 → u2 → u0</code></pre>
+  <p>Once at <code>u0</code>, the limit check <code>(<= amount u0)</code> blocks ALL transfers. Recovery only triggers when <code>threat-score &lt; 10</code>, restoring to hardcoded <code>u10000</code> — but there's no admin override to manually set the limit.</p>
+  <p><strong>Impact:</strong> A series of warning-level incidents (which are expected in normal bridge operation) permanently disables all transfers. An attacker can trigger this by submitting borderline threat reports.</p>
+  <p><strong>Fix:</strong> Add an admin function to set limits directly. Use subtraction instead of division for graduated reduction, or set a minimum floor (e.g., <code>(max (/ limit u4) u100)</code>).</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> #3 — Daily Volume Limits Never Reset</h3>
+  <p><code>current-volume</code> on each chain monotonically increases and never resets:</p>
+  <pre><code>(map-set supported-chains target-chain 
+    (merge chain-config { current-volume: (+ (get current-volume chain-config) amount) }))</code></pre>
+  <p>The only way to reset is for the owner to call <code>configure-chain</code> manually, which also wipes the chain's risk score. The "daily limit" is effectively a lifetime limit.</p>
+  <p><strong>Impact:</strong> Every chain eventually hits its limit and becomes permanently unusable. The bridge has a finite total capacity equal to the configured limit per chain.</p>
+  <p><strong>Fix:</strong> Track the last reset block, and automatically reset volume when sufficient blocks have passed (e.g., ~144 blocks ≈ 1 day on Stacks).</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> #4 — Risk Assessment Can Overwrite Previous Decisions</h3>
+  <p><code>submit-risk-assessment</code> never checks the current status of the transfer request:</p>
+  <pre><code>(let ((request (unwrap! (map-get? transfer-requests request-id) ERR-INVALID-REQUEST)))
+    (asserts! (is-ai-agent) ERR-NOT-AUTHORIZED)
+    ;; No check: (asserts! (is-eq (get status request) STATUS-PENDING) ...)
+    (map-set transfer-requests request-id (merge request { status: new-status, risk-score: risk-score })))</code></pre>
+  <p><strong>Impact:</strong> A compromised or buggy AI agent can flip already-approved transfers to rejected (griefing) or flip rejected transfers to approved (bypassing security). The finality of risk decisions is broken.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> #5 — Volume Counted on Initiation, Never Refunded on Rejection</h3>
+  <p>When <code>initiate-transfer</code> is called, the transfer amount is immediately added to the chain's <code>current-volume</code>. If the AI agent later rejects the transfer, the volume is never decremented.</p>
+  <p><strong>Impact:</strong> Grief attack — an attacker spams transfer requests on a target chain. All get rejected, but the chain's volume limit is exhausted. Combined with Finding #3 (no volume reset), this permanently disables the chain.</p>
+  <p><strong>Fix:</strong> Decrement volume in <code>submit-risk-assessment</code> when status is REJECTED, or only count volume for approved transfers.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> #6 — tx-sender Auth for AI Agent</h3>
+  <pre><code>(define-private (is-ai-agent)
+    (is-eq tx-sender (var-get authorized-ai-agent)))</code></pre>
+  <p>Uses <code>tx-sender</code> (the original transaction sender) instead of <code>contract-caller</code> (the immediate caller). If the AI agent is an EOA, any contract it calls could use this contract as an intermediary. Should use <code>contract-caller</code> for tighter access control.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> #7 — Immutable Contract Owner</h3>
+  <p><code>CONTRACT-OWNER</code> is defined as <code>(define-constant CONTRACT-OWNER tx-sender)</code> — set permanently at deploy time. There's no ownership transfer function. If the deployer key is compromised or lost, the contract becomes unmanageable: no new chains, no guardian changes, no AI agent rotation.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> #8 — Hardcoded Limit Recovery</h3>
+  <pre><code>(if (< current-score u10)
+    (var-set global-transfer-limit u10000)
+    true)</code></pre>
+  <p>Recovery always resets to <code>u10000</code> regardless of what the operational limit should be. If the bridge was configured for higher throughput (e.g., <code>u1000000</code>), recovery throttles it to 1% of capacity.</p>
+</div>
+
+<h2>Low &amp; Informational</h2>
+
+<div class="finding">
+  <h3><span class="severity low">LOW</span> #9 — No Transfer Execution Function</h3>
+  <p>There's no <code>execute-transfer</code> or <code>complete-transfer</code> function. Even after AI approval, nothing happens on-chain. The contract is an incomplete risk-assessment layer with no bridge mechanics underneath.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">LOW</span> #10 — Asymmetric Guardian Permissions</h3>
+  <p>Guardians are described as an "emergency" role but can only block/unblock addresses. They cannot pause the bridge, adjust limits, configure chains, or submit risk assessments. For incident response, their powers are surprisingly limited.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">INFO</span> #11 — No Events for Administrative Changes</h3>
+  <p>Guardian additions/removals, AI agent changes, and chain configuration changes emit no <code>print</code> events. The contract is designed for off-chain monitoring but provides no visibility into admin actions.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><span class="severity good">GOOD</span> Clean three-tier access control (owner / AI agent / guardians)</li>
+  <li><span class="severity good">GOOD</span> Graduated incident response (NORMAL → WARNING → CRITICAL) is well-designed conceptually</li>
+  <li><span class="severity good">GOOD</span> Per-chain configuration with independent limits is sound architecture</li>
+  <li><span class="severity good">GOOD</span> Rich event emission in transfer and incident functions aids monitoring</li>
+  <li><span class="severity good">GOOD</span> Address blacklisting with dual-authority (owner + guardian) is appropriate</li>
+</ul>
+
+<h2>Verdict</h2>
+<p>SentinelBridge is architecturally interesting — the AI-guided risk assessment pattern is a novel approach to bridge security. However, the contract is <strong>fundamentally incomplete</strong>. The most critical issue is that no actual token transfers occur; it's a risk assessment framework without a bridge underneath. Beyond that, the transfer limit mechanism has a fatal ratchet-to-zero bug, volume tracking is broken (no reset), and risk assessments lack finality.</p>
+<p><strong>Not safe for production use.</strong> Requires fundamental redesign of token handling, limit management, and volume tracking before deployment.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a></p>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Built with real contract reads, not vibes</p>
+</footer>
+
+</body>
+</html>
