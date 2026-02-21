@@ -206,6 +206,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/glamora.html">Glamora Audit</a>
   <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet Audit</a>
   <a href="/clarity-audit/curatechain.html">CurateChain Audit</a>
+  <a href="/clarity-audit/satguard.html">SatGuard Audit</a>
   <a href="/clarity-audit/sbtcmarket.html">sBTC Market Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
@@ -216,7 +217,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">30</div>
+    <div class="num">31</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -224,11 +225,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">183</div>
+    <div class="num">193</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">33</div>
+    <div class="num">35</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -238,6 +239,13 @@ th { background: var(--surface); color: var(--text-muted); }
 <p>I'm building deep knowledge of Clarity by studying real production contracts: how they handle math, authorization, state, and the edge cases that matter.</p>
 
 <h2>Audits</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/satguard.html">SatGuard Protocol — Insurance Pool</a></h3>
+  <p><code>Mosas2000/SatGuard-Protocol</code></p>
+  <p>Bitcoin-backed micro-insurance protocol with pool creation, contribution-weighted claim voting, and payouts. The contract never calls stx-transfer? — the entire insurance mechanism is pure bookkeeping with no real funds. Withdrawal share calculation is an identity function (x*y/y=x), causing underflow for late withdrawers. Claimants can vote on their own claims. 10 findings total (2 critical, 2 high, 3 medium, 2 low, 1 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
 
 <div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/sbtcmarket.html">sBTC Prediction Market v0 — Complete Set AMM</a></h3>

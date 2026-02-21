@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SatGuard Protocol Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/satguard.html" class="active">SatGuard Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>SatGuard Protocol — Insurance Pool Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/Mosas2000/SatGuard-Protocol">Mosas2000/SatGuard-Protocol</a> ·
+  Commit: <code><a href="https://github.com/Mosas2000/SatGuard-Protocol/tree/8995aa779e07a65d8c7b33a3a2328eb2695e2c95">8995aa7</a></code> (2026-01-31) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>SatGuard Protocol is a Bitcoin-backed micro-insurance system on Stacks. Users create insurance pools with configurable coverage types, contribute funds, submit claims, and vote on claim payouts using contribution-weighted governance. The contract manages pool lifecycle (create → contribute → claim → vote → payout → close → withdraw).</p>
+<p>The contract is 439 lines of Clarity across a single file (<code>insurance-pool-full.clar</code>) with 5 data maps, 2 data variables, 8 public functions, and 5 read-only functions.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — DeFi insurance, intended to hold/transfer pooled funds</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>1 — Has README but no tests or CI</td><td>2</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>2 — 439 lines, 5 maps, voting + claims</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>0 — 0 stars/forks</td><td>0</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>2 — Insurance is a new audit category</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>18 / 10 = 1.8 ✓</strong></td></tr>
+</table>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>No Token Transfers — Insurance Pool is Pure Bookkeeping</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>Withdrawal Share Calculation is an Identity Function</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Claimant Can Vote on Own Claim</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>No Access Control on Claim Processing</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Pool Closure Ignores Pending Claims</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>No Claim Amount Cap Per Contributor</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>Integer Division in Approval Threshold</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>No Claim Expiry or Voting Deadline</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>No Double-Claim Prevention Per Contributor</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Contributor Count Only Increments</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-01</span> No Token Transfers — Insurance Pool is Pure Bookkeeping</h3>
+<p><strong>Location:</strong> <code>contribute-to-pool</code>, <code>process-claim-payout</code>, <code>withdraw-from-pool</code></p>
+<p><strong>Description:</strong> The entire insurance protocol never calls <code>stx-transfer?</code> or any token transfer function. When users "contribute" to a pool, only map entries are updated — no STX moves. When claims are "paid", the claimant receives nothing. When users "withdraw", no tokens are returned. The contract is a pure accounting system with no economic reality.</p>
+<pre><code>;; contribute-to-pool — updates maps but never transfers STX
+(map-set contributors
+  { pool-id: pool-id, contributor: tx-sender }
+  { amount: (+ (get amount existing-contribution) amount), contributed-at: block-height })
+
+;; process-claim-payout — marks claim as paid but sends nothing
+(map-set claims { claim-id: claim-id }
+  (merge claim { status: CLAIM-STATUS-PAID }))
+(map-set pools { pool-id: pool-id }
+  (merge pool { total-funds: (- (get total-funds pool) (get amount claim)) }))</code></pre>
+<p><strong>Impact:</strong> The insurance protocol provides zero financial protection. Users believe they are contributing to and protected by an insurance pool, but no funds are ever collected or distributed. This is the most fundamental flaw — the entire contract's purpose is unfulfilled.</p>
+<p><strong>Recommendation:</strong> Add <code>(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))</code> in <code>contribute-to-pool</code>, <code>(try! (as-contract (stx-transfer? (get amount claim) tx-sender (get claimant claim))))</code> in <code>process-claim-payout</code>, and corresponding transfer in <code>withdraw-from-pool</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-02</span> Withdrawal Share Calculation is an Identity Function</h3>
+<p><strong>Location:</strong> <code>withdraw-from-pool</code>, line ~420</p>
+<p><strong>Description:</strong> The "proportional share" calculation divides by the same value it multiplies by, making it a no-op:</p>
+<pre><code>(let
+  ((share (/ (* withdrawal-amount (get total-funds pool))
+             (get total-funds pool))))  ;; = withdrawal-amount * X / X = withdrawal-amount</code></pre>
+<p>The formula <code>withdrawal-amount * total-funds / total-funds</code> always equals <code>withdrawal-amount</code> (ignoring integer truncation edge cases). This means if a pool has had claims paid out (reducing total-funds), withdrawing users get back their full original contribution amount rather than a proportional share of the remaining funds. The pool would underflow when the last contributors withdraw.</p>
+<p><strong>Impact:</strong> After claims deplete pool funds, early withdrawers take more than their fair share. The last contributor's withdrawal will revert with an underflow, permanently locking their share. If total-funds reaches 0 from claims, the division by zero aborts all withdrawals.</p>
+<p><strong>Recommendation:</strong> Track original total contributions separately. The share formula should be: <code>(/ (* withdrawal-amount remaining-funds) original-total-contributions)</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-01</span> Claimant Can Vote on Own Claim</h3>
+<p><strong>Location:</strong> <code>vote-on-claim</code></p>
+<p><strong>Description:</strong> The voting function only checks that the voter is a pool contributor and hasn't voted before. It does not prevent the claimant from voting on their own claim. Since voting power equals contribution amount, a large contributor can submit a claim and immediately vote to approve it with significant weight.</p>
+<pre><code>;; No check for: (asserts! (not (is-eq tx-sender (get claimant claim))) err-unauthorized)
+(asserts! (> voting-power u0) err-unauthorized)
+(asserts! (is-none existing-vote) err-unauthorized)</code></pre>
+<p><strong>Impact:</strong> A contributor who holds >60% of pool funds can unilaterally approve their own claim for max-coverage, draining the pool. Even with less than 60%, self-voting gives an unfair advantage in the governance process.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (not (is-eq tx-sender (get claimant claim))) err-unauthorized)</code> to prevent self-voting on claims.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-02</span> No Access Control on Claim Processing</h3>
+<p><strong>Location:</strong> <code>process-claim-payout</code></p>
+<p><strong>Description:</strong> Anyone can call <code>process-claim-payout</code> — there is no restriction to pool creators, contributors, or any governance role. An external party could prematurely process a claim as soon as the minimum vote threshold is met, before all voters have participated.</p>
+<p><strong>Impact:</strong> A claimant (or colluding party) can call <code>process-claim-payout</code> immediately after gathering just enough votes, preventing additional negative votes from being cast. This creates a race condition favoring claim approval.</p>
+<p><strong>Recommendation:</strong> Restrict to pool creator or implement a voting deadline after which processing is allowed.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-01</span> Pool Closure Ignores Pending Claims</h3>
+<p><strong>Location:</strong> <code>close-pool</code></p>
+<p><strong>Description:</strong> The pool creator can close a pool at any time without checking for pending claims. Since <code>process-claim-payout</code> only checks claim status (not pool status), pending claims can still be processed after closure. However, since <code>submit-claim</code> checks pool status, new claims are blocked. The inconsistency creates confusion about pool lifecycle.</p>
+<p><strong>Impact:</strong> A malicious pool creator could close the pool, trigger withdrawals, and drain funds before pending claims are processed.</p>
+<p><strong>Recommendation:</strong> Either block closure while claims are pending, or check pool status in <code>process-claim-payout</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-02</span> No Claim Amount Cap Per Contributor</h3>
+<p><strong>Location:</strong> <code>submit-claim</code></p>
+<p><strong>Description:</strong> A contributor who deposited 1 STX can submit a claim for <code>max-coverage</code> (potentially thousands of STX). The only check is that the contributor has <em>some</em> contribution, not that the claim is proportional to their stake.</p>
+<pre><code>;; Only checks contributor exists, not proportionality
+(asserts! (> (get amount contribution) u0) err-unauthorized)
+(asserts! (<= amount (get max-coverage pool)) err-invalid-amount)</code></pre>
+<p><strong>Impact:</strong> A minimum contributor can claim the maximum coverage amount, extracting far more value than they put in.</p>
+<p><strong>Recommendation:</strong> Cap claims at a multiple of the contributor's own contribution, or require minimum contribution thresholds for different claim tiers.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-03</span> Integer Division in Approval Threshold</h3>
+<p><strong>Location:</strong> <code>process-claim-payout</code></p>
+<p><strong>Description:</strong> The approval threshold uses integer division: <code>(/ (* total-funds u60) u100)</code>. For small pool sizes, this truncates significantly. For example, with total-funds = 1, the threshold becomes 0, meaning any positive vote approves the claim.</p>
+<p><strong>Impact:</strong> Claims in very small pools can be approved with less than the intended 60% threshold. A pool with 1 STX total can have claims approved with zero votes-for.</p>
+<p><strong>Recommendation:</strong> Use <code>(>= (* (get votes-for claim) u100) (* (get total-funds pool) u60))</code> to avoid division truncation.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-01</span> No Claim Expiry or Voting Deadline</h3>
+<p><strong>Location:</strong> <code>submit-claim</code>, <code>vote-on-claim</code></p>
+<p><strong>Description:</strong> Claims remain in PENDING status indefinitely. There is no deadline for voting or automatic expiry. A claim that never reaches quorum stays pending forever, potentially blocking pool closure or creating governance gridlock.</p>
+<p><strong>Recommendation:</strong> Add a <code>voting-deadline</code> field (e.g., <code>submitted-at + 1000 blocks</code>) and allow automatic rejection after expiry.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-02</span> No Double-Claim Prevention Per Contributor</h3>
+<p><strong>Location:</strong> <code>submit-claim</code></p>
+<p><strong>Description:</strong> A contributor can submit unlimited claims against the same pool. While each claim requires separate voting, a malicious contributor could spam claims to exhaust voter attention or overwhelm governance.</p>
+<p><strong>Recommendation:</strong> Track active claims per contributor and limit concurrent pending claims.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-01</span> Contributor Count Only Increments</h3>
+<p><strong>Location:</strong> <code>withdraw-from-pool</code></p>
+<p><strong>Description:</strong> The <code>contributor-count</code> is decremented during withdrawals but is never checked for underflow. More importantly, it only increments on first contribution — if the same contributor withdraws and the pool somehow re-opens, the count is not restored on re-contribution since the map entry was deleted.</p>
+<p><strong>Recommendation:</strong> Minor issue given pool lifecycle, but consider making contributor-count a derived value or removing it from core logic.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+<p>The contract implements a complete insurance pool lifecycle — pool creation, contribution, claims, voting, payouts, closure, and withdrawal. The governance model (contribution-weighted voting with 60% approval and 50% quorum) is reasonable in design.</p>
+<p>However, the contract suffers from the same fundamental flaw seen across many Clarity projects: <strong>no actual token transfers</strong>. Every financial operation is pure bookkeeping. This pattern — tracking balances in maps without moving real tokens — makes the contract a simulation rather than a functioning protocol.</p>
+<p>The withdrawal share calculation bug (C-02) further demonstrates that the financial math was not tested, as the identity function <code>x * y / y = x</code> would be immediately apparent in any integration test with claim payouts.</p>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><span class="severity good">GOOD</span> Clean event logging with <code>print</code> for all state changes</li>
+<li><span class="severity good">GOOD</span> Proper use of <code>asserts!</code> for input validation</li>
+<li><span class="severity good">GOOD</span> Double-vote prevention via the <code>votes</code> map</li>
+<li><span class="severity good">GOOD</span> Contribution-weighted voting is a sound governance model</li>
+<li><span class="severity good">GOOD</span> Clean separation of pool, contributor, claim, and vote data</li>
+</ul>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007</a> ☕ · <a href="/clarity-audit/">All Audits</a></p>
+</footer>
+
+</body>
+</html>
