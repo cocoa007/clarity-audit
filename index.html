@@ -203,6 +203,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/reguguard.html">ReguGuard Audit</a>
   <a href="/clarity-audit/bugwatch.html">BugWatch Audit</a>
   <a href="/clarity-audit/orderbook.html">Orderbook Audit</a>
+  <a href="/clarity-audit/glamora.html">Glamora Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -211,7 +212,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">20</div>
+    <div class="num">27</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -219,11 +220,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">142</div>
+    <div class="num">154</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">27</div>
+    <div class="num">29</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -315,6 +316,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/bugwatch.html">BugWatch — AI-Driven Bug Bounty Platform</a></h3>
   <p><code>Mgid26/BugWatch</code></p>
   <p>Decentralized bug bounty platform with AI oracle assessment, staking, reputation, and appeals. The critical flaw: bounties are calculated and tracked in state but never actually paid out — no STX transfer, no bounty fund. Reporters can only recover their own stake. AI auditors cannot be removed once added. Appeal window anchored to submission time, not assessment time. 13 findings total (1 critical, 3 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/glamora.html">Glamora — Decentralized Fashion Social Platform</a></h3>
+  <p><code>Terese678/glamora</code> (main + storage + bridge-adapter + nft + tokens)</p>
+  <p>Ambitious fashion social platform with dual-token payments (sBTC + USDCx), subscriptions, NFT marketplace, creator vaults, and bridge integration. Public-user story is broken at storage layer — tips and follows only work between creators. NFT marketplace collects payment without transferring tokens. Platform fees permanently locked. 12 findings total (2 critical, 3 high, 4 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 

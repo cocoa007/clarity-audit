@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glamora Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/glamora.html" class="active">Glamora</a>
+</nav>
+
+<h1>Glamora — Decentralized Fashion Social Platform</h1>
+<p class="subtitle">
+  Repo: <a href="https://github.com/Terese678/glamora">Terese678/glamora</a> · 7 contracts · ~2,500+ lines<br>
+  Audited: February 21, 2026
+</p>
+
+<h2>Overview</h2>
+<p>Glamora is a decentralized fashion social platform where creators share content (fashion shows, lookbooks, tutorials, behind-the-scenes, reviews) and earn cryptocurrency tips from fans. Features include dual-token payments (sBTC + USDCx stablecoin), three subscription tiers, NFT collections with marketplace, social following, creator vaults for gas-optimized batch withdrawals, and bridge deposit tracking for cross-chain USDCx from Ethereum.</p>
+<p>The architecture is well-separated: <code>main.clar</code> handles business logic, <code>storage-v2.clar</code> is the data layer with authorized-contract access control, <code>bridge-adapter.clar</code> manages vaults and payment intelligence, and <code>glamora-nft.clar</code> implements SIP-009 NFTs with collection management.</p>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>Severity</th><th>Count</th><th>Description</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>2</td><td>Public users can't tip, duplicate error code</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>3</td><td>Follow broken for public users, subscription overwrite, locked fees</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>4</td><td>Rounding loss, dead code, no NFT transfer on sale, vault dead-end</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>3</td><td>Empty strings, cancel-after-expiry, hardcoded FX rate</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> Public Users Cannot Tip — record-tip Requires Creator Profile</h3>
+  <p>The <code>record-tip</code> function in storage unconditionally unwraps the tipper's <code>creator-profiles</code> entry to update their <code>total-tips-sent</code>:</p>
+<pre><code>(tipper-profile (unwrap! (map-get? creator-profiles tipper) ERR-USER-NOT-FOUND))</code></pre>
+  <p>Public users only exist in <code>public-user-profiles</code>. Any tip from a public user will revert with <code>ERR-USER-NOT-FOUND</code>. This breaks the core value proposition — "public users can tip creators they love."</p>
+  <p><strong>Fix:</strong> Check both profile maps. If tipper is a public user, update <code>public-user-profiles</code> instead, using the <code>total-tips-sent</code> field that already exists there.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> Duplicate Error Code u318 — Silent Collision</h3>
+  <p>Two different error constants share the same value:</p>
+<pre><code>(define-constant ERR-INVALID-AMOUNT (err u318))
+(define-constant ERR-SUBSCRIPTION-CHECK-FAILED (err u318))</code></pre>
+  <p>When <code>subscribe-to-creator</code> calls <code>has-active-subscription</code> and it fails, the error is indistinguishable from an invalid tip amount. This makes debugging impossible and could mask subscription validation bypasses.</p>
+  <p><strong>Fix:</strong> Change <code>ERR-SUBSCRIPTION-CHECK-FAILED</code> to <code>(err u319)</code> (skipping the already-used u318).</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">H-01</span> Follow/Unfollow Only Works Between Creators</h3>
+  <p>Both <code>create-follow</code> and <code>remove-follow</code> in storage unwrap <code>creator-profiles</code> for both the follower and the followed user:</p>
+<pre><code>(follower-profile (unwrap! (map-get? creator-profiles follower) ERR-USER-NOT-FOUND))
+(following-profile (unwrap! (map-get? creator-profiles following) ERR-USER-NOT-FOUND))</code></pre>
+  <p>Public users cannot follow anyone, and nobody can follow a public user. The main contract's <code>has-profile</code> check accepts public users, but the storage layer rejects them. The feature silently fails for the majority user type.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-02</span> Single Subscription Per User — Silent Overwrite</h3>
+  <p>The <code>user-subscriptions</code> map uses the subscriber's principal as the sole key. When a user subscribes to Creator B while already subscribed to Creator A, the <code>has-active-subscription</code> check passes (because it only checks the <em>specific</em> creator), and <code>map-set</code> silently overwrites the Creator A subscription. No refund, no notification — the old subscription data is permanently lost.</p>
+  <p><strong>Fix:</strong> Use a composite key <code>{subscriber: principal, creator: principal}</code> to allow multiple concurrent subscriptions.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-03</span> No Platform Fee Withdrawal — Revenue Permanently Locked</h3>
+  <p>Platform fees (5% of every tip and subscription) accumulate in <code>CONTRACT-ADDRESS</code> for both sBTC and USDCx tokens. There is no admin function to withdraw these fees. The <code>platform-fees-earned</code> variable tracks the amount, but the actual tokens are permanently locked in the contract principal with no exit path.</p>
+  <p><strong>Fix:</strong> Add an admin-only <code>withdraw-platform-fees</code> function that uses <code>as-contract</code> to transfer accumulated fees to the admin.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> Integer Division Rounding Loss in Fee Calculation</h3>
+  <p><code>calculate-platform-fee</code> uses <code>(/ (* amount 5) 100)</code>. Clarity integer division truncates. For a tip of 999,999 sats: fee = 49,999 instead of the exact 49,999.95. Over thousands of tips, these fractions compound to measurable loss for the platform.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> Storage Contract Reference Mismatch</h3>
+  <p>The constant <code>STORAGE-CONTRACT</code> points to <code>.storage-v3</code>, but the data variable <code>storage-contract</code> points to a hardcoded testnet principal. All actual calls use the constant <code>.storage-v3</code> directly. The data variable and its getter <code>get-storage-contract</code> are dead code that returns a misleading value.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-03</span> NFT Marketplace — Sale Doesn't Transfer NFT</h3>
+  <p>The storage contract's <code>complete-nft-sale</code> records the sale history and marks the listing inactive, but there's no corresponding NFT transfer (<code>nft-transfer?</code>) from seller to buyer in the main contract's marketplace flow. The buyer pays but never receives the NFT.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-04</span> Creator Vault Withdrawal Dead-End</h3>
+  <p><code>complete-vault-withdrawal</code> in bridge-adapter requires <code>is-authorized</code> (only callable from main.clar). But main.clar has no function that calls <code>complete-vault-withdrawal</code>. Creators can set thresholds and deposit, but the actual withdrawal is unreachable — a dead-end in the call chain.</p>
+</div>
+
+<h2>Low Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity low">L-01</span> No Input Validation on Empty Strings</h3>
+  <p>Profile creation in main.clar accepts empty strings for username, display name, and bio. An empty username <code>""</code> could be registered and reserved in the <code>usernames</code> map, creating a phantom entry that blocks no real username but wastes storage.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-02</span> Subscription Cancel After Expiry Breaks Stats</h3>
+  <p>The cancel function doesn't verify the subscription hasn't already expired. Cancelling an expired subscription decrements the creator's <code>total-subscribers</code> and tier counter, pushing them below their true values. Over time, these counters can drift to inaccurate (or underflowing) values.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-03</span> Hardcoded Nigerian Naira Exchange Rate</h3>
+  <p><code>USD-TO-NIGERIAN-NAIRA-RATE</code> is hardcoded at 1,500 NGN/USD. The real rate fluctuates significantly (~1,500-1,700+ in 2024-2026). The earnings stability report will show increasingly inaccurate Naira values with no update mechanism.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+
+<table>
+  <tr><th>Feature</th><th>Status</th></tr>
+  <tr><td>Multi-contract architecture</td><td>✅ Clean main → storage → adapter separation</td></tr>
+  <tr><td>Dual-token payment (sBTC + USDCx)</td><td>✅ Well-implemented with token selection</td></tr>
+  <tr><td>Creator profiles & content publishing</td><td>✅ Working with IPFS integration</td></tr>
+  <tr><td>Tipping with platform fee split</td><td>⚠️ Broken for public users (C-01)</td></tr>
+  <tr><td>Social following</td><td>⚠️ Creator-only at storage layer (H-01)</td></tr>
+  <tr><td>Subscription tiers (Basic/Premium/VIP)</td><td>⚠️ Single-sub per user limitation (H-02)</td></tr>
+  <tr><td>NFT minting & collections (SIP-009)</td><td>✅ Working with collection limits</td></tr>
+  <tr><td>NFT marketplace</td><td>❌ No NFT transfer on sale (M-03)</td></tr>
+  <tr><td>Creator vault (gas savings)</td><td>⚠️ No withdrawal trigger (M-04)</td></tr>
+  <tr><td>Bridge deposit verification</td><td>✅ Structure present (not live)</td></tr>
+  <tr><td>Payment intents</td><td>✅ Deferred execution pattern</td></tr>
+  <tr><td>Access control</td><td>✅ Authorized-contract pattern</td></tr>
+  <tr><td>Event logging</td><td>✅ Comprehensive print statements</td></tr>
+  <tr><td>Platform fee extraction</td><td>❌ No withdrawal function (H-03)</td></tr>
+</table>
+
+<p><strong>Verdict:</strong> Glamora is the most ambitious and well-documented Clarity project in this audit series. The multi-contract architecture with clean separation of concerns (main → storage, main → bridge-adapter, main → nft) demonstrates strong software engineering. The dual-token system, creator vaults for gas optimization, and payment intent pattern for deferred execution show sophisticated design thinking.</p>
+
+<p>However, the public-user story is fundamentally broken at the storage layer — the contract only truly works for creator-to-creator interactions, contradicting the platform's own documentation. The NFT marketplace collects payment without transferring tokens, and platform revenue has no withdrawal path. With targeted fixes to the storage functions (checking both profile maps), composite subscription keys, and marketplace NFT transfers, this could be a genuinely functional decentralized social platform.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕</p>
+</footer>
+
+</body>
+</html>
