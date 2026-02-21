@@ -212,6 +212,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
   <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market Audit</a>
   <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch Audit</a>
+  <a href="/clarity-audit/stx-yield.html">STX Yield Staking Audit</a>
   <a href="/clarity-audit/stx-future.html">STX Future Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
@@ -348,6 +349,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Ecosystem (5 Contracts)</a></h3>
   <p><code>serayd61/stacks-nft-marketplace</code></p>
   <p>Comprehensive NFT ecosystem: marketplace with auctions, SIP-009 collection, fractional ownership, rental, and staking. Fatal architectural flaw — none of the five contracts ever take custody of NFTs. Marketplace collects payment but never delivers tokens. <code>as-contract</code> bugs permanently lock buyout proceeds and rental collateral. 24 findings total (6 critical, 5 high, 8 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-yield.html">STX Yield Staking — MasterChef-style Reward Accumulator</a></h3>
+  <p><code>cypherpulse/stx-yield</code> (stx-yield-staking-v1.clar, 406 lines)</p>
+  <p>MasterChef-style STX staking protocol with admin-funded reward pool. Completely non-functional: uses <code>tx-self</code> (a non-existent Clarity keyword), <code>update-rewards</code> returns bool but is used as uint everywhere (type mismatch), and <code>stake</code> transfers STX from the user back to themselves. Emergency withdraw drains all funds including user stakes. Despite well-structured comments and correct conceptual math, the code was never compiled or tested. 11 findings total (3 critical, 2 high, 2 medium, 2 low, 2 informational).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 

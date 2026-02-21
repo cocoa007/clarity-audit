@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STX Yield Staking Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/stx-yield.html" class="active">STX Yield Staking Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>STX Yield Staking — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/cypherpulse/stx-yield">cypherpulse/stx-yield</a> ·
+  Commit: <code><a href="https://github.com/cypherpulse/stx-yield/tree/24f2fe75b91a5c6979bb0c235fec80b8c1937020">24f2fe7</a></code> (2026-02-18) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">3</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract implements a MasterChef-style STX staking protocol where users deposit STX and earn yield funded by an admin-deposited reward pool. The accumulator pattern tracks per-share rewards, and users stake/unstake/claim with automatic reward harvesting. The contract is 406 lines of Clarity and claims to be "audited against CertiK Clarity Security Checklist 2024/2025".</p>
+<p><strong>Verdict: The contract is completely non-functional due to multiple compilation-blocking errors.</strong> It uses <code>tx-self</code> (a non-existent Clarity keyword), <code>update-rewards</code> returns <code>bool</code> but is used as <code>uint</code> throughout, and <code>stake</code> transfers STX from the user to themselves. Despite well-structured comments and architecture, the code was clearly never compiled or tested.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — DeFi staking with STX transfers</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>2 — Has Clarinet workspace, README, structured project</td><td>4</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>2 — 406 lines, accumulator math, multi-function</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>1 — 1 star, recently pushed</td><td>1.5</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>2 — Yield staking — new category for this portfolio</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>21.5 / 10 = 2.15 &ge; 1.8 &check;</strong></td></tr>
+</table>
+<p><em>No <code>clarity_version</code> specified in Clarinet.toml. Uses <code>epoch = "latest"</code>. -0.5 penalty not applied (score well above threshold).</em></p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td><code>tx-self</code> Does Not Exist — Contract Won't Compile</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td><code>update-rewards</code> Returns Bool, Used as Uint — Type Mismatch</td></tr>
+  <tr><td>C-03</td><td><span class="severity critical">CRITICAL</span></td><td><code>stake</code> Transfers STX From User to User — Funds Never Reach Contract</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td><code>emergency-withdraw</code> Drains User Stakes, Not Just Reward Pool</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>Dual Auth Check Weakens Ownership Guard</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>No Minimum Stake or Cooldown — Reward Sniping Possible</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Reward Rate Change Can Be Front-Run</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>No Ownership Transfer Confirmation (Two-Step)</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td><code>burn-block-height</code> vs <code>stacks-block-height</code> Inconsistency</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>No Pause Mechanism</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>Missing SIP-010 Token — Staked Positions Not Composable</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> <code>tx-self</code> Does Not Exist — Contract Won't Compile</h3>
+  <p><strong>Location:</strong> <code>unstake</code>, <code>claim</code>, <code>deposit-rewards</code>, <code>emergency-withdraw</code> — 7 occurrences</p>
+  <p><strong>Description:</strong> The contract uses <code>tx-self</code> in multiple functions as if it were a keyword that returns the contract's own principal address. This keyword does not exist in any version of Clarity (1 through 4). The correct way to reference the contract's principal is <code>(as-contract tx-sender)</code>.</p>
+  <pre><code>;; unstake (line ~201): tx-self is not a Clarity keyword
+(try! (stx-transfer? pending tx-self caller))
+...
+(try! (stx-transfer? amount tx-self caller))
+
+;; claim (line ~225):
+(try! (stx-transfer? pending tx-self caller))
+
+;; deposit-rewards (line ~238):
+(try! (stx-transfer? amount tx-sender tx-self))
+
+;; emergency-withdraw (line ~270):
+(let ((bal (stx-get-balance tx-self)))
+  (try! (stx-transfer? bal tx-self (var-get owner))))</code></pre>
+  <p><strong>Impact:</strong> The contract will fail at compilation time. None of the core functions (unstake, claim, deposit-rewards, emergency-withdraw) can execute. The contract is completely undeployable.</p>
+  <p><strong>Recommendation:</strong> Replace all <code>tx-self</code> references with <code>(as-contract tx-sender)</code>. For transfers FROM the contract, wrap the transfer in <code>(as-contract ...)</code>:</p>
+  <pre><code>;; Instead of: (stx-transfer? amount tx-self caller)
+;; Use:
+(as-contract (stx-transfer? amount tx-sender caller))</code></pre>
+</div>
+
+<!-- C-02 -->
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> <code>update-rewards</code> Returns Bool, Used as Uint — Type Mismatch</h3>
+  <p><strong>Location:</strong> <code>update-rewards</code> (private fn), <code>stake</code>, <code>unstake</code>, <code>claim</code></p>
+  <p><strong>Description:</strong> The <code>update-rewards</code> function returns <code>bool</code> (<code>true</code>/<code>false</code>). However, every public function binds its return value to <code>current-rps</code> and uses it as a <code>uint</code> in arithmetic operations — multiplication with staked amounts and comparison in <code>calc-pending</code>.</p>
+  <pre><code>;; update-rewards returns bool:
+(define-private (update-rewards)
+  (let (...)
+    (var-set last-reward-block current-block)
+    (if (and (> ts u0) (> current-block last-block) (> rate-bps u0))
+      (let (...)
+        (var-set acc-reward-per-share new-rps)
+        true    ;; &lt;-- returns bool
+      )
+      false     ;; &lt;-- returns bool
+    )
+  )
+)
+
+;; But callers use it as uint:
+(define-public (stake (amount uint))
+  (let (
+    (current-rps (update-rewards))  ;; bool, NOT uint!
+    ...
+    (new-debt (* new-staked current-rps))  ;; uint * bool = TYPE ERROR
+  )
+    (calc-pending user-data current-rps)   ;; expects uint, gets bool
+    ...
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Clarity is strongly typed — <code>uint * bool</code> and passing <code>bool</code> where <code>uint</code> is expected will fail at compilation time. Combined with C-01, no function in this contract can compile.</p>
+  <p><strong>Recommendation:</strong> <code>update-rewards</code> should return the current <code>acc-reward-per-share</code>:</p>
+  <pre><code>(define-private (update-rewards)
+  (let (...)
+    (var-set last-reward-block current-block)
+    (if (and (> ts u0) (> current-block last-block) (> rate-bps u0))
+      (let (...)
+        (var-set acc-reward-per-share new-rps)
+        new-rps  ;; return the updated value
+      )
+      rps  ;; return unchanged value
+    )
+  )
+)</code></pre>
+</div>
+
+<!-- C-03 -->
+<div class="finding">
+  <h3><span class="severity critical">C-03</span> <code>stake</code> Transfers STX From User to User — Funds Never Reach Contract</h3>
+  <p><strong>Location:</strong> <code>stake</code> function, line ~170</p>
+  <p><strong>Description:</strong> In the <code>stake</code> function, the user's STX deposit is "transferred" with:</p>
+  <pre><code>(let (
+  (caller tx-sender)
+  ...
+)
+  ;; Transfer stake from user to contract (user-authorized transfer)
+  (try! (stx-transfer? amount caller tx-sender))
+  ;; caller == tx-sender, so this transfers from user to... user
+)</code></pre>
+  <p>Since <code>caller</code> is bound to <code>tx-sender</code> at the start of the let block, this is <code>(stx-transfer? amount tx-sender tx-sender)</code> — a transfer from the user to themselves. The contract's balance never increases, but <code>total-staked</code> is incremented.</p>
+  <p><strong>Impact:</strong> Users appear to have staked funds (state is updated), but no STX actually moves to the contract. When users attempt to unstake or claim, the contract has no STX to pay them. This creates a phantom accounting system where the contract promises STX it doesn't hold.</p>
+  <p><strong>Recommendation:</strong> Transfer to the contract using <code>(as-contract tx-sender)</code>:</p>
+  <pre><code>;; Correct: transfer from user to contract
+(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <h3><span class="severity high">H-01</span> <code>emergency-withdraw</code> Drains User Stakes, Not Just Reward Pool</h3>
+  <p><strong>Location:</strong> <code>emergency-withdraw</code> function</p>
+  <p><strong>Description:</strong> The emergency withdrawal transfers the contract's entire STX balance to the owner. This includes both the reward pool AND all user-staked principal. The comment says "admin drains entire contract STX balance" and acknowledges "total-staked is NOT zeroed here; users must unstake after." But users cannot unstake — the contract has no STX left.</p>
+  <pre><code>(define-public (emergency-withdraw)
+  (begin
+    (asserts! (is-owner) ERR-OWNER-ONLY)
+    (let ((bal (stx-get-balance tx-self)))
+      (asserts! (> bal u0) ERR-NO-EMERGENCY)
+      (try! (stx-transfer? bal tx-self (var-get owner)))
+      ;; total-staked NOT zeroed — users can't recover
+      (var-set reward-pool-balance u0)
+      (ok bal)
+    )
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> The admin can rug-pull all staked funds at any time. There is no timelock, no multi-sig, and no separation between reward pool and staked principal. This is a unilateral fund extraction vector.</p>
+  <p><strong>Recommendation:</strong> Emergency withdraw should only drain the reward pool balance, not user stakes. Or implement a two-phase emergency: (1) pause all operations, (2) allow each user to individually withdraw their stake.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <h3><span class="severity high">H-02</span> Dual Auth Check Weakens Ownership Guard</h3>
+  <p><strong>Location:</strong> <code>is-owner</code> function</p>
+  <p><strong>Description:</strong> The ownership check accepts EITHER <code>contract-caller</code> or <code>tx-sender</code> matching the owner:</p>
+  <pre><code>(define-private (is-owner)
+  (or (is-eq contract-caller (var-get owner))
+      (is-eq tx-sender       (var-get owner))))</code></pre>
+  <p>The comment says "never rely solely on tx-sender for auth" (per CertiK), but the fix is wrong. Using <code>or</code> with both is <em>weaker</em> than using either alone. If the owner calls through an intermediary contract, <code>tx-sender</code> is still the owner even though <code>contract-caller</code> is the intermediary. Conversely, if a malicious contract has <code>contract-caller</code> set to the owner, <code>tx-sender</code> might be an attacker.</p>
+  <p><strong>Impact:</strong> An intermediary contract called by the owner can pass the auth check via <code>tx-sender</code>, even if the intermediary shouldn't have admin privileges. This opens a vector for confused deputy attacks through contract composition.</p>
+  <p><strong>Recommendation:</strong> Use only <code>contract-caller</code> for auth, which represents the immediate caller:</p>
+  <pre><code>(define-private (is-owner)
+  (is-eq contract-caller (var-get owner)))</code></pre>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> No Minimum Stake or Cooldown — Reward Sniping Possible</h3>
+  <p><strong>Location:</strong> <code>stake</code> and <code>unstake</code> functions</p>
+  <p><strong>Description:</strong> There is no minimum staking duration or cooldown period. A user can stake in one block and immediately unstake in the next, capturing any accumulated <code>acc-reward-per-share</code> increment. With large flash-loaned STX, an attacker can stake a massive amount for one block, diluting all other stakers' rewards for that period, then unstake.</p>
+  <p><strong>Impact:</strong> Flash-loan-style reward sniping. An attacker with large capital can periodically spike the total-staked to harvest a disproportionate share of rewards, at the expense of long-term stakers.</p>
+  <p><strong>Recommendation:</strong> Add a minimum staking duration (e.g., 144 blocks / ~1 day) before unstaking is allowed. Track <code>stake-block</code> per user and enforce cooldown.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> Reward Rate Change Can Be Front-Run</h3>
+  <p><strong>Location:</strong> <code>set-reward-rate</code> function</p>
+  <p><strong>Description:</strong> When the admin increases the reward rate, the transaction is visible in the mempool. An attacker can front-run by staking a large amount before the rate increase takes effect, capturing the higher rate from block one.</p>
+  <p><strong>Impact:</strong> Sophisticated stakers can extract disproportionate rewards around rate changes, diluting returns for honest stakers.</p>
+  <p><strong>Recommendation:</strong> Implement a time-delayed rate change (e.g., announce the new rate, apply it after N blocks). This gives all stakers equal opportunity to adjust positions.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity low">L-01</span> No Ownership Transfer Confirmation (Two-Step)</h3>
+  <p><strong>Location:</strong> <code>set-owner</code> function</p>
+  <p><strong>Description:</strong> Ownership is transferred in a single step. If the admin accidentally sets the owner to a wrong address, the contract becomes permanently unmanageable — no one can change the rate, deposit rewards, or emergency withdraw.</p>
+  <p><strong>Recommendation:</strong> Implement a two-step transfer: <code>propose-owner</code> + <code>accept-ownership</code>.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity low">L-02</span> <code>burn-block-height</code> vs <code>stacks-block-height</code> Inconsistency</h3>
+  <p><strong>Location:</strong> <code>update-rewards</code>, print statements</p>
+  <p><strong>Description:</strong> The reward accumulator uses <code>burn-block-height</code> (Bitcoin blocks) for delta calculation, but the constant <code>BLOCKS-PER-YEAR u52560</code> assumes ~10-minute Stacks blocks. Post-Nakamoto, Stacks blocks are ~5 seconds while Bitcoin blocks remain ~10 minutes. Using <code>burn-block-height</code> with a Stacks-block-based constant means rewards accrue ~60x slower than intended.</p>
+  <p><strong>Recommendation:</strong> Use <code>stacks-block-height</code> consistently, or adjust <code>BLOCKS-PER-YEAR</code> to match Bitcoin block times (~52,560 Bitcoin blocks/year is actually correct for Bitcoin, but then the APY math needs to account for the much slower block production).</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity info">I-01</span> No Pause Mechanism</h3>
+  <p><strong>Location:</strong> Global</p>
+  <p><strong>Description:</strong> Unlike the emergency-withdraw function, there is no way to pause staking/unstaking operations. If a vulnerability is discovered, the admin's only option is to drain all funds (including user stakes) via emergency-withdraw.</p>
+  <p><strong>Recommendation:</strong> Add a <code>paused</code> data-var and guard all public functions with an <code>(asserts! (not (var-get paused)) ERR-PAUSED)</code> check.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity info">I-02</span> Missing SIP-010 Token — Staked Positions Not Composable</h3>
+  <p><strong>Location:</strong> Global</p>
+  <p><strong>Description:</strong> Users' staked positions are tracked in a map but not represented as a fungible token. This means staked positions cannot be used as collateral, traded, or composed with other DeFi protocols. Most production staking protocols issue a receipt token (e.g., stSTX).</p>
+  <p><strong>Recommendation:</strong> Implement a SIP-010 receipt token that is minted on stake and burned on unstake, representing the user's pro-rata share of the pool.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+<ul>
+  <li>The MasterChef accumulator math is conceptually correct — the <code>acc-reward-per-share</code> approach properly isolates per-user rewards. The implementation simply fails to compile.</li>
+  <li>The contract correctly separates reward pool from staked principal in accounting (via <code>reward-pool-balance</code>), but the emergency function ignores this separation.</li>
+  <li>Good use of <code>print</code> events for off-chain indexing.</li>
+  <li>The <code>PRECISION</code> scaler (1e12) is appropriate for avoiding rounding loss in the accumulator.</li>
+</ul>
+
+<h2>Recommendations Summary</h2>
+<ol>
+  <li><strong>[BLOCKING]</strong> Replace all <code>tx-self</code> with <code>(as-contract tx-sender)</code> and wrap outbound transfers in <code>(as-contract ...)</code>.</li>
+  <li><strong>[BLOCKING]</strong> Fix <code>update-rewards</code> to return <code>uint</code> (the current <code>acc-reward-per-share</code>).</li>
+  <li><strong>[BLOCKING]</strong> Fix <code>stake</code> to transfer STX to the contract, not back to the user.</li>
+  <li>Restrict <code>emergency-withdraw</code> to only drain <code>reward-pool-balance</code>, not user stakes.</li>
+  <li>Use only <code>contract-caller</code> in <code>is-owner</code>.</li>
+  <li>Add minimum staking duration and pause mechanism.</li>
+  <li>Actually compile and test the contract with <code>clarinet check</code> before publishing.</li>
+</ol>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">All audits</a> · February 21, 2026</p>
+</footer>
+
+</body>
+</html>
