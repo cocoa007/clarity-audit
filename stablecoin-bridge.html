@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Stablecoin Bridge LP Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/stablecoin-bridge.html" class="active">Stablecoin Bridge Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>BTC Stablecoin Bridge LP — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/promise-code/btc-stablecoin-bridge-lp">promise-code/btc-stablecoin-bridge-lp</a> ·
+  Commit: <code><a href="https://github.com/promise-code/btc-stablecoin-bridge-lp/tree/fb378881981e44c041e1ce0373017acff012bab7">fb37888</a></code> (2024-10-31) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">3</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract implements a Bitcoin-backed stablecoin system with integrated liquidity pool functionality. Users deposit BTC as collateral to mint stablecoins, and can provide liquidity in a BTC/stablecoin AMM pool. The contract includes an owner-controlled oracle for BTC/USD pricing, collateral vaults with minimum ratios, and LP token accounting.</p>
+<p>The codebase is a single Clarity file (283 lines) covering collateral management, stablecoin minting/burning, LP provision, and basic AMM mechanics. No swap function is implemented despite pool infrastructure.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — DeFi: collateralized stablecoin + LP pool</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>1 — Has Clarinet config + tests dir, but simulated balances</td><td>2</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>2 — 283 lines, multi-feature (vaults, LP, oracle)</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>0 — 0 stars/forks</td><td>0</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>3 — Stablecoin bridge + LP — new category for this portfolio</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>19.5 / 10 = 1.95 ≥ 1.8 ✓</strong></td></tr>
+</table>
+<p><em>No Clarity version specified. Uses legacy <code>as-contract</code>. -0.5 penalty not applied as score is borderline and contract is DeFi-relevant.</em></p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Phantom Balance System — No Real Asset Transfers</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>Broken Square Root Enables LP Token Miscalculation</td></tr>
+  <tr><td>C-03</td><td><span class="severity critical">CRITICAL</span></td><td>Unilateral Oracle Manipulation — Owner Controls All Collateral</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Mint Guard Uses Pool Balance Instead of Total Collateral</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>LP Token Calculation Inconsistent — Second Depositors Disadvantaged</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>No Liquidation Mechanism for Undercollateralized Vaults</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Remove Liquidity Underflow on btc-provided / stable-provided</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>No Swap Function Despite Pool Infrastructure</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>Collateral Ratio Division Truncation Allows Over-Minting</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>No Withdrawal Function for Deposited Collateral</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Missing SIP-010 Trait — Not Composable</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>No Events Emitted for State Changes</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> Phantom Balance System — No Real Asset Transfers</h3>
+  <p><strong>Location:</strong> <code>transfer-balance</code> (lines 54-65), <code>deposit-collateral</code> (line 121)</p>
+  <p><strong>Description:</strong> The entire contract operates on internal <code>balances</code> maps that are never funded by real STX or BTC transfers. The <code>deposit-collateral</code> function calls <code>transfer-balance</code> which moves numbers between map entries, but no <code>stx-transfer?</code> or SIP-010 transfer is ever called. There is no way for users to seed the <code>balances</code> map with real tokens.</p>
+  <pre><code>(define-private (transfer-balance (amount uint) (sender principal) (recipient principal))
+    (let (
+        (sender-balance (default-to u0 (map-get? balances sender)))
+        (recipient-balance (default-to u0 (map-get? balances recipient)))
+    )
+    (if (>= sender-balance amount)
+        (begin
+            (map-set balances sender (- sender-balance amount))
+            (map-set balances recipient (+ recipient-balance amount))
+            (ok true)
+        )
+        ERR-INSUFFICIENT-BALANCE
+    ))
+)</code></pre>
+  <p><strong>Impact:</strong> The contract is completely non-functional. No real assets can be deposited, no real stablecoins can be backed, and the LP pool holds nothing. Every user operation will fail with <code>ERR-INSUFFICIENT-BALANCE</code> since <code>balances[user]</code> is always 0.</p>
+  <p><strong>Recommendation:</strong> Replace <code>transfer-balance</code> with actual <code>stx-transfer?</code> calls for deposits. Implement a SIP-010 fungible token for the stablecoin. Use real token transfers for all asset movements.</p>
+</div>
+
+<!-- C-02 -->
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> Broken Square Root Enables LP Token Miscalculation</h3>
+  <p><strong>Location:</strong> <code>sqrt</code> (lines 93-100)</p>
+  <p><strong>Description:</strong> The square root implementation is fundamentally incorrect. It performs a single Newton's method iteration without any convergence loop, returning <code>(x/2 + 1)</code> instead of <code>√x</code>.</p>
+  <pre><code>(define-private (sqrt (x uint))
+    (let (
+        (next (+ (/ x u2) u1))
+    )
+    (if (<= x u2)
+        u1
+        next  ;; Returns x/2+1, NOT sqrt(x)
+    ))
+)</code></pre>
+  <p><strong>Examples:</strong></p>
+  <ul>
+    <li><code>sqrt(100)</code> → 51 (should be 10) — 5.1x over</li>
+    <li><code>sqrt(10000)</code> → 5001 (should be 100) — 50x over</li>
+    <li><code>sqrt(1000000)</code> → 500001 (should be 1000) — 500x over</li>
+  </ul>
+  <p><strong>Impact:</strong> Initial LP token minting is massively inflated. The first liquidity provider receives orders of magnitude more LP tokens than they should. This distorts all subsequent LP calculations and pro-rata withdrawals.</p>
+  <p><strong>Recommendation:</strong> Implement a proper integer square root using Newton's method with iterative convergence:</p>
+  <pre><code>;; Proper Babylonian method sqrt
+(define-private (sqrt (x uint))
+  (if (<= x u1) x
+    (let (
+      (z (/ (+ x u1) u2))
+      (z (if (< (/ x z) z) (/ x z) z))  ;; min(z, x/z)
+      ;; ... iterate until convergence
+    ) z)
+  )
+)</code></pre>
+</div>
+
+<!-- C-03 -->
+<div class="finding">
+  <h3><span class="severity critical">C-03</span> Unilateral Oracle Manipulation — Owner Controls All Collateral</h3>
+  <p><strong>Location:</strong> <code>update-price</code> (lines 110-115)</p>
+  <p><strong>Description:</strong> The contract owner has unrestricted ability to set the oracle price to any value between 1 and <code>MAX-PRICE</code> (100,000,000,000). This directly controls whether all vaults in the system are collateralized or not. There is no time delay, no multi-sig, and no external oracle integration.</p>
+  <pre><code>(define-public (update-price (new-price uint))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (asserts! (validate-price new-price) ERR-INVALID-PRICE)
+        (var-set oracle-price new-price)
+        (ok true)
+    )
+)</code></pre>
+  <p><strong>Impact:</strong> The owner can crash the price to make all vaults undercollateralized, or inflate it to mint maximum stablecoins with minimal collateral. In a real deployment, this gives the owner complete control over all user funds.</p>
+  <p><strong>Recommendation:</strong> Integrate a decentralized oracle (e.g., Redstone, DIA) or implement a multi-party price feed with deviation checks. Add a time-weighted average price (TWAP) mechanism and maximum price change per update.</p>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <h3><span class="severity high">H-01</span> Mint Guard Uses Pool Balance Instead of Total Collateral</h3>
+  <p><strong>Location:</strong> <code>mint-stablecoin</code> (lines 138-140)</p>
+  <p><strong>Description:</strong> The minting assertion checks that total supply doesn't exceed <code>pool-btc-balance * oracle-price</code>. But <code>pool-btc-balance</code> tracks the LP pool, not total collateral. At contract start, pool-btc-balance is 0, making all minting impossible regardless of collateral deposited.</p>
+  <pre><code>(asserts! (and 
+    (> amount u0)
+    (<= amount MAX-MINT-AMOUNT)
+    (<= (+ (var-get total-supply) amount) (* (var-get pool-btc-balance) (var-get oracle-price)))
+) ERR-INVALID-AMOUNT)</code></pre>
+  <p><strong>Impact:</strong> No stablecoins can ever be minted until someone first provides liquidity to the pool. The collateral vault system is disconnected from the minting constraint. Even with sufficient personal collateral, users cannot mint.</p>
+  <p><strong>Recommendation:</strong> Track total collateral across all vaults separately. The mint check should reference total locked collateral, not LP pool balance.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <h3><span class="severity high">H-02</span> LP Token Calculation Inconsistent — Second Depositors Disadvantaged</h3>
+  <p><strong>Location:</strong> <code>calculate-lp-tokens</code> (lines 83-92)</p>
+  <p><strong>Description:</strong> For the first depositor, LP tokens = <code>sqrt(btc * stable)</code>. For subsequent depositors, LP tokens = <code>btc * sqrt(pool_btc * pool_stable) / pool_btc</code>. These formulas are not equivalent. The second formula doesn't consider the stable amount at all, meaning a user can provide 1 stable + 1000 BTC and get the same LP tokens as 1000 stable + 1000 BTC.</p>
+  <pre><code>(if (is-eq pool-btc u0)
+    (sqrt (* btc-amount stable-amount))
+    (/ (* btc-amount (sqrt (* pool-btc pool-stable))) pool-btc)
+)</code></pre>
+  <p><strong>Impact:</strong> Second and subsequent liquidity providers can game the system by providing minimal stablecoins with large BTC amounts. They receive disproportionate LP tokens and can drain pool value on withdrawal.</p>
+  <p><strong>Recommendation:</strong> Use the standard Uniswap V2 LP token formula: <code>min(btc * totalLP / poolBTC, stable * totalLP / poolStable)</code>. Track total LP supply globally.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> No Liquidation Mechanism for Undercollateralized Vaults</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> The contract defines a <code>LIQUIDATION-RATIO</code> of 130% but never implements liquidation. If BTC price drops and a vault falls below 130%, nothing happens. The stablecoin remains in circulation, underbacked.</p>
+  <p><strong>Impact:</strong> The stablecoin has no mechanism to maintain its peg during BTC price declines. Bad debt accumulates silently with no way to unwind it.</p>
+  <p><strong>Recommendation:</strong> Implement a liquidation function allowing anyone to repay a vault's debt when the collateral ratio falls below LIQUIDATION-RATIO, receiving the collateral at a discount.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> Remove Liquidity Underflow on btc-provided / stable-provided</h3>
+  <p><strong>Location:</strong> <code>remove-liquidity</code> (lines 201-202)</p>
+  <p><strong>Description:</strong> When removing liquidity, the pro-rata BTC and stable returns are subtracted from the user's historical <code>btc-provided</code> and <code>stable-provided</code>. But due to pool ratio changes from the broken sqrt and asymmetric deposits, <code>btc-return</code> can exceed <code>btc-provided</code>, causing an underflow panic.</p>
+  <pre><code>(map-set liquidity-providers tx-sender {
+    pool-tokens: (- total-lp-tokens lp-tokens),
+    btc-provided: (- (get btc-provided provider-data) btc-return),
+    stable-provided: (- (get stable-provided provider-data) stable-return)
+})</code></pre>
+  <p><strong>Impact:</strong> LP providers may be permanently unable to withdraw their liquidity if pool ratios have shifted, as the subtraction will panic and revert.</p>
+  <p><strong>Recommendation:</strong> Don't track historical provided amounts. Calculate returns purely from LP token share of pool.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <h3><span class="severity medium">M-03</span> No Swap Function Despite Pool Infrastructure</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> The contract builds AMM pool infrastructure (add/remove liquidity, fee rate constant, pool balances) but implements no swap function. The <code>POOL-FEE-RATE</code> constant (0.3%) is defined but unused.</p>
+  <p><strong>Impact:</strong> The liquidity pool is a dead-end. Funds can be deposited but never used for trading. The pool serves no purpose without swaps, and LPs earn no fees.</p>
+  <p><strong>Recommendation:</strong> Implement a constant-product swap function: <code>x * y = k</code> with fee deduction.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity low">L-01</span> Collateral Ratio Division Truncation Allows Over-Minting</h3>
+  <p><strong>Location:</strong> <code>calculate-collateral-ratio</code> (lines 68-76)</p>
+  <p><strong>Description:</strong> The collateral ratio formula <code>(btc_value * 100) / stablecoin_amount</code> uses integer division which truncates. With carefully chosen amounts, a user can get a ratio of exactly 150 (passing the check) while actually being slightly undercollateralized.</p>
+  <p><strong>Impact:</strong> Minor: users can mint fractionally more stablecoins than the 150% ratio should allow.</p>
+  <p><strong>Recommendation:</strong> Multiply by a larger precision factor before dividing, or rearrange the inequality to avoid division entirely: <code>btc_value * 100 >= stablecoin_amount * MINIMUM_COLLATERAL_RATIO</code>.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity low">L-02</span> No Withdrawal Function for Deposited Collateral</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> Users can deposit collateral and mint stablecoins, then burn stablecoins, but there is no function to withdraw excess collateral from a vault. Collateral is permanently locked once deposited.</p>
+  <p><strong>Impact:</strong> User funds are trapped in collateral vaults with no exit path, even after repaying all minted stablecoins.</p>
+  <p><strong>Recommendation:</strong> Add a <code>withdraw-collateral</code> function that allows withdrawal as long as the remaining ratio stays above <code>MINIMUM-COLLATERAL-RATIO</code>.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity info">I-01</span> Missing SIP-010 Trait — Not Composable</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> The stablecoin is tracked in a custom <code>stablecoin-balances</code> map rather than implementing the SIP-010 fungible token standard. It cannot be used in any other Stacks DeFi protocol, DEX, or wallet.</p>
+  <p><strong>Recommendation:</strong> Implement SIP-010 trait (<code>define-fungible-token</code> with <code>transfer</code>, <code>get-balance</code>, <code>get-total-supply</code>, etc.).</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity info">I-02</span> No Events Emitted for State Changes</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> No <code>print</code> events are emitted for deposits, mints, burns, LP operations, or price updates. Off-chain monitoring and indexing is impossible.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "deposit", ... })</code> to all state-changing functions.</p>
+</div>
+
+<h2>Architectural Issues</h2>
+<p>Beyond individual findings, this contract has fundamental architectural problems:</p>
+<ul>
+  <li><strong>No real asset layer:</strong> The entire system operates on phantom internal balances with no connection to real STX, BTC, or SIP-010 tokens. This makes the contract completely non-functional.</li>
+  <li><strong>Circular dependency:</strong> Minting requires LP pool balance, but LP pool needs stablecoins — which can only come from minting. The system can never bootstrap.</li>
+  <li><strong>No global LP tracking:</strong> Total LP token supply is not tracked globally. <code>remove-liquidity</code> divides by the user's own LP tokens, making the calculation self-referential.</li>
+  <li><strong>Missing core functions:</strong> No swap, no collateral withdrawal, no liquidation, no stablecoin transfer between users.</li>
+</ul>
+
+<h2>Recommendations</h2>
+<ol>
+  <li><strong>Use real token transfers.</strong> Replace internal balance maps with <code>stx-transfer?</code> and <code>define-fungible-token</code>. This is the single most important fix.</li>
+  <li><strong>Fix the sqrt function.</strong> Implement proper Babylonian method with iterative convergence. Test with known values.</li>
+  <li><strong>Decentralize the oracle.</strong> Use a multi-party price feed or integrate an existing Stacks oracle. At minimum, add price change limits and time delays.</li>
+  <li><strong>Implement liquidation.</strong> The LIQUIDATION-RATIO constant is defined but unused. Build the actual liquidation mechanism.</li>
+  <li><strong>Add swap functionality.</strong> The LP pool is useless without a swap function. Implement constant-product AMM.</li>
+  <li><strong>Track global LP supply.</strong> Use a data-var for total LP tokens to enable correct pro-rata calculations.</li>
+</ol>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Independent security audit — not affiliated with the project</p>
+</footer>
+
+</body>
+</html>

@@ -344,6 +344,13 @@ th { background: var(--surface); color: var(--text-muted); }
 </div>
 
 <div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stablecoin-bridge.html">BTC Stablecoin Bridge LP — Collateralized Stablecoin + AMM Pool</a></h3>
+  <p><code>promise-code/btc-stablecoin-bridge-lp</code> (btc-stablecoin-bridge.clar)</p>
+  <p>Bitcoin-backed stablecoin with integrated liquidity pool. Fatally flawed: the entire system runs on phantom internal balances with no real STX/BTC transfers — completely non-functional. Square root function returns x/2+1 instead of √x, inflating LP tokens by orders of magnitude. Owner-controlled oracle can crash or inflate all vault collateral ratios at will. No liquidation, no swap, no collateral withdrawal. 12 findings total (3 critical, 2 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-escrow.html">STX Escrow — Trustless P2P Escrow (3 Contracts)</a></h3>
   <p><code>serayd61/stx-escrow</code></p>
   <p>Three-contract escrow system with dispute arbitration and NFT swap support. The core STX escrow works, but the arbitration contract collects real STX (dispute fees, arbiter stakes) for a resolution system that cannot enforce outcomes. NFT contract has no NFT transfer mechanism — deposited STX has no path to completion. 14 findings total (3 critical, 3 high, 5 medium).</p>
