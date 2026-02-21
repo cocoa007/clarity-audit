@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StacksYield Elite Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory</a>
+  <a href="/clarity-audit/quests.html">Quests</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge</a>
+  <a href="/clarity-audit/dao-governance.html">DAO Governance</a>
+  <a href="/clarity-audit/stacksmint.html">StacksMint</a>
+  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace</a>
+  <a href="/clarity-audit/yield-elite.html" class="active">Yield Elite</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>StacksYield Elite — Multi-Tier Staking Protocol</h1>
+<p class="subtitle">
+  <a href="https://github.com/sienna-enzo/stacks-yield-elite">sienna-enzo/stacks-yield-elite</a> ·
+  Staking &amp; Yield Vault · February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">10</div><div class="label">Findings</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>StacksYield Elite is a multi-tier liquid staking protocol where users deposit STX and earn YIELD-ANALYTICS-TOKEN rewards. It features three tiers (Explorer, Pioneer, Titan) with escalating yield multipliers, time-lock bonuses up to 3x, a cooldown-based withdrawal mechanism, and an on-chain governance system with weighted voting.</p>
+
+<p>The contract is ~400 lines of Clarity in a single file. It handles real STX transfers, making the bugs especially consequential. <strong>The protocol is non-functional in its current state</strong> — staked funds cannot be withdrawn and rewards cannot be minted.</p>
+
+<h2>Findings</h2>
+
+<!-- CRITICAL-1 -->
+<div class="finding" style="border-left-color: var(--red);">
+<h3><span class="severity critical">CRITICAL</span> C-1: Complete Withdrawal Sends STX to Itself</h3>
+
+<p>The withdrawal function attempts to return STX to the user but sends it back to the contract:</p>
+
+<pre><code>(define-public (complete-withdrawal)
+  (let (
+      (stake-position (unwrap! (map-get? StakingPositions tx-sender) ERR-NO-STAKE))
+      (cooldown-start (unwrap! (get cooldown-initiated stake-position) ERR-NOT-AUTHORIZED))
+      (withdrawal-amount (get staked-amount stake-position))
+    )
+    ;; ...cooldown check...
+    (try! (as-contract (stx-transfer? withdrawal-amount tx-sender tx-sender)))
+    ;; ...cleanup...
+  )
+)</code></pre>
+
+<p>Inside <code>as-contract</code>, <strong>both</strong> occurrences of <code>tx-sender</code> resolve to the contract's own principal. The STX transfer goes from contract → contract. The user's position is deleted but they receive nothing.</p>
+
+<p><strong>Impact:</strong> All staked STX is permanently locked. No user can ever withdraw.</p>
+
+<p><strong>Fix:</strong> Capture the user's principal before entering <code>as-contract</code>:</p>
+<pre><code>(let ((user tx-sender))
+  ;; ...
+  (try! (as-contract (stx-transfer? withdrawal-amount tx-sender user)))
+)</code></pre>
+</div>
+
+<!-- CRITICAL-2 -->
+<div class="finding" style="border-left-color: var(--red);">
+<h3><span class="severity critical">CRITICAL</span> C-2: Stake Overwrites Instead of Accumulating</h3>
+
+<p>When a user stakes additional tokens, the staking position is overwritten rather than accumulated:</p>
+
+<pre><code>(map-set StakingPositions tx-sender {
+  staked-amount: amount,  ;; ← should be updated-stake-total
+  stake-start-block: stacks-block-height,
+  ...
+})</code></pre>
+
+<p>The <code>UserPositions</code> map correctly tracks <code>updated-stake-total</code>, but <code>StakingPositions</code> stores only the latest deposit. Previous deposits remain locked in the contract but are no longer tracked against the user.</p>
+
+<p><strong>Impact:</strong> Repeated staking silently orphans previously staked STX. A user staking 1M then 500K loses visibility of the first 1M — it's still in the contract but withdrawal can only recover 500K.</p>
+</div>
+
+<!-- HIGH-1 -->
+<div class="finding" style="border-left-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-1: Fungible Token Has Zero Max Supply</h3>
+
+<pre><code>(define-fungible-token YIELD-ANALYTICS-TOKEN u0)</code></pre>
+
+<p>The second argument to <code>define-fungible-token</code> is the maximum supply. With <code>u0</code>, the token has a max supply of zero. Every call to <code>ft-mint?</code> will fail because minting any amount exceeds the cap.</p>
+
+<p><strong>Impact:</strong> <code>claim-staking-rewards</code> always reverts. No rewards can ever be distributed. The entire yield mechanism is broken.</p>
+
+<p><strong>Fix:</strong> Either remove the supply cap or set a meaningful maximum: <code>(define-fungible-token YIELD-ANALYTICS-TOKEN)</code></p>
+</div>
+
+<!-- HIGH-2 -->
+<div class="finding" style="border-left-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-2: Yield Multiplier Overflow (Up to 90,000x)</h3>
+
+<pre><code>(let (
+    (final-yield-multiplier (* (get yield-multiplier tier-details) time-lock-multiplier))
+  )</code></pre>
+
+<p>Both <code>tier yield-multiplier</code> (up to 300 for Titan) and <code>time-lock-multiplier</code> (up to 300 for 120-day lock) are expressed in basis points where 100 = 1x. Multiplying them gives up to 90,000 — which is 900x, not 9x as intended.</p>
+
+<p><strong>Impact:</strong> Titan-tier users with 120-day locks get 900x yield multiplier instead of 9x. Reward calculation produces absurdly inflated values. (Moot currently due to H-1, but would be exploitable if the FT bug were fixed.)</p>
+
+<p><strong>Fix:</strong> <code>(/ (* tier-mult time-lock-mult) u100)</code></p>
+</div>
+
+<!-- HIGH-3 -->
+<div class="finding" style="border-left-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-3: Lock Duration Not Enforced on Withdrawal</h3>
+
+<p>Neither <code>initiate-withdrawal</code> nor <code>complete-withdrawal</code> checks whether the lock period has elapsed:</p>
+
+<pre><code>;; initiate-withdrawal checks:
+;; ✓ sufficient balance
+;; ✓ no existing cooldown
+;; ✓ not emergency mode
+;; ✗ lock-duration elapsed? — NOT CHECKED
+
+;; complete-withdrawal checks:
+;; ✓ cooldown period complete
+;; ✗ lock-duration elapsed? — NOT CHECKED</code></pre>
+
+<p><strong>Impact:</strong> A user can stake with a 120-day lock (receiving the maximum 3x yield multiplier) then immediately initiate withdrawal. They get the enhanced rewards without honoring the lock commitment. The time-lock incentive structure is meaningless.</p>
+</div>
+
+<!-- MEDIUM-1 -->
+<div class="finding" style="border-left-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-1: Governance Power Persists Through Cooldown</h3>
+
+<p><code>initiate-withdrawal</code> starts the cooldown but doesn't reduce governance power. During the entire cooldown period (2,160 blocks / ~36 hours), the user retains full voting weight despite having signaled their intent to exit. They can vote on proposals with power derived from stake they're withdrawing.</p>
+
+<p><strong>Impact:</strong> Exiting stakers retain governance influence during cooldown, allowing last-minute voting before withdrawal completes.</p>
+</div>
+
+<!-- MEDIUM-2 -->
+<div class="finding" style="border-left-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-2: Deposit-Only Economics — No Token Redemption</h3>
+
+<p>Users deposit real STX but earn YIELD-ANALYTICS-TOKEN. There is no mechanism to:</p>
+<ul>
+  <li>Redeem tokens for STX</li>
+  <li>Trade tokens on a DEX</li>
+  <li>Use tokens as collateral</li>
+  <li>Burn tokens for any value</li>
+</ul>
+
+<p>The yield token has no utility beyond governance voting weight (which is also calculated from STX stake, not token balance). The "yield" is entirely illusory — users get a number in a map but no recoverable value.</p>
+</div>
+
+<!-- MEDIUM-3 -->
+<div class="finding" style="border-left-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-3: Partial Withdrawal Amount Discarded</h3>
+
+<p><code>initiate-withdrawal</code> accepts a <code>withdrawal-amount</code> parameter and validates it against the staked balance, but never stores it. <code>complete-withdrawal</code> always withdraws the full <code>staked-amount</code>:</p>
+
+<pre><code>;; initiate-withdrawal: validates withdrawal-amount but only sets cooldown flag
+;; complete-withdrawal: reads staked-amount from position (ignores original request)</code></pre>
+
+<p><strong>Impact:</strong> Users cannot partially withdraw. The parameter creates a false expectation of partial withdrawal support. All-or-nothing withdrawals force users to fully exit and re-stake to reduce position size.</p>
+</div>
+
+<!-- LOW-1 -->
+<div class="finding" style="border-left-color: var(--blue);">
+<h3><span class="severity low">LOW</span> L-1: Tier Configuration Requires Manual Init</h3>
+
+<p><code>TierConfiguration</code> entries don't exist until the owner calls <code>initialize-protocol</code>. Staking works before initialization because <code>calculate-tier-assignment</code> uses hardcoded values — but the TierConfiguration map entries that governance or UI might query will return <code>none</code>.</p>
+
+<p>Additionally, <code>initialize-protocol</code> can be called multiple times, allowing the owner to silently change tier parameters.</p>
+</div>
+
+<!-- LOW-2 -->
+<div class="finding" style="border-left-color: var(--blue);">
+<h3><span class="severity low">LOW</span> L-2: Centralized Admin with No Timelock</h3>
+
+<p>The contract owner can:</p>
+<ul>
+  <li>Pause/unpause the entire protocol instantly</li>
+  <li>Change base yield from 1% to 20% with no delay</li>
+  <li>Modify minimum stake requirements</li>
+  <li>Re-initialize tier configurations</li>
+</ul>
+
+<p>None of these actions require governance approval or have a timelock delay. The governance system exists but has no power over protocol parameters — it's purely advisory.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+
+<table>
+<tr><th>Aspect</th><th>Assessment</th></tr>
+<tr><td>STX Custody</td><td><span class="severity critical">BROKEN</span> Funds go in but can't come out (C-1)</td></tr>
+<tr><td>Reward Distribution</td><td><span class="severity high">BROKEN</span> Zero-supply FT blocks all minting (H-1)</td></tr>
+<tr><td>Staking Accounting</td><td><span class="severity critical">BROKEN</span> Overwrites lose track of deposits (C-2)</td></tr>
+<tr><td>Time-Lock Enforcement</td><td><span class="severity high">BROKEN</span> Never checked on withdrawal (H-3)</td></tr>
+<tr><td>Governance System</td><td><span class="severity medium">WEAK</span> Functional voting but no execution power</td></tr>
+<tr><td>Tier System</td><td><span class="severity low">OK</span> Hardcoded fallback works but map is decorative</td></tr>
+<tr><td>Access Control</td><td><span class="severity low">CENTRALIZED</span> Owner has full unilateral control</td></tr>
+</table>
+
+<h2>Verdict</h2>
+
+<p>StacksYield Elite is <strong>non-functional as deployed</strong>. The two critical bugs (self-transfer withdrawal, stake overwrite) mean funds deposited into this contract cannot be recovered. The zero-supply fungible token means no rewards can be distributed. The time-lock system provides yield bonuses but doesn't enforce the lock.</p>
+
+<p>The governance system is the most complete subsystem — proposal creation, weighted voting, and double-vote prevention all work correctly. But governance has no teeth: it can't modify protocol parameters or execute any on-chain actions.</p>
+
+<p>The core pattern here is a contract that looks sophisticated on the surface (tiers, multipliers, governance, cooldowns) but fails at the fundamental operations: <strong>depositing correctly</strong>, <strong>withdrawing at all</strong>, and <strong>distributing rewards</strong>.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕ · February 21, 2026</p>
+</footer>
+
+</body>
+</html>

@@ -197,6 +197,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/dao-governance.html">DAO Governance Audit</a>
   <a href="/clarity-audit/stacksmint.html">StacksMint Audit</a>
   <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Audit</a>
+  <a href="/clarity-audit/yield-elite.html">Yield Elite Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -205,7 +206,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">14</div>
+    <div class="num">15</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -213,11 +214,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">77</div>
+    <div class="num">87</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">16</div>
+    <div class="num">18</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -267,6 +268,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stacksmint.html">StacksMint — Token Factory &amp; Registry</a></h3>
   <p><code>StacksMint/StacksMintContract</code> (registry + token template)</p>
   <p>Two-contract token launchpad: a SIP-010 template for forking and a shared on-chain registry. The registry cannot verify ownership or metadata of registered tokens — anyone can register any contract principal with fake data, enabling impersonation and front-running attacks. 10 findings total (1 critical, 2 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/yield-elite.html">StacksYield Elite — Multi-Tier Staking Protocol</a></h3>
+  <p><code>sienna-enzo/stacks-yield-elite</code></p>
+  <p>Multi-tier liquid staking protocol with governance, time-lock bonuses, and tiered yield multipliers. Withdrawal function sends STX back to the contract instead of the user (permanent fund lock). Stake function overwrites positions instead of accumulating. Fungible token defined with zero max supply — no rewards can ever mint. 10 findings total (2 critical, 3 high, 3 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
