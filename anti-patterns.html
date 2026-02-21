@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Clarity Anti-Patterns That Kill Smart Contracts — Clarity Audit Notes</title>
+<meta name="description" content="The most common Clarity smart contract anti-patterns found across 16 audits and 170+ issues. Real code examples, real bugs, real fixes.">
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.pattern { background: var(--surface); border-left: 3px solid var(--red); border-radius: 0 8px 8px 0; padding: 1.25rem; margin: 1rem 0; }
+.pattern.warn { border-left-color: var(--yellow); }
+.pattern.info { border-left-color: var(--blue); }
+.pattern h3 { margin-top: 0; color: var(--accent); }
+.fix { background: #0d2818; border: 1px solid #1a4d2e; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+.fix::before { content: "✅ Fix: "; font-weight: 600; color: var(--green); }
+.counter { display: inline-block; background: var(--red); color: #fff; border-radius: 50%; width: 1.6rem; height: 1.6rem; text-align: center; line-height: 1.6rem; font-size: 0.8rem; font-weight: 700; margin-right: 0.5rem; }
+.counter.warn { background: var(--yellow); color: #000; }
+.counter.info { background: var(--blue); color: #000; }
+.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.toc ul { list-style: none; padding-left: 0; }
+.toc li { margin-bottom: 0.4rem; }
+.toc li::before { content: "→ "; color: var(--text-muted); }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; } .nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .number { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 0.8rem; color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.comment { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html" class="active">Anti-Patterns</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sbtcmarket.html">sBTC Market</a>
+  <a href="/clarity-audit/dao-governance.html">DAO Governance</a>
+</nav>
+
+<h1>7 Clarity Anti-Patterns That Kill Smart Contracts</h1>
+<p class="subtitle">Lessons from 16 audits and 170+ findings on Stacks</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="number">16</div><div class="label">contracts audited</div></div>
+  <div class="stat-card"><div class="number">170+</div><div class="label">issues found</div></div>
+  <div class="stat-card"><div class="number">7</div><div class="label">recurring patterns</div></div>
+  <div class="stat-card"><div class="number">40+</div><div class="label">critical bugs</div></div>
+</div>
+
+<p>After auditing 16 Clarity smart contracts on Stacks, clear patterns emerge. The same mistakes show up again and again — sometimes subtle, sometimes devastating, always preventable. This post documents the 7 most common anti-patterns we found, with real code from real audits.</p>
+
+<div class="toc">
+  <strong>Table of Contents</strong>
+  <ul>
+    <li><a href="#as-contract">1. The <code>as-contract</code> / <code>tx-sender</code> Rebind</a> — the #1 killer</li>
+    <li><a href="#missing-transfers">2. Missing Actual Transfers</a> — bookkeeping without money</li>
+    <li><a href="#overflow">3. Integer Overflow & Underflow</a> — uint math gone wrong</li>
+    <li><a href="#access-control">4. Access Control Gaps</a> — anyone can be admin</li>
+    <li><a href="#disconnected">5. Disconnected Multi-Contract Systems</a> — islands pretending to be a bridge</li>
+    <li><a href="#zero-supply">6. <code>define-fungible-token</code> with Zero Max Supply</a> — tokens that can't exist</li>
+    <li><a href="#shadowing">7. Shadowing Builtins</a> — infinite recursion by accident</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="as-contract"><span class="counter">1</span> The <code>as-contract</code> / <code>tx-sender</code> Rebind</h2>
+
+<p><strong>Frequency:</strong> Found in 3+ audits. This is the single most common critical bug in Clarity contracts.</p>
+
+<p>Inside an <code>as-contract</code> block, <code>tx-sender</code> rebinds to the <em>contract's own principal</em>. Developers who don't know this write transfer code that either sends funds to the wrong place or does nothing at all.</p>
+
+<div class="pattern">
+<h3>Pattern A: The Self-Transfer No-Op</h3>
+<p>From a P2P lending contract — every outbound transfer was broken:</p>
+<pre><code><span class="comment">;; ❌ BROKEN: transfers from contract → contract (no-op)</span>
+(as-contract (stx-transfer? amount tx-sender tx-sender))</code></pre>
+<p>The developer intended <code>tx-sender</code> to mean "the user who called this function." But inside <code>as-contract</code>, both the sender and recipient resolve to the contract itself. Every withdrawal, loan disbursement, collateral return, and liquidation payout was silently doing nothing. Five critical functions — all dead:</p>
+<ul>
+  <li><code>withdraw-funds</code> — lenders could never withdraw deposits</li>
+  <li><code>borrow</code> — borrowers posted collateral but never received loans</li>
+  <li><code>repay</code> — borrowers repaid debt but collateral was never returned</li>
+  <li><code>liquidate</code> — liquidators paid debt but got no collateral</li>
+  <li><code>withdraw-collateral</code> — collateral permanently locked</li>
+</ul>
+</div>
+
+<div class="pattern">
+<h3>Pattern B: The Wrong-Sender Transfer</h3>
+<p>From a multisig wallet — deposits went to the owner, not the contract:</p>
+<pre><code><span class="comment">;; ❌ BROKEN: deposits go to CONTRACT-OWNER's personal address</span>
+(try! (stx-transfer? amount tx-sender CONTRACT-OWNER))
+
+<span class="comment">;; ❌ BROKEN: execution pulls from the executor's own balance</span>
+(try! (stx-transfer? (get amount tx) tx-sender (get to tx)))</code></pre>
+<p>The contract never held any funds. The entire multisig approval process was theater — the owner personally funded every transfer at execution time.</p>
+</div>
+
+<div class="pattern">
+<h3>Pattern C: The Stake-to-Owner Funnel</h3>
+<p>From a bug bounty platform:</p>
+<pre><code><span class="comment">;; Nominally "burns" forfeited stakes, actually sends to owner</span>
+(define-private (burn-stake (amount uint))
+    (as-contract (stx-transfer? amount tx-sender CONTRACT-OWNER))
+)</code></pre>
+<p>Inside <code>as-contract</code>, <code>tx-sender</code> correctly refers to the contract (the holder of the stakes). But the "burn" function sends to the contract owner, creating a perverse incentive: the owner profits from rejected reports.</p>
+</div>
+
+<div class="fix">
+Capture <code>tx-sender</code> in a <code>let</code> binding <strong>before</strong> entering <code>as-contract</code>:
+<pre><code><span class="comment">;; ✅ CORRECT: capture the caller, then use as-contract for the contract's authority</span>
+(let ((caller tx-sender))
+  (as-contract (stx-transfer? amount tx-sender caller))
+)</code></pre>
+<p>Inside the <code>as-contract</code> block, <code>tx-sender</code> is the contract (the sender), and <code>caller</code> is the original user (the recipient). This is the correct pattern for every outbound transfer from a contract.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="missing-transfers"><span class="counter">2</span> Missing Actual Transfers</h2>
+
+<p><strong>Frequency:</strong> Found in 4+ audits. Contracts that track balances in maps but never move real assets.</p>
+
+<p>This is subtler than the <code>as-contract</code> bug. The contract does real accounting — incrementing balances, tracking deposits, computing rewards — but never calls <code>stx-transfer?</code> or <code>ft-transfer?</code>. It's a ledger with no bank.</p>
+
+<div class="pattern">
+<h3>Bounties Calculated, Never Paid</h3>
+<p>From a bug bounty platform:</p>
+<pre><code><span class="comment">;; Bounty is computed and recorded...</span>
+(var-set total-bounties-paid (+ (var-get total-bounties-paid) final-bounty))
+
+<span class="comment">;; Stakes are returned (this works)...</span>
+(try! (return-stake reporter staked))
+
+<span class="comment">;; But where's the stx-transfer? for the bounty itself?</span>
+<span class="comment">;; Nowhere. It doesn't exist.</span></code></pre>
+<p>The contract tracked <code>total-bounties-paid</code> in a data variable. The number went up. But no STX ever moved. The entire economic incentive of the platform was cosmetic.</p>
+</div>
+
+<div class="pattern">
+<h3>Bridge Records Transfers, Never Executes Them</h3>
+<p>From a cross-chain bridge contract:</p>
+<pre><code><span class="comment">;; initiate-transfer records the request in a map...</span>
+(map-set transfer-requests request-id { 
+  sender: tx-sender, amount: amount, status: STATUS-PENDING })
+
+<span class="comment">;; AI risk assessment approves it...</span>
+(map-set transfer-requests request-id 
+  (merge request { status: STATUS-APPROVED }))
+
+<span class="comment">;; But there's no function that actually calls stx-transfer?</span>
+<span class="comment">;; Approved transfers have no on-chain effect.</span></code></pre>
+<p>The bridge had risk scoring, multi-agent validation, daily volume limits — an entire security apparatus protecting transfers that never happen.</p>
+</div>
+
+<div class="pattern">
+<h3>NFT Sale Completes Without NFT Transfer</h3>
+<p>From a social platform with NFT marketplace features:</p>
+<pre><code><span class="comment">;; buy-nft records the sale in history, marks listing inactive</span>
+<span class="comment">;; buyer's STX is transferred to seller ✓</span>
+<span class="comment">;; but the NFT itself? Never transferred.</span>
+<span class="comment">;; The buyer pays and receives nothing.</span></code></pre>
+</div>
+
+<div class="fix">
+For every state change that represents value movement, grep your contract for the corresponding <code>stx-transfer?</code>, <code>ft-transfer?</code>, or <code>nft-transfer?</code> call. If the transfer exists only in comments or variable names but not as an actual function call, the contract is broken. Every balance change in a map must correspond to a real token operation.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="overflow"><span class="counter">3</span> Integer Overflow & Underflow</h2>
+
+<p><strong>Frequency:</strong> Found in 5+ audits. Clarity uses unsigned 128-bit integers — no negative numbers, and overflow/underflow causes runtime aborts or wrapping.</p>
+
+<div class="pattern">
+<h3>Underflow Wrapping: Signer Count Goes to Max-Uint</h3>
+<p>From a multisig wallet:</p>
+<pre><code><span class="comment">;; ❌ No check if signer actually exists before decrementing</span>
+(var-set signer-count (- (var-get signer-count) u1))</code></pre>
+<p>If <code>remove-signer</code> is called for a non-existent signer, the count underflows. In Clarity, <code>u0 - u1</code> causes a runtime abort (not a wrap to max-uint), which would revert the transaction. But the deeper issue is: there's no check that the signer exists at all, so the <em>intent</em> was clearly wrong.</p>
+</div>
+
+<div class="pattern">
+<h3>Refund Underflow Blocks All Refunds</h3>
+<p>From an AMM prediction market:</p>
+<pre><code><span class="comment">;; Refund calculates: user's original shares minus shares they traded</span>
+<span class="comment">;; But after swaps, traded shares can exceed original deposit</span>
+<span class="comment">;; Result: underflow → transaction aborts → no refund possible</span></code></pre>
+<p>Users who traded in the AMM could never get refunds if the market was cancelled, because the refund calculation assumed shares only decreased — ignoring that AMM swaps could redistribute shares.</p>
+</div>
+
+<div class="pattern">
+<h3>Multiplication Overflow in AMM Math</h3>
+<p>From the same prediction market:</p>
+<pre><code><span class="comment">;; mul-down: fixed-point multiplication</span>
+<span class="comment">;; If a * b overflows u128, the function returns max-uint</span>
+<span class="comment">;; instead of aborting — silently corrupting all AMM pricing</span></code></pre>
+<p>The <code>mul-down</code> helper was designed to handle overflow "gracefully" by returning <code>u340282366920938463463374607431768211455</code> (max uint128). But this doesn't fail — it returns a garbage value that propagates through every subsequent calculation, making trades execute at wildly wrong prices.</p>
+</div>
+
+<div class="pattern warn">
+<h3>Division Truncation Locks Dust</h3>
+<p>From interest calculations and fee computations across multiple contracts:</p>
+<pre><code><span class="comment">;; Interest calculation: rounds down for small amounts</span>
+(/ (* amount (* rate blocks-elapsed)) u10000)
+
+<span class="comment">;; For small loans or short durations: result is 0</span>
+<span class="comment">;; Borrower pays zero interest</span></code></pre>
+<p>Integer division in Clarity always truncates toward zero. This means small amounts vanish (fees round to zero, interest disappears) and remainders accumulate in the contract as permanently locked dust.</p>
+</div>
+
+<div class="fix">
+<ul>
+  <li>Always check for underflow before subtraction: <code>(asserts! (>= a b) ERR-UNDERFLOW)</code></li>
+  <li>For multiplication, check that the result divided by one operand equals the other: <code>(asserts! (is-eq (/ result b) a) ERR-OVERFLOW)</code></li>
+  <li>For division-sensitive math, multiply first, divide last, and consider using a higher precision intermediate representation</li>
+  <li>Never silently return a default on overflow — always abort</li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="access-control"><span class="counter">4</span> Access Control Gaps</h2>
+
+<p><strong>Frequency:</strong> Found in nearly every audit. The most common sub-patterns:</p>
+
+<div class="pattern">
+<h3>Anyone Can Call Admin Functions</h3>
+<p>From a prediction market — the most dangerous instance:</p>
+<pre><code><span class="comment">;; ❌ mock-resolve-market: no authorization check at all</span>
+<span class="comment">;; Anyone can call this to resolve any market in their favor</span>
+<span class="comment">;; and drain the entire vault</span></code></pre>
+<p>A market resolution function with no access control. Any user could declare themselves the winner and claim all funds.</p>
+</div>
+
+<div class="pattern">
+<h3>Anyone Can Cancel</h3>
+<p>From a jackpot contract:</p>
+<pre><code>(define-public (cancel-pot (pot-contract &lt;stackspot-trait&gt;))
+  <span class="comment">;; No check on tx-sender at all</span>
+  <span class="comment">;; Anyone can cancel any active pot</span>
+  ...
+)</code></pre>
+</div>
+
+<div class="pattern warn">
+<h3>Immutable Owner, No Transfer</h3>
+<p>Found in 6+ contracts — the owner is a deploy-time constant with no transfer mechanism:</p>
+<pre><code>(define-constant contract-owner tx-sender)
+
+<span class="comment">;; No set-owner, no transfer-ownership, no accept-ownership</span>
+<span class="comment">;; If this key is compromised → game over, forever</span>
+<span class="comment">;; If this key is lost → admin functions locked, forever</span></code></pre>
+</div>
+
+<div class="fix">
+<ul>
+  <li>Every public function that modifies state should have an explicit authorization check</li>
+  <li>Use a two-step ownership transfer pattern (propose + accept) to prevent transferring to an invalid address</li>
+  <li>Consider timelocks for sensitive admin operations</li>
+  <li>Use <code>contract-caller</code> instead of <code>tx-sender</code> for authorization when you want to prevent proxy/intermediary contract attacks</li>
+</ul>
+<pre><code><span class="comment">;; ✅ Two-step ownership transfer</span>
+(define-data-var owner principal tx-sender)
+(define-data-var pending-owner (optional principal) none)
+
+(define-public (propose-owner (new-owner principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get owner)) ERR-NOT-AUTHORIZED)
+    (var-set pending-owner (some new-owner))
+    (ok true)))
+
+(define-public (accept-ownership)
+  (begin
+    (asserts! (is-eq (some tx-sender) (var-get pending-owner)) ERR-NOT-AUTHORIZED)
+    (var-set owner tx-sender)
+    (var-set pending-owner none)
+    (ok true)))</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="disconnected"><span class="counter info">5</span> Disconnected Multi-Contract Systems</h2>
+
+<p><strong>Frequency:</strong> Found in 3+ audits. Multi-contract architectures where the contracts reference each other in comments but not in code.</p>
+
+<div class="pattern info">
+<h3>The Island Archipelago</h3>
+<p>From a DAO governance system with 5 contracts (voting-escrow, proposal-manager, governance-token, timelock, treasury):</p>
+<pre><code><span class="comment">;; proposal-manager.clar</span>
+(define-public (vote (proposal-id uint) (support bool))
+  (let (
+    (voter-power u1000000)  <span class="comment">;; ← hardcoded! Should call governance-token</span>
+  )
+  ...))
+
+<span class="comment">;; Timelock is owner-only (not connected to proposals)</span>
+<span class="comment">;; Treasury is independent of governance approval</span>
+<span class="comment">;; Voting escrow can't create locks (see: shadowing bug)</span></code></pre>
+<p>Five contracts that looked like a sophisticated DAO. In reality: the proposal manager never queried the governance token for voting power (hardcoded <code>u1000000</code> per voter). The timelock could only be triggered by the owner, not by passed proposals. The treasury had no connection to governance votes. Each contract was an island.</p>
+</div>
+
+<div class="pattern info">
+<h3>Storage Reference Mismatch</h3>
+<p>From a social platform:</p>
+<pre><code><span class="comment">;; Constant says one thing:</span>
+(define-constant STORAGE-CONTRACT .storage-v3)
+
+<span class="comment">;; Data variable says another:</span>
+(define-data-var storage-contract principal
+  'STPC6F6C2M7QAXPW66XW4Q0AGXX9HGAX6525RMF8.storage-v3)
+
+<span class="comment">;; Actual calls use the constant directly, making the variable dead code</span></code></pre>
+</div>
+
+<div class="fix">
+<ul>
+  <li>Every cross-contract dependency should be an actual <code>contract-call?</code>, not a comment</li>
+  <li>Write integration tests that exercise the full flow across all contracts</li>
+  <li>If contract A's security depends on contract B enforcing an invariant, verify that B actually enforces it</li>
+  <li>Use traits to define the interface contract, ensuring compile-time verification of cross-contract calls</li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="zero-supply"><span class="counter">6</span> <code>define-fungible-token</code> with Zero Max Supply</h2>
+
+<p><strong>Frequency:</strong> Found in 1 audit, but it's a total system kill.</p>
+
+<div class="pattern">
+<h3>Tokens That Can Never Exist</h3>
+<p>From a yield staking platform:</p>
+<pre><code><span class="comment">;; ❌ Max supply = 0. ft-mint? will ALWAYS fail.</span>
+(define-fungible-token YIELD-ANALYTICS-TOKEN u0)</code></pre>
+<p>The second argument to <code>define-fungible-token</code> is the maximum supply. Setting it to <code>u0</code> means zero tokens can ever be minted. The entire reward system — staking, yield calculation, tier multipliers, lock durations — all of it feeds into a mint that always fails.</p>
+<p>The contract had 300+ lines of staking logic, yield multipliers up to 90,000x, governance power calculations — all computing rewards for a token that cannot exist.</p>
+</div>
+
+<div class="fix">
+Either omit the max supply argument (for unlimited supply) or set it to a meaningful cap:
+<pre><code><span class="comment">;; ✅ No cap (unlimited minting, controlled by logic)</span>
+(define-fungible-token MY-TOKEN)
+
+<span class="comment">;; ✅ Explicit cap</span>
+(define-fungible-token MY-TOKEN u1000000000000)</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="shadowing"><span class="counter">7</span> Shadowing Builtins</h2>
+
+<p><strong>Frequency:</strong> Found in 1 audit, but the impact is total contract death.</p>
+
+<div class="pattern">
+<h3>Infinite Recursion by Accident</h3>
+<p>From a DAO's voting escrow contract:</p>
+<pre><code>(define-private (to-int (value uint))
+  (if (&lt; value u9223372036854775807)
+    (to-int value)   <span class="comment">;; ← calls ITSELF, not the built-in to-int</span>
+    0))</code></pre>
+<p>The developer defined a helper called <code>to-int</code> — the same name as the Clarity built-in that converts <code>uint</code> to <code>int</code>. In Clarity, user-defined functions shadow builtins. So the recursive call to <code>to-int</code> calls the user's function, not the builtin, creating infinite recursion.</p>
+<p>Every function that called <code>checkpoint</code> (which called <code>to-int</code>) would hit the runtime recursion limit and abort. This meant: <strong>no locks could be created, no amounts could be increased, no unlock times could be extended</strong>. The entire voting escrow — the centerpiece of the DAO — was dead on arrival.</p>
+</div>
+
+<div class="fix">
+<ul>
+  <li>Never name your functions the same as Clarity builtins (<code>to-int</code>, <code>to-uint</code>, <code>not</code>, <code>and</code>, <code>or</code>, <code>map</code>, <code>filter</code>, <code>fold</code>, <code>len</code>, etc.)</li>
+  <li>Use descriptive prefixes: <code>safe-to-int</code>, <code>checked-to-int</code>, <code>uint-to-int</code></li>
+  <li>If you must wrap a builtin, reference it differently:</li>
+</ul>
+<pre><code><span class="comment">;; ✅ Different name, no shadowing</span>
+(define-private (safe-to-int (value uint))
+  (if (&lt; value u9223372036854775807)
+    (to-int value)   <span class="comment">;; ← now calls the REAL built-in</span>
+    0))</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2>The Bigger Picture</h2>
+
+<p>These 7 patterns account for the majority of critical and high-severity findings across 16 audits. Some observations:</p>
+
+<ul>
+  <li><strong>The <code>as-contract</code> rebind (#1) and missing transfers (#2) are the most dangerous</strong> because they silently succeed. The transaction doesn't abort — it just doesn't do what you think. Users see "success" while their funds are locked or lost.</li>
+  <li><strong>Overflow/underflow (#3) at least fails loudly</strong> in most cases (Clarity aborts on uint underflow). The exception is when contracts catch the error and return a default — like the AMM returning max-uint on overflow.</li>
+  <li><strong>Access control (#4) is the most common</strong> but often the easiest to fix — a single <code>asserts!</code> line.</li>
+  <li><strong>Disconnected systems (#5) reveal a design problem</strong>, not just a code bug. No amount of per-function fixes will help if the contracts don't actually talk to each other.</li>
+  <li><strong>Zero supply (#6) and shadowing (#7) are rare but total kills</strong> — they render entire contracts non-functional with a single line.</li>
+</ul>
+
+<p>The common thread: <strong>Clarity's safety features (no reentrancy, atomic transactions, no implicit conversions) don't protect you from logic errors.</strong> The language prevents entire classes of EVM bugs, but it can't stop you from transferring to the wrong address, forgetting to transfer at all, or naming your function the same as a builtin.</p>
+
+<p>Test your contracts. Audit your contracts. And check for these 7 patterns first.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a></p>
+  <p>cocoa007 · Clarity Audit Notes · 2025</p>
+</footer>
+
+</body>
+</html>
