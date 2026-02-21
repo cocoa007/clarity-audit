@@ -127,7 +127,7 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
     (var-set owner tx-sender)  ;; Attacker becomes owner
     ...</code></pre>
 <p><strong>Impact:</strong> Complete contract takeover. Any STX or tokens deposited after deployment can be drained by the attacker via <code>withdraw-stx</code> or <code>withdraw-token</code>. The intended owner has no recourse.</p>
-<p><strong>Recommendation:</strong> Set <code>owner</code> to <code>tx-sender</code> at contract deployment time (as a constant or in the data-var initializer), and restrict <code>initialize</code> to only the deployer. Better yet, take all parameters at deploy time and remove the initialize pattern entirely.</p>
+<p><strong>Recommendation:</strong> Keep the initialize pattern but guard it properly: set <code>(define-constant deployer tx-sender)</code> at deploy time, then restrict <code>initialize</code> to only the deployer and ensure it can only be called once. This preserves deployment-agnostic code — the same audited contract can be reused across deployments and verified with Clarity 4's <code>contract-hash?</code>.</p>
 </div>
 
 <div class="finding">
@@ -258,7 +258,7 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 
 <h2>Architecture Notes</h2>
 <ul>
-  <li><strong>Initialization pattern:</strong> Uses a deploy-then-initialize two-step that is inherently vulnerable to front-running (C-01). The Clarity best practice is to use <code>define-constant</code> for the deployer and take constructor-like parameters at deploy time.</li>
+  <li><strong>Initialization pattern:</strong> Uses a deploy-then-initialize two-step that is vulnerable to front-running (C-01). The fix is to guard <code>initialize</code> with <code>(define-constant deployer tx-sender)</code> and a one-time flag — not to eliminate it. Keeping deployment-agnostic code means the same audited contract can be reused and verified via Clarity 4's <code>contract-hash?</code>.</li>
   <li><strong>As-contract usage:</strong> The contract correctly uses <code>as-contract</code> for custody transfers. It wraps outbound STX and token transfers in <code>as-contract</code> blocks, which is the right pattern for a custodial contract. However, it should migrate to Clarity 4's <code>as-contract?</code> with explicit asset allowances.</li>
   <li><strong>Trait definition:</strong> The contract defines its own <code>sip-010-trait</code> inline instead of importing the canonical SIP-010 trait. This works but means the trait signature may drift from the standard.</li>
   <li><strong>Multi-chain approach:</strong> The repo includes Solidity and Miniscript versions alongside Clarity, showing serious intent to deploy across chains. The Clarity version is the most feature-complete.</li>
@@ -266,7 +266,7 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 
 <h2>Recommendations Summary</h2>
 <ol>
-  <li><strong>[CRITICAL]</strong> Replace the initialize pattern with deploy-time initialization using <code>define-constant contract-owner tx-sender</code></li>
+  <li><strong>[CRITICAL]</strong> Guard <code>initialize</code> with <code>(define-constant deployer tx-sender)</code> + one-time flag — keeps code deployment-agnostic and verifiable via <code>contract-hash?</code></li>
   <li><strong>[CRITICAL]</strong> Remove or redesign the UTXO contract — it cannot compile</li>
   <li><strong>[HIGH]</strong> Add expiry checks to all owner functions — the owner must be locked out once the switch triggers</li>
   <li><strong>[HIGH]</strong> Enforce the token allowlist in <code>withdraw-token</code> and <code>claim-token</code></li>
