@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReguGuard Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory</a>
+  <a href="/clarity-audit/quests.html">Quests</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge</a>
+  <a href="/clarity-audit/dao-governance.html">DAO Governance</a>
+  <a href="/clarity-audit/stacksmint.html">StacksMint</a>
+  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace</a>
+  <a href="/clarity-audit/yield-elite.html">Yield Elite</a>
+  <a href="/clarity-audit/stx-escrow.html">STX Escrow</a>
+  <a href="/clarity-audit/crowdfund.html">Crowdfund</a>
+  <a href="/clarity-audit/reguguard.html" class="active">ReguGuard</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>ReguGuard — Regulatory Document Management & Impact Analysis</h1>
+<p class="subtitle">
+  <a href="https://github.com/Egidigbi25/ReguGuard">Egidigbi25/ReguGuard</a> ·
+  Regulatory Compliance / Document Lifecycle · February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Contract</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">378</div>
+    <div class="label">Lines of Clarity</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">10</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">0</div>
+    <div class="label">Critical</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>ReguGuard is a regulatory document summarization and impact analysis system. It implements a document lifecycle (submit → summarize → review → approve/reject/dispute) with role-based access control for AI agents and human auditors. It also includes on-chain complexity analysis and predictive regulatory impact scoring.</p>
+
+<p>This is a <strong>non-financial contract</strong> — no tokens are transferred, no value is at stake. The risks are centered on <strong>data integrity</strong> and <strong>governance centralization</strong>.</p>
+
+<h3>Roles</h3>
+<ul>
+  <li><strong>Contract Owner:</strong> Root admin — manages agent/auditor whitelists, resolves disputes</li>
+  <li><strong>Authorized AI Agents:</strong> Submit summaries, complexity analyses, and impact predictions</li>
+  <li><strong>Authorized Auditors:</strong> Review summaries, raise disputes</li>
+  <li><strong>Submitters:</strong> Anyone can submit document hashes</li>
+</ul>
+
+<h3>Document Lifecycle</h3>
+<pre><code>Submitted (u0) → Summarized (u1) → Reviewed (u2*) → Approved (u3)
+                                                    → Rejected (u4) → back to Summarized
+                                   → Disputed (u5) → Approved or Rejected
+
+* status-reviewed (u2) is defined but never used</code></pre>
+
+<h2>Findings</h2>
+
+<h3><span class="severity high">HIGH</span> H-1: Centralized Single-Point-of-Failure Admin</h3>
+<div class="finding">
+<p><strong>All admin functions</strong></p>
+<p>The <code>contract-owner</code> is set to <code>tx-sender</code> at deployment and is immutable. No ownership transfer, no multisig, no timelock. If the deployer key is compromised, an attacker controls the entire system: whitelisting/removing agents and auditors, resolving all disputes unilaterally.</p>
+<p><strong>Impact:</strong> Complete system takeover via single key compromise.</p>
+<p><strong>Fix:</strong> Add a two-step ownership transfer function. Consider multisig or DAO-based admin for dispute resolution.</p>
+</div>
+
+<h3><span class="severity high">HIGH</span> H-2: Dispute Can Overwrite Active Review Without Status Check</h3>
+<div class="finding">
+<p><strong><code>dispute-prediction</code></strong></p>
+<p>The function does not check the current document status before setting it to <code>status-disputed</code>. An auditor can dispute a document that is <code>status-submitted</code> (before any summary exists), <code>status-rejected</code>, or already <code>status-disputed</code>.</p>
+<pre><code>;; No status check — disputes allowed at any stage
+(define-public (dispute-prediction (doc-id uint) (reason-hash (buff 32)))
+    (begin
+        (asserts! (is-authorized-auditor tx-sender) err-unauthorized-auditor)
+        (asserts! (is-some (map-get? documents doc-id)) err-not-found)
+        ;; Missing: (asserts! (or (is-eq status status-summarized) 
+        ;;                        (is-eq status status-approved)) ...)
+        (map-set disputes doc-id { ... })
+        (update-doc-status doc-id status-disputed)
+        (ok true)))</code></pre>
+<p><strong>Impact:</strong> Document status can be forced to "disputed" at any stage, blocking normal workflow or overwriting valid approvals.</p>
+<p><strong>Fix:</strong> Restrict disputes to documents with <code>status-summarized</code> or <code>status-approved</code> status.</p>
+</div>
+
+<h3><span class="severity high">HIGH</span> H-3: Review Skips Status Check — Can Approve Stale Summaries</h3>
+<div class="finding">
+<p><strong><code>review-summary</code></strong></p>
+<p>The function checks that a summary map entry exists but doesn't verify the document is in <code>status-summarized</code> state. If a document was rejected and re-submitted, the old summary entry persists — an auditor can approve based on the outdated summary.</p>
+<pre><code>;; Only checks existence, not current status
+(asserts! (is-some (map-get? summaries doc-id)) err-not-found)
+;; Missing: (asserts! (is-eq (get-doc-status doc-id) status-summarized) ...)</code></pre>
+<p><strong>Impact:</strong> Auditors can approve documents based on outdated/stale summaries after re-submission.</p>
+<p><strong>Fix:</strong> Add <code>(asserts! (is-eq (get-doc-status doc-id) status-summarized) err-invalid-status-transition)</code>.</p>
+</div>
+
+<h3><span class="severity medium">MEDIUM</span> M-1: Single Summary Per Document — Last-Write-Wins</h3>
+<div class="finding">
+<p><strong><code>summaries</code> map</strong></p>
+<p>The map is keyed only by <code>doc-id</code>. Multiple agent submissions silently overwrite each other. The <code>version</code> field is agent-supplied and not validated — can be set to any value or go backwards.</p>
+<p><strong>Impact:</strong> No audit trail of previous summaries. A malicious agent could overwrite a good summary just before review.</p>
+<p><strong>Fix:</strong> Key by <code>{doc-id, version}</code> with auto-incrementing version, or <code>{doc-id, agent}</code>.</p>
+</div>
+
+<h3><span class="severity medium">MEDIUM</span> M-2: Single Review Per Document — No Multi-Auditor Support</h3>
+<div class="finding">
+<p><strong><code>reviews</code> map</strong></p>
+<p>Keyed only by <code>doc-id</code>. A second auditor's review overwrites the first with no history. No consensus mechanism among auditors.</p>
+<p><strong>Impact:</strong> A single compromised auditor can approve anything.</p>
+<p><strong>Fix:</strong> Key by <code>{doc-id, auditor}</code> and require N-of-M approvals for critical documents.</p>
+</div>
+
+<h3><span class="severity medium">MEDIUM</span> M-3: Single Dispute Per Document — Overwritable</h3>
+<div class="finding">
+<p><strong><code>disputes</code> map</strong></p>
+<p>Keyed by <code>doc-id</code> only. A new dispute silently overwrites any existing (even unresolved) dispute, destroying evidence.</p>
+<p><strong>Impact:</strong> Dispute evidence can be silently replaced by another auditor.</p>
+<p><strong>Fix:</strong> Use a dispute counter and key by <code>{doc-id, dispute-id}</code>.</p>
+</div>
+
+<h3><span class="severity medium">MEDIUM</span> M-4: Complexity Analysis Has No Status Guard</h3>
+<div class="finding">
+<p><strong><code>analyze-complexity</code></strong></p>
+<p>Can be called on any document regardless of lifecycle status — even before a summary exists or after approval. Results are overwritable and not tied to a specific summary version.</p>
+<p><strong>Impact:</strong> Complexity scores may not correspond to the actual summary that was reviewed.</p>
+<p><strong>Fix:</strong> Restrict to <code>status-summarized</code> documents. Tie score to summary version.</p>
+</div>
+
+<h3><span class="severity medium">MEDIUM</span> M-5: Impact Prediction Has No Status Guard</h3>
+<div class="finding">
+<p><strong><code>predict-regulatory-impact</code></strong></p>
+<p>Same as M-4. Predictions can be submitted at any lifecycle stage and overwritten at any time, including after final approval.</p>
+<p><strong>Impact:</strong> Post-facto modification of the on-chain record.</p>
+<p><strong>Fix:</strong> Restrict to appropriate lifecycle stages. Make predictions append-only.</p>
+</div>
+
+<h3><span class="severity low">LOW</span> L-1: <code>tx-sender</code> Throughout — No <code>contract-caller?</code></h3>
+<div class="finding">
+<p>All access control uses <code>tx-sender</code>. Acceptable for direct calls but limits composability in inter-contract scenarios.</p>
+</div>
+
+<h3><span class="severity low">LOW</span> L-2: No Event Emissions</h3>
+<div class="finding">
+<p>No <code>print</code> statements for any state changes. Makes off-chain indexing and monitoring difficult. The contract claims to provide an audit trail, but off-chain systems have no event stream to consume.</p>
+</div>
+
+<h2>Additional Observations</h2>
+
+<div class="finding">
+<p><span class="severity info">INFO</span> <strong>Unused <code>status-reviewed</code> constant:</strong> <code>status-reviewed</code> (u2) is defined but never used. The lifecycle jumps from <code>status-summarized</code> directly to <code>status-approved</code> or <code>status-rejected</code>.</p>
+</div>
+
+<div class="finding">
+<p><span class="severity info">INFO</span> <strong><code>get-doc-status</code> returns u0 for non-existent documents:</strong> Indistinguishable from a real submitted document. Should return optional or check existence.</p>
+</div>
+
+<div class="finding">
+<p><span class="severity info">INFO</span> <strong>Integer division precision loss in complexity scoring:</strong> <code>(/ (* base-score u100) (+ readability-index u1))</code> — for small inputs, scores cluster at 0 due to integer truncation.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+
+<table>
+  <tr><th>Aspect</th><th>Rating</th><th>Notes</th></tr>
+  <tr><td>Access Control</td><td>⚠️ Moderate</td><td>Role-based but overly centralized, no transfer mechanism</td></tr>
+  <tr><td>State Machine</td><td>⚠️ Weak</td><td>Status transitions not enforced in most functions</td></tr>
+  <tr><td>Data Integrity</td><td>⚠️ Weak</td><td>Last-write-wins across summaries, reviews, disputes</td></tr>
+  <tr><td>Financial Risk</td><td>✅ None</td><td>No token transfers or value at stake</td></tr>
+  <tr><td>Code Quality</td><td>✅ Good</td><td>Well-structured, clear naming, thorough comments</td></tr>
+  <tr><td>Composability</td><td>⚠️ Limited</td><td>tx-sender only, no trait implementations</td></tr>
+</table>
+
+<h2>Verdict</h2>
+<p>ReguGuard implements an interesting concept — on-chain regulatory document management with AI-human collaboration. The code is well-organized and readable. However, the core issue is <strong>incomplete lifecycle enforcement</strong>: most functions don't check document status before executing, allowing out-of-order operations. The single-entry-per-document pattern for summaries, reviews, and disputes means data can be silently overwritten — undermining the "immutable audit trail" goal the project claims to provide.</p>
+
+<p><strong>No critical financial vulnerabilities</strong> exist since the contract handles no tokens or value transfers. The main risks are <strong>data integrity</strong> (overwritable records) and <strong>governance centralization</strong> (single admin key).</p>
+
+<p>The concept is sound, but the implementation needs significant hardening of state machine transitions and data storage patterns before it could serve its stated purpose of providing tamper-proof regulatory compliance records.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a></p>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Built with real contract reads, not vibes</p>
+</footer>
+
+</body>
+</html>
