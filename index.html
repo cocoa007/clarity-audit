@@ -199,6 +199,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Audit</a>
   <a href="/clarity-audit/yield-elite.html">Yield Elite Audit</a>
   <a href="/clarity-audit/stx-escrow.html">STX Escrow Audit</a>
+  <a href="/clarity-audit/crowdfund.html">Crowdfund Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -215,11 +216,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">101</div>
+    <div class="num">110</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">21</div>
+    <div class="num">24</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -290,6 +291,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-escrow.html">STX Escrow — Trustless P2P Escrow (3 Contracts)</a></h3>
   <p><code>serayd61/stx-escrow</code></p>
   <p>Three-contract escrow system with dispute arbitration and NFT swap support. The core STX escrow works, but the arbitration contract collects real STX (dispute fees, arbiter stakes) for a resolution system that cannot enforce outcomes. NFT contract has no NFT transfer mechanism — deposited STX has no path to completion. 14 findings total (3 critical, 3 high, 5 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/crowdfund.html">Stacks Crowdfund — Decentralized Fundraising Platform</a></h3>
+  <p><code>serayd61/stacks-crowdfund</code></p>
+  <p>Crowdfunding platform with campaigns, deadlines, and refund mechanism. All contributions are sent directly to a hardcoded external treasury — the contract never holds funds. claim-funds and claim-refund update bookkeeping but perform zero STX transfers. 9 findings total (3 critical, 1 high, 2 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 

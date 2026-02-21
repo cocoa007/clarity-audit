@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stacks Crowdfund Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory</a>
+  <a href="/clarity-audit/quests.html">Quests</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge</a>
+  <a href="/clarity-audit/dao-governance.html">DAO Governance</a>
+  <a href="/clarity-audit/stacksmint.html">StacksMint</a>
+  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace</a>
+  <a href="/clarity-audit/yield-elite.html">Yield Elite</a>
+  <a href="/clarity-audit/stx-escrow.html">STX Escrow</a>
+  <a href="/clarity-audit/crowdfund.html" class="active">Crowdfund</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>Stacks Crowdfund — Decentralized Fundraising Platform</h1>
+<p class="subtitle">
+  <a href="https://github.com/serayd61/stacks-crowdfund">serayd61/stacks-crowdfund</a> ·
+  Crowdfunding · February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Contract</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">342</div>
+    <div class="label">Lines</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">9</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">3</div>
+    <div class="label">Critical</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+
+<p>A decentralized crowdfunding platform on Stacks. Users create campaigns with goals and deadlines, others contribute STX, and if the goal is met the owner claims funds (minus a 2% platform fee). If the campaign fails, contributors can request refunds. Includes milestone tracking, creator/backer stats, and deadline extensions.</p>
+
+<p><strong>The contract is fundamentally broken.</strong> All contributions are sent directly to a hardcoded external treasury address — the contract never holds any STX. The claim-funds and claim-refund functions update internal bookkeeping but perform zero STX transfers. Every micro-STX contributed is permanently gifted to the treasury with no recovery path.</p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Contributions sent to hardcoded treasury, not contract</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>claim-funds performs no STX transfer</td></tr>
+  <tr><td>C-03</td><td><span class="severity critical">CRITICAL</span></td><td>claim-refund performs no STX transfer</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Refunds gated by campaign owner — no permissionless path</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Unlimited deadline extension</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>No minimum campaign duration</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>Milestone system declared but unused</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>Fee calculation is dead code</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Redundant state variable (total-campaigns mirrors campaign-nonce)</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-01: Contributions Sent to Hardcoded Treasury, Not Contract</h3>
+
+<p>The <code>contribute</code> function transfers STX directly to an external address instead of the contract:</p>
+
+<pre><code>(define-constant treasury 'SP2PEBKJ2W1ZDDF2QQ6Y4FXKZEDPT9J9R2NKD9WJB)
+
+;; In contribute:
+(try! (stx-transfer? amount tx-sender treasury))</code></pre>
+
+<p>All contributed STX leaves the contract immediately and goes to this hardcoded principal. The contract never holds any funds, making all distribution functions (claim-funds, claim-refund) impossible. This is the root cause of C-02 and C-03.</p>
+
+<p><strong>Fix:</strong> Transfer to the contract itself using <code>(stx-transfer? amount tx-sender (as-contract tx-sender))</code>, then have claim functions use <code>(as-contract (stx-transfer? ...))</code> to pay out.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-02: claim-funds Performs No STX Transfer</h3>
+
+<p>The <code>claim-funds</code> function calculates the owner payout and fee, updates all bookkeeping, then returns a response claiming funds were distributed:</p>
+
+<pre><code>(let (
+  (raised (get raised campaign))
+  (fee (calculate-fee raised))
+  (owner-amount (- raised fee))
+)
+  ;; ... asserts, map-set, var-set ...
+  (ok { campaign-id: campaign-id, claimed: owner-amount, fee: fee })
+)</code></pre>
+
+<p>There is no <code>stx-transfer?</code> call anywhere in this function. The campaign owner receives nothing. The response tuple reports a <code>claimed</code> amount that was never sent.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-03: claim-refund Performs No STX Transfer</h3>
+
+<p>Similarly, <code>claim-refund</code> clears the contribution record and decrements the campaign's <code>raised</code> amount, but never sends STX back:</p>
+
+<pre><code>;; Clear contribution
+(map-set contributions { campaign-id: campaign-id, contributor: tx-sender } u0)
+
+;; Update campaign raised amount
+(map-set campaigns campaign-id 
+  (merge campaign { raised: (- (get raised campaign) contribution) }))
+
+(ok { campaign-id: campaign-id, refunded: contribution })</code></pre>
+
+<p>Contributors who call this function lose their contribution record (preventing a second attempt) and receive zero STX. The <code>refunded</code> value in the response is fictional.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-01: Refunds Gated by Campaign Owner</h3>
+
+<p><code>claim-refund</code> requires <code>(get refunds-enabled campaign)</code>, which can only be set by <code>enable-refunds</code>, callable only by the campaign owner:</p>
+
+<pre><code>(define-public (enable-refunds (campaign-id uint))
+  ;; ...
+  (asserts! (is-eq (get owner campaign) tx-sender) err-not-campaign-owner)
+  ;; ...
+)</code></pre>
+
+<p>If a campaign fails and the owner abandons the project (or acts maliciously), contributors have no way to enable refunds. In a proper crowdfunding contract, refunds should be permissionless once the deadline passes and the goal is unmet.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-01: Unlimited Deadline Extension</h3>
+
+<p><code>extend-deadline</code> allows the campaign owner to add any number of blocks with no cap:</p>
+
+<pre><code>(define-public (extend-deadline (campaign-id uint) (additional-blocks uint))
+  ;; ... only checks: is owner, campaign not ended ...
+  (map-set campaigns campaign-id 
+    (merge campaign { end-block: (+ (get end-block campaign) additional-blocks) })
+  )
+)</code></pre>
+
+<p>A malicious owner could set <code>additional-blocks</code> to <code>u999999999</code>, preventing the campaign from ever ending. This blocks both fund claiming and refund enabling indefinitely, trapping contributors.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-02: No Minimum Campaign Duration</h3>
+
+<p><code>create-campaign</code> accepts any positive duration: <code>(asserts! (&gt; duration u0) err-invalid-amount)</code>. A campaign with <code>duration=1</code> starts and expires within essentially the same block, making it impossible for anyone to contribute while still consuming a campaign nonce and emitting creation events.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-01: Milestone System Declared But Unused</h3>
+
+<p>The contract defines a <code>milestones</code> map with title, amount, and completion status, but no public or private function ever reads from or writes to it. This is dead code suggesting an abandoned feature.</p>
+
+<pre><code>(define-map milestones { campaign-id: uint, milestone-id: uint }
+  { title: (string-utf8 128), amount: uint, completed: bool }
+)</code></pre>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-02: Fee Calculation Is Dead Code</h3>
+
+<p><code>calculate-fee</code> correctly computes 2% (200 basis points) of a given amount, and <code>claim-funds</code> uses it to split raised funds into owner-amount and fee. But since <code>claim-funds</code> performs no transfer, neither the fee nor the owner payment actually occurs. The treasury already received 100% of contributions directly via <code>contribute</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-01: Redundant State Variable</h3>
+
+<p><code>total-campaigns</code> and <code>campaign-nonce</code> are both initialized to <code>u0</code> and both incremented by 1 in <code>create-campaign</code>. They always hold the same value. One could be removed.</p>
+</div>
+
+<h2>Architecture Analysis</h2>
+
+<h3>The Custody Problem</h3>
+
+<p>A crowdfunding contract <strong>must</strong> hold funds in escrow to function. The standard pattern in Clarity is:</p>
+
+<pre><code>;; Contribution: funds go INTO the contract
+(stx-transfer? amount tx-sender (as-contract tx-sender))
+
+;; Payout: contract sends funds OUT
+(as-contract (stx-transfer? payout-amount tx-sender campaign-owner))
+
+;; Refund: contract returns funds to contributor
+(as-contract (stx-transfer? contribution tx-sender contributor))</code></pre>
+
+<p>This contract skips the escrow entirely and sends all funds to a hardcoded address. The internal bookkeeping (raised, contributions, stats) tracks money that the contract no longer controls.</p>
+
+<h3>What Works</h3>
+
+<ul>
+  <li><span class="severity good">GOOD</span> Campaign creation with block-height deadlines — correct pattern</li>
+  <li><span class="severity good">GOOD</span> New-vs-repeat contributor detection — clever use of <code>is-eq current-contribution u0</code></li>
+  <li><span class="severity good">GOOD</span> Creator and backer stats tracking — properly structured merge updates</li>
+  <li><span class="severity good">GOOD</span> Read-only helpers (progress percentage, is-active, is-successful) — well-designed</li>
+  <li><span class="severity good">GOOD</span> Error code organization — clear, well-named constants</li>
+</ul>
+
+<h2>Verdict</h2>
+
+<p><strong>Do not use.</strong> The contract collects real STX into a hardcoded third-party address with zero ability to distribute funds to campaign owners or refund contributors. It functions as a one-way donation mechanism disguised as a crowdfunding platform. The bookkeeping logic is sound, but without a contract custody model, the entire platform is non-functional.</p>
+
+<p>To fix: replace the treasury direct-send with <code>as-contract</code> escrow pattern, add actual <code>stx-transfer?</code> calls to claim-funds and claim-refund, make refunds permissionless after deadline, and cap deadline extensions.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕ · February 21, 2026</p>
+</footer>
+
+</body>
+</html>
