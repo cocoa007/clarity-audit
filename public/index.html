@@ -191,6 +191,8 @@ th { background: var(--surface); color: var(--text-muted); }
 <nav class="nav">
   <a href="/clarity-audit/" class="active">Home</a>
   <a href="/clarity-audit/market-factory.html">Market Factory Audit</a>
+  <a href="/clarity-audit/quests.html">Quests Audit</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -199,19 +201,19 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">3</div>
+    <div class="num">6</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">23</div>
+    <div class="num">31</div>
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">10</div>
+    <div class="num">32</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">1</div>
+    <div class="num">7</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -227,6 +229,20 @@ th { background: var(--surface); color: var(--text-muted); }
   <p><code>SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA.market-factory-v18-bias</code></p>
   <p>LMSR prediction market with bias/virtual liquidity. Found integer truncation in STX-scale math causes ~46% of sell positions to revert, plus a self-service cap bypass in the auto-buy functions. 10 findings total.</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 20, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/quests.html">Quests Contract — Quest/Challenge System</a></h3>
+  <p><code>SushilBro/quests-contract</code> (quests + treasury + helper)</p>
+  <p>Quest system where participants lock tokens and complete activities for refunds. Found self-certifiable activity completion (no verification), unconditional refund that defeats the incentive model, and a treasury accounting bug. 10 findings total.</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 20, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/p2p-lending.html">P2P Lending Pool — Collateralized Lending</a></h3>
+  <p><code>esthhdam-stack/P2P-Lending-Pool</code></p>
+  <p>Single-asset STX lending pool with flash loans and liquidation. Every outbound transfer is broken due to systemic <code>as-contract</code> misuse — all deposited funds permanently locked. 12 findings total (3 critical, 3 high, 3 medium, 3 low).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
 <h2>Contracts Studied</h2>
