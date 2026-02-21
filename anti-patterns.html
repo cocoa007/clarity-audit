@@ -68,6 +68,11 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
   <div class="stat-card"><div class="number">40+</div><div class="label">critical bugs</div></div>
 </div>
 
+<div class="pattern info" style="border-left-color: var(--green); background: #0d2818; margin-bottom: 1.5rem;">
+<h3 style="color: var(--green);">📢 Clarity 4 Update (Epoch 3.3)</h3>
+<p>These patterns were found auditing contracts written in <strong>Clarity 3 and earlier</strong>. Clarity 4 (epoch 3.3) introduced <code>as-contract?</code> which directly addresses the <strong>#1 anti-pattern</strong> below. New contracts should use Clarity 4. Contracts still using <code>as-contract</code> (Clarity 3 or lower) should migrate to <code>as-contract?</code>.</p>
+</div>
+
 <p>After auditing 16 Clarity smart contracts on Stacks, clear patterns emerge. The same mistakes show up again and again — sometimes subtle, sometimes devastating, always preventable. This post documents the 7 most common anti-patterns we found, with real code from real audits.</p>
 
 <div class="toc">
@@ -93,8 +98,13 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 <div class="pattern">
 <h3>Pattern A: The Self-Transfer No-Op</h3>
 <p>From a P2P lending contract — every outbound transfer was broken:</p>
-<pre><code><span class="comment">;; ❌ BROKEN: transfers from contract → contract (no-op)</span>
-(as-contract (stx-transfer? amount tx-sender tx-sender))</code></pre>
+<pre><code><span class="comment">;; ❌ BROKEN (Clarity 3): transfers from contract → contract (no-op)</span>
+(as-contract (stx-transfer? amount tx-sender tx-sender))
+
+<span class="comment">;; ✅ Clarity 4 fix: explicit allowances prevent this confusion</span>
+(let ((caller tx-sender))
+  (as-contract? (with-stx)
+    (stx-transfer? amount tx-sender caller)))</code></pre>
 <p>The developer intended <code>tx-sender</code> to mean "the user who called this function." But inside <code>as-contract</code>, both the sender and recipient resolve to the contract itself. Every withdrawal, loan disbursement, collateral return, and liquidation payout was silently doing nothing. Five critical functions — all dead:</p>
 <ul>
   <li><code>withdraw-funds</code> — lenders could never withdraw deposits</li>
@@ -108,11 +118,15 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 <div class="pattern">
 <h3>Pattern B: The Wrong-Sender Transfer</h3>
 <p>From a multisig wallet — deposits went to the owner, not the contract:</p>
-<pre><code><span class="comment">;; ❌ BROKEN: deposits go to CONTRACT-OWNER's personal address</span>
+<pre><code><span class="comment">;; ❌ BROKEN (Clarity 3): deposits go to CONTRACT-OWNER's personal address</span>
 (try! (stx-transfer? amount tx-sender CONTRACT-OWNER))
 
-<span class="comment">;; ❌ BROKEN: execution pulls from the executor's own balance</span>
-(try! (stx-transfer? (get amount tx) tx-sender (get to tx)))</code></pre>
+<span class="comment">;; ❌ BROKEN (Clarity 3): execution pulls from the executor's own balance</span>
+(try! (stx-transfer? (get amount tx) tx-sender (get to tx)))
+
+<span class="comment">;; ✅ Clarity 4 fix: contract executes with explicit STX allowance</span>
+(as-contract? (with-stx)
+  (try! (stx-transfer? (get amount tx) tx-sender (get to tx))))</code></pre>
 <p>The contract never held any funds. The entire multisig approval process was theater — the owner personally funded every transfer at execution time.</p>
 </div>
 
@@ -122,6 +136,12 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 <pre><code><span class="comment">;; Nominally "burns" forfeited stakes, actually sends to owner</span>
 (define-private (burn-stake (amount uint))
     (as-contract (stx-transfer? amount tx-sender CONTRACT-OWNER))
+)
+
+<span class="comment">;; ✅ Clarity 4 fix: burn to a real burn address with explicit allowance</span>
+(define-private (burn-stake (amount uint))
+    (as-contract? (with-stx)
+        (stx-transfer? amount tx-sender BURN-ADDRESS))
 )</code></pre>
 <p>Inside <code>as-contract</code>, <code>tx-sender</code> correctly refers to the contract (the holder of the stakes). But the "burn" function sends to the contract owner, creating a perverse incentive: the owner profits from rejected reports.</p>
 </div>
@@ -133,6 +153,43 @@ Capture <code>tx-sender</code> in a <code>let</code> binding <strong>before</str
   (as-contract (stx-transfer? amount tx-sender caller))
 )</code></pre>
 <p>Inside the <code>as-contract</code> block, <code>tx-sender</code> is the contract (the sender), and <code>caller</code> is the original user (the recipient). This is the correct pattern for every outbound transfer from a contract.</p>
+</div>
+
+<div class="fix" style="border: 2px solid var(--green); background: #0d2818;">
+<strong style="color: var(--green); font-size: 1.1rem;">🆕 Clarity 4 Fix: <code>as-contract?</code></strong>
+<p style="margin-top: 0.75rem;">Clarity 4 (epoch 3.3) eliminates the <code>tx-sender</code> rebind footgun entirely. The new <code>as-contract?</code> replaces <code>as-contract</code> and <strong>requires explicit asset allowances</strong> — the contract must declare exactly what assets it's allowed to move.</p>
+
+<p><strong>Allowance expressions:</strong></p>
+<ul>
+  <li><code>with-stx</code> — allow STX transfers</li>
+  <li><code>with-ft</code> — allow fungible token transfers</li>
+  <li><code>with-nft</code> — allow NFT transfers</li>
+  <li><code>with-stacking</code> — allow stacking operations</li>
+  <li><code>with-all-assets-unsafe</code> — allow everything (use only when necessary)</li>
+</ul>
+
+<pre><code><span class="comment">;; ✅ Clarity 4 — safe version with explicit allowances</span>
+<span class="comment">;; No tx-sender rebind footgun. Contract declares what it can move.</span>
+(as-contract? (with-stx)
+  (stx-transfer? amount tx-sender recipient))
+
+<span class="comment">;; ✅ Clarity 4 — NFT transfer with explicit allowance</span>
+(as-contract? (with-nft)
+  (nft-transfer? my-nft token-id tx-sender buyer))
+
+<span class="comment">;; ✅ Clarity 4 — multiple asset types</span>
+(as-contract? (with-stx) (with-ft)
+  (begin
+    (try! (stx-transfer? fee tx-sender treasury))
+    (ft-transfer? reward-token amount tx-sender caller)))</code></pre>
+
+<p>This is safer because:</p>
+<ul>
+  <li>The contract <strong>explicitly declares</strong> what assets it's allowed to move — no accidental drains</li>
+  <li>If a contract only needs to move STX, it says <code>(with-stx)</code> and can't accidentally move NFTs</li>
+  <li>Auditors can immediately see the asset scope of each <code>as-contract?</code> block</li>
+  <li><strong>Contracts still using <code>as-contract</code></strong> (Clarity 3 or lower) should migrate to <code>as-contract?</code></li>
+</ul>
 </div>
 
 <!-- ============================================================ -->
