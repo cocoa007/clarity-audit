@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CurateChain Audit — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/curatechain.html" class="active">CurateChain</a>
+</nav>
+
+<h1>CurateChain — Content Curation Protocol</h1>
+<p class="subtitle">
+  <a href="https://github.com/elliot-martins/CurateChain">elliot-martins/CurateChain</a> ·
+  Commit: <code><a href="https://github.com/elliot-martins/CurateChain/tree/988cb53f57088cdfcaeb13a4d994aef378cdb0df">988cb53</a></code> ·
+  Audited February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">0</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">3</div>
+    <div class="label">High</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">3</div>
+    <div class="label">Medium</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Low</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Info</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>CurateChain is a decentralized content curation protocol built on Stacks. Users submit content items (paying an STX fee to the protocol admin), vote on items (+1/-1 appraisals that affect both item scores and voter reputation), send STX gratuities to content creators, and flag problematic content. An admin can adjust fees, remove items, and manage topic categories.</p>
+<p>The protocol's core value proposition is its reputation system — but the reputation mechanism is exploitable, and the flagging system lacks basic duplicate prevention.</p>
+
+<h2>Priority Matrix Score: 15</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>2 — holds/transfers STX via tips + fees</td><td>3</td><td>6</td></tr>
+  <tr><td>Deployment likelihood</td><td>1 — student project</td><td>2</td><td>2</td></tr>
+  <tr><td>Code complexity</td><td>2 — ~280 lines, multiple interactions</td><td>2</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>0 — 0 stars/forks</td><td>1.5</td><td>0</td></tr>
+  <tr><td>Novelty</td><td>2 — new category: content curation</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>15 (≥6 ✓)</strong></td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-01: Reputation Inflation via Repeated Same-Direction Voting</h3>
+  <p><strong>Location:</strong> <code>appraise-item</code> function</p>
+  <p>A user can call <code>appraise-item</code> with the same vote direction repeatedly on the same item. While the item's score correctly doesn't change (delta = appraisal − previous = 0), the voter's reputation increments by <code>appraisal</code> on every call:</p>
+  <pre><code>(map-set participant-credibility
+  { participant: tx-sender }
+  { metric: (+ (get metric appraiser-standing) appraisal) }
+)</code></pre>
+  <p><strong>Impact:</strong> Any user can inflate their reputation to arbitrary values by repeatedly voting +1 on any item. If reputation is ever used for access control, weighting, or trust signals, the entire system is compromised.</p>
+  <p><strong>Recommendation:</strong> Only update reputation when the vote actually changes:</p>
+  <pre><code>(asserts! (not (is-eq appraisal previous-appraisal)) ERR_DUPLICATE_ENTRY)</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-02: Unlimited Duplicate Flagging Per User</h3>
+  <p><strong>Location:</strong> <code>flag-item</code> function</p>
+  <p>There is no tracking of which users have flagged an item. A single user can call <code>flag-item</code> repeatedly, inflating the flag count to any value:</p>
+  <pre><code>(map-set curated-items
+  { item-identifier: item-identifier }
+  (merge target-item { flags: (+ (get flags target-item) u1) })
+)</code></pre>
+  <p><strong>Impact:</strong> A single malicious user can make any content appear heavily flagged, potentially triggering admin removal of legitimate content. This is a griefing vector against content creators.</p>
+  <p><strong>Recommendation:</strong> Add a <code>participant-flags</code> map (similar to <code>participant-appraisals</code>) and assert no prior flag exists before incrementing.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-03: Self-Voting on Own Content Allowed</h3>
+  <p><strong>Location:</strong> <code>appraise-item</code> function</p>
+  <p>There is no check preventing a content originator from voting on their own submission. Combined with H-01, an originator can boost their own content's score and inflate their reputation simultaneously.</p>
+  <p><strong>Impact:</strong> Undermines the integrity of the curation system. Content creators can self-promote without any cost or restriction.</p>
+  <p><strong>Recommendation:</strong></p>
+  <pre><code>(asserts! (not (is-eq tx-sender (get originator target-item))) ERR_INVALID_APPRAISAL)</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-01: State Updated Before Transfer in reward-originator</h3>
+  <p><strong>Location:</strong> <code>reward-originator</code> function</p>
+  <p>The gratuity counter is updated via <code>map-set</code> before the <code>stx-transfer?</code> call. In Clarity, a failed <code>try!</code> rolls back the entire transaction, so this doesn't cause data corruption. However, the pattern is a code smell — state-before-transfer is the #1 bug pattern in Solidity and signals inattention to execution order.</p>
+  <p>Additionally, no minimum amount check exists. A zero-amount transfer will fail at <code>stx-transfer?</code> but wastes gas.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (> gratuity-amount u0) ERR_INADEQUATE_BALANCE)</code> and move <code>map-set</code> after the transfer.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-02: No Admin Role Transfer Mechanism</h3>
+  <p><strong>Location:</strong> <code>PROTOCOL_ADMINISTRATOR</code> constant</p>
+  <p>Admin is set as <code>tx-sender</code> at deploy time via <code>define-constant</code>. There is no way to transfer admin rights. If the deployer's key is compromised or lost, all admin capabilities (fee adjustment, content moderation, topic management) are permanently unavailable.</p>
+  <p><strong>Recommendation:</strong> Change to a <code>define-data-var</code> with a guarded transfer function.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-03: Expunged Items Leave Counter Inconsistent</h3>
+  <p><strong>Location:</strong> <code>expunge-item</code> function</p>
+  <p>When an item is deleted, <code>aggregate-submissions</code> is not decremented. Since item IDs are sequential and monotonically increasing, <code>retrieve-top-items</code> will attempt to look up deleted items (returning <code>none</code>, filtered out). The counter no longer reflects actual content count.</p>
+  <p><strong>Recommendation:</strong> Maintain a separate <code>active-items-count</code> variable, or document that the counter represents "total ever submitted."</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-01: Top Items Query Hard-Capped at 10</h3>
+  <p><strong>Location:</strong> <code>enumerate</code> helper function</p>
+  <p>The <code>enumerate</code> function generates a static list of up to 10 elements. This is a Clarity limitation (no dynamic loops), but means <code>retrieve-top-items</code> can never return more than 10 items regardless of how many exist.</p>
+  <p><strong>Recommendation:</strong> Document the limitation. Consider adding offset-based pagination for scalability.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-01: tx-sender vs contract-caller Considerations</h3>
+  <p><strong>Location:</strong> All public functions</p>
+  <p>The contract uses <code>tx-sender</code> throughout. For admin functions, <code>contract-caller</code> would be more secure against proxy-based authorization bypass. For user functions, <code>tx-sender</code> is appropriate.</p>
+  <p><strong>Recommendation:</strong> Use <code>contract-caller</code> for admin authorization checks (<code>adjust-submission-charge</code>, <code>expunge-item</code>, <code>introduce-topic</code>).</p>
+</div>
+
+<h2>Architecture Notes</h2>
+<ul>
+  <li>Single-contract design — clean and self-contained</li>
+  <li>STX flows: submission fees → admin, gratuities → originator (both via <code>stx-transfer?</code>)</li>
+  <li>Reputation system is read-only state with no on-chain enforcement — a social signal only</li>
+  <li>Topic validation uses <code>index-of</code> on a list variable — correct but limits topics to 10</li>
+  <li>The <code>enumerate</code> workaround for Clarity's lack of dynamic loops is clever but constraining</li>
+</ul>
+
+<h2>What Works Well</h2>
+<ul>
+  <li>Clean error handling with descriptive constants</li>
+  <li>Overflow check on submission counter</li>
+  <li>Topic validation against a configurable whitelist</li>
+  <li>Self-flagging prevention (<code>originator ≠ flagger</code>)</li>
+  <li>Event emission via <code>print</code> for off-chain indexing</li>
+</ul>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007</a> ☕ · <a href="/clarity-audit/">All Audits</a> · Independent security research</p>
+</footer>
+
+</body>
+</html>

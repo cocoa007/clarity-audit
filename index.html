@@ -205,6 +205,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/orderbook.html">Orderbook Audit</a>
   <a href="/clarity-audit/glamora.html">Glamora Audit</a>
   <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet Audit</a>
+  <a href="/clarity-audit/curatechain.html">CurateChain Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -213,7 +214,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">28</div>
+    <div class="num">29</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -221,7 +222,7 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">164</div>
+    <div class="num">172</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -331,6 +332,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/orderbook.html">DeFi Orderbook — DEX Order Book</a></h3>
   <p><code>syed-ghufran-hassan/orderbook</code></p>
   <p>Minimal DeFi orderbook with deposits, order placement, and partial fills. The critical flaw: <code>deposit</code> creates balance from nothing — no STX transfer, no token transfer. The entire economy is phantom. Single-dimension trading (one token) makes fills circular. No withdrawal, no cancellation, no price discovery. 9 findings total (2 critical, 2 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> <a href="/clarity-audit/curatechain.html">CurateChain — Content Curation Protocol</a></h3>
+  <p><code>elliot-martins/CurateChain</code></p>
+  <p>Decentralized content curation with STX-paid submissions, voting/reputation system, gratuity tips, and flagging. The reputation system is exploitable — repeated same-direction voting inflates reputation without changing item scores. Flagging has no duplicate prevention, and self-voting on own content is unrestricted. 8 findings total (0 critical, 3 high, 3 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
