@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugWatch Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/market-factory.html">Market Factory</a>
+  <a href="/clarity-audit/quests.html">Quests</a>
+  <a href="/clarity-audit/p2p-lending.html">P2P Lending</a>
+  <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge</a>
+  <a href="/clarity-audit/dao-governance.html">DAO Governance</a>
+  <a href="/clarity-audit/stacksmint.html">StacksMint</a>
+  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace</a>
+  <a href="/clarity-audit/yield-elite.html">Yield Elite</a>
+  <a href="/clarity-audit/stx-escrow.html">STX Escrow</a>
+  <a href="/clarity-audit/crowdfund.html">Crowdfund</a>
+  <a href="/clarity-audit/reguguard.html">ReguGuard</a>
+  <a href="/clarity-audit/bugwatch.html" class="active">BugWatch</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>BugWatch — AI-Driven Bug Bounty Platform</h1>
+<p class="subtitle">
+  <a href="https://github.com/Mgid26/BugWatch">Mgid26/BugWatch</a> ·
+  BugWatch.clar (~375 lines) · February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">1</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Low</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>BugWatch is a decentralized bug bounty platform where security researchers submit vulnerability reports backed by STX stakes. Authorized AI oracles assess reports with severity ratings and confidence scores, and the contract handles bounty payouts, stake management, and reporter reputation tracking. An appeal mechanism lets reporters challenge AI decisions within a 144-block window.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Staking:</strong> Reporters lock STX (default 10 STX) when submitting reports as spam deterrent</li>
+  <li><strong>AI Oracles:</strong> Whitelisted principals assess reports with severity + confidence score (0–100)</li>
+  <li><strong>Bounty Calculation:</strong> Dynamic bounty = base reward (by severity) + confidence multiplier</li>
+  <li><strong>Appeals:</strong> 144-block window (~24h) for reporters to challenge AI decisions</li>
+  <li><strong>Reputation:</strong> On-chain score tracking verified vs rejected reports (+5/−2)</li>
+</ul>
+
+<h2>Findings</h2>
+
+<h3>Critical</h3>
+
+<div class="finding">
+  <p><span class="severity critical">CRITICAL</span> <strong>C-01: Bounties Are Calculated But Never Paid Out</strong></p>
+  <p>The <code>finalize-ai-assessment</code> function calculates a <code>final-bounty</code>, records it in the report's <code>bounty</code> field, and increments <code>total-bounties-paid</code> — but <strong>never actually transfers STX to the reporter</strong>. Only the original stake is returned.</p>
+<pre><code>;; Stake is returned:
+(try! (return-stake reporter staked))
+;; Bounty is tracked but never sent:
+(var-set total-bounties-paid (+ (var-get total-bounties-paid) final-bounty))
+;; No stx-transfer? for the bounty itself — nowhere in the contract</code></pre>
+  <p>The entire economic incentive of the platform is non-functional. Reporters get back only their stake, never the promised bounty rewards. There is no bounty fund, no mechanism to deposit bounty funds, and no transfer to pay them.</p>
+  <p><strong>Fix:</strong> Add a bounty fund (funded by project owners or a treasury), and add an <code>stx-transfer?</code> for the bounty amount in the verified branch.</p>
+</div>
+
+<h3>High</h3>
+
+<div class="finding">
+  <p><span class="severity high">HIGH</span> <strong>H-01: No Mechanism to Remove AI Auditors</strong></p>
+  <p><code>add-ai-auditor</code> adds oracle principals but there is no <code>remove-ai-auditor</code> function. If an AI oracle's key is compromised, the owner cannot revoke access. A compromised oracle can verify fraudulent reports indefinitely, draining the stake pool.</p>
+  <p><strong>Fix:</strong> Add a <code>remove-ai-auditor</code> function that sets the map value to <code>false</code>.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity high">HIGH</span> <strong>H-02: Appeal Window Anchored to Submission, Not Assessment</strong></p>
+  <p>The appeal window is calculated from <code>submission-height</code>, not from when the AI assessment occurs:</p>
+<pre><code>(asserts! (&lt; block-height (+ submission-block APPEAL-WINDOW)) ERR-APPEAL-WINDOW-CLOSED)</code></pre>
+  <p>If the AI takes 140+ blocks to assess a report, the reporter has almost no time to file an appeal. In extreme cases, the window expires before assessment even happens, making appeals impossible.</p>
+  <p><strong>Fix:</strong> Store the assessment block height and anchor the appeal window to it.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity high">HIGH</span> <strong>H-03: <code>burn-stake</code> Sends Funds to Owner, Not a Burn Address</strong></p>
+<pre><code>(define-private (burn-stake (amount uint))
+    (as-contract (stx-transfer? amount tx-sender CONTRACT-OWNER))
+)</code></pre>
+  <p>Despite the name "burn," this transfers forfeited stakes to the contract owner. This creates a perverse incentive — the owner profits from rejected reports. Combined with the owner's control over AI oracle authorization, this could undermine trust in the entire platform.</p>
+  <p><strong>Fix:</strong> Send to a true burn address, a DAO treasury, or split between community fund and protocol.</p>
+</div>
+
+<h3>Medium</h3>
+
+<div class="finding">
+  <p><span class="severity medium">MEDIUM</span> <strong>M-01: No Severity Validation in <code>finalize-ai-assessment</code></strong></p>
+  <p>The <code>severity</code> parameter accepts any <code>string-ascii 20</code> value. A compromised oracle could pass arbitrary strings. The bounty calculation only handles "critical", "high", "medium" — anything else defaults to <code>u50</code> (low). No explicit validation exists.</p>
+  <p><strong>Fix:</strong> Assert severity is one of the expected values: "critical", "high", "medium", "low".</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity medium">MEDIUM</span> <strong>M-02: <code>tx-sender</code> Usage Vulnerable to Proxy Attacks</strong></p>
+  <p>All authorization checks use <code>tx-sender</code>. If an AI auditor interacts through an intermediary contract, <code>tx-sender</code> is the intermediary — enabling impersonation of authorized oracles via wrapper contracts, or filing appeals on behalf of other reporters.</p>
+  <p><strong>Fix:</strong> Use <code>contract-caller</code> where appropriate, or document the restriction against intermediary calls.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity medium">MEDIUM</span> <strong>M-03: <code>resolve-appeal</code> Accepts Arbitrary Decision Strings</strong></p>
+  <p>The <code>decision</code> parameter is unconstrained. Only <code>"overturned"</code> triggers stake return; anything else burns the stake. A typo like <code>"overtruned"</code> would silently burn the reporter's stake with no recourse.</p>
+  <p><strong>Fix:</strong> Assert decision is either <code>"overturned"</code> or <code>"upheld"</code>.</p>
+</div>
+
+<h3>Low / Informational</h3>
+
+<div class="finding">
+  <p><span class="severity low">LOW</span> <strong>L-01: Reputation Score Grows Unbounded</strong></p>
+  <p>The reputation system adds +5 per verified report with no cap. A prolific reporter reaches arbitrarily high scores, which currently has no on-chain effect but could mislead off-chain consumers relying on the score for trust decisions.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity low">LOW</span> <strong>L-02: No Events Emitted for Appeals</strong></p>
+  <p><code>file-appeal</code> and <code>resolve-appeal</code> don't emit <code>print</code> events, unlike submissions and assessments. Off-chain indexers cannot track appeal activity without polling every report ID.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity low">LOW</span> <strong>L-03: Submission Fee Can Be Set to Zero</strong></p>
+  <p><code>set-submission-fee</code> has no minimum value check. Setting fee to <code>u0</code> eliminates the spam deterrent that staking provides, defeating the platform's core economic design.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity info">INFO</span> <strong>I-01: No Re-assessment After Appeal Overturn</strong></p>
+  <p>When an appeal is overturned (resolved in reporter's favor), the status changes to <code>"verified-on-appeal"</code> but no bounty calculation or payment occurs. The reporter gets their stake back but no bounty reward.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity info">INFO</span> <strong>I-02: <code>update-reputation</code> Return Value Unused</strong></p>
+  <p>The private function returns a bool from <code>map-set</code> that is silently discarded in the <code>begin</code> blocks where it's called. Not a bug in Clarity, but worth noting.</p>
+</div>
+
+<div class="finding">
+  <p><span class="severity info">INFO</span> <strong>I-03: No Report Enumeration On-Chain</strong></p>
+  <p>There's no way to enumerate all reports. Off-chain indexers must track the <code>report-nonce</code> and query each ID individually.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+  <tr><th>Severity</th><th>Count</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>1</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>3</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>3</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>3</td></tr>
+  <tr><td><span class="severity info">INFO</span></td><td>3</td></tr>
+</table>
+
+<p>The most significant finding is that <strong>bounties are never actually paid</strong> — the core value proposition of the platform is non-functional. The contract calculates bounties, tracks them in state, but has no mechanism to fund or distribute them. Combined with irrevocable AI oracle access and a misaligned appeal window, the contract requires substantial fixes before production use.</p>
+
+<p>The staking and reputation mechanics are conceptually sound. The appeal system is a good design choice. But without functional bounty payouts, the platform reduces to a staking-only system where reporters can only get their own money back.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a></p>
+</footer>
+
+</body>
+</html>

@@ -201,6 +201,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/stx-escrow.html">STX Escrow Audit</a>
   <a href="/clarity-audit/crowdfund.html">Crowdfund Audit</a>
   <a href="/clarity-audit/reguguard.html">ReguGuard Audit</a>
+  <a href="/clarity-audit/bugwatch.html">BugWatch Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -217,11 +218,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">120</div>
+    <div class="num">133</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">24</div>
+    <div class="num">25</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -306,6 +307,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity high">HIGH</span> <a href="/clarity-audit/reguguard.html">ReguGuard — Regulatory Document Management &amp; Impact Analysis</a></h3>
   <p><code>Egidigbi25/ReguGuard</code></p>
   <p>On-chain regulatory document lifecycle with AI agent summarization, auditor review, dispute resolution, and predictive impact scoring. No financial functions, but the "immutable audit trail" goal is undermined by last-write-wins data patterns and unenforced state machine transitions. 10 findings total (0 critical, 3 high, 5 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/bugwatch.html">BugWatch — AI-Driven Bug Bounty Platform</a></h3>
+  <p><code>Mgid26/BugWatch</code></p>
+  <p>Decentralized bug bounty platform with AI oracle assessment, staking, reputation, and appeals. The critical flaw: bounties are calculated and tracked in state but never actually paid out — no STX transfer, no bounty fund. Reporters can only recover their own stake. AI auditors cannot be removed once added. Appeal window anchored to submission time, not assessment time. 13 findings total (1 critical, 3 high, 3 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
