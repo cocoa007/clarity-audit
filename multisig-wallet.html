@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multisig Wallet Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/multisig-wallet.html" class="active">Multisig Wallet</a>
+</nav>
+
+<h1>Multi-Signature Wallet — Multisig Treasury</h1>
+<p class="subtitle">
+  Repo: <a href="https://github.com/Dark-Brain07/stacks-builder-contracts">Dark-Brain07/stacks-builder-contracts</a> · 1 contract · ~103 lines<br>
+  Audited: February 21, 2026
+</p>
+
+<h2>Overview</h2>
+<p>A multi-signature wallet contract requiring multiple signers to approve STX transactions before execution. Features signer management (add/remove), transaction proposals with signature collection, threshold-based execution, and deposit tracking. The contract aims to provide shared custody of funds with configurable signers and a fixed 2-of-N approval threshold.</p>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>Severity</th><th>Count</th><th>Description</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>2</td><td>No shared treasury, owner-only execution</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>3</td><td>Hardcoded threshold, signer count corruption, stale signatures</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>2</td><td>Deposits go to owner, no cancellation</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>3</td><td>No events, duplicate add-signer, no re-signing check</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> Execute Transfers From Owner's Personal Balance, Not Contract</h3>
+  <p>The <code>execute-tx</code> function transfers STX from <code>tx-sender</code> (the owner) rather than from a shared contract-held pool. The contract never holds any funds — there is no shared treasury.</p>
+<pre><code>(define-public (execute-tx (tx-id uint))
+  (let ((tx (unwrap! (map-get? transactions tx-id) ERR-TX-NOT-FOUND)))
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    ;; Sends from CONTRACT-OWNER's personal balance:
+    (try! (stx-transfer? (get amount tx) tx-sender (get to tx)))
+    ...))</code></pre>
+  <p>The entire multisig approval process is theater — the owner must personally fund every transfer at execution time. The deposit function also sends funds to the owner, not the contract.</p>
+  <p><strong>Fix:</strong> Hold funds in the contract principal. Deposits: <code>(stx-transfer? amount tx-sender (as-contract tx-sender))</code>. Execution: <code>(as-contract (stx-transfer? amount tx-sender (get to tx)))</code>.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> Only Owner Can Execute — Single Point of Failure</h3>
+  <p>The <code>execute-tx</code> function restricts execution to <code>CONTRACT-OWNER</code>:</p>
+<pre><code>(asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)</code></pre>
+  <p>This gives the owner unilateral veto power over all approved transactions. Even if every signer approves, the owner can refuse to execute indefinitely. This fundamentally breaks the multisig security model — it's a single-signer wallet with an approval queue.</p>
+  <p><strong>Fix:</strong> Allow any signer to execute a fully-approved transaction: <code>(asserts! (is-signer tx-sender) ERR-NOT-SIGNER)</code>.</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">H-01</span> Hardcoded 2-of-N Signature Threshold</h3>
+  <p>The required signatures is a constant:</p>
+<pre><code>(define-constant REQUIRED-SIGS u2)</code></pre>
+  <p>As signers are added, the security threshold never scales. A 2-of-100 multisig provides almost no security — any two colluding signers can drain the wallet. The threshold cannot be updated without redeploying the entire contract.</p>
+  <p><strong>Fix:</strong> Use a <code>data-var</code> for threshold with an owner-controlled setter that validates <code>threshold &lt;= signer-count</code> and <code>threshold &gt;= 2</code>.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-02</span> Signer Count Corruption on Remove</h3>
+  <p><code>remove-signer</code> decrements <code>signer-count</code> without checking whether the principal is actually a signer:</p>
+<pre><code>(define-public (remove-signer (signer principal))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (map-delete signers signer)
+    (var-set signer-count (- (var-get signer-count) u1))  ;; no existence check!
+    (ok true)))</code></pre>
+  <p>Removing a non-existent signer causes uint underflow (wraps to <code>u340282366920938463463374607431768211455</code>). Also, no guard prevents removing all signers or going below the required threshold, which would brick the wallet.</p>
+  <p><strong>Fix:</strong> Assert <code>(is-signer signer)</code> before removal. Assert <code>(> signer-count REQUIRED-SIGS)</code> after decrement.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-03</span> Removed Signers' Approvals Persist on Pending Transactions</h3>
+  <p>When a signer is removed via <code>remove-signer</code>, their existing signatures on pending transactions remain valid. The <code>sign-tx</code> function checks signer status at signing time, but signatures already recorded are never invalidated.</p>
+  <p>A removed (potentially compromised) signer's past approvals still count toward the threshold, allowing transactions to be executed with approval from parties who are no longer authorized.</p>
+  <p><strong>Fix:</strong> Either invalidate pending transactions on signer removal, or check signer status at execution time by re-verifying all signers.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> Deposits Go to Owner's Personal Address</h3>
+  <p>The <code>deposit</code> function sends STX directly to <code>CONTRACT-OWNER</code>:</p>
+<pre><code>(try! (stx-transfer? amount tx-sender CONTRACT-OWNER))</code></pre>
+  <p>Combined with C-01, funds flow through the owner's personal account with zero on-chain enforcement. The <code>deposits</code> map tracks contributions but has no connection to actual fund custody. There is no trustless custody.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> No Transaction Cancellation or Expiry</h3>
+  <p>Once submitted, a transaction cannot be cancelled by the creator or expired after a timeout. Proposals persist forever in an unexecuted state, and individual signatures cannot be revoked. If a transaction becomes undesirable after submission, the only option is to never execute it — but it remains in the map permanently.</p>
+</div>
+
+<h2>Low Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity low">L-01</span> No Event Emissions</h3>
+  <p>No <code>print</code> statements for any operations — transaction creation, signing, execution, deposits, or signer changes. Off-chain indexers and monitoring tools cannot track multisig activity without polling every block.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-02</span> Duplicate add-signer Corrupts Count</h3>
+  <p><code>add-signer</code> doesn't check if the principal is already a signer. Re-adding an existing signer increments <code>signer-count</code> without actually adding anyone, inflating the count and breaking invariants.</p>
+  <p><strong>Fix:</strong> Assert <code>(is-none (map-get? signers signer))</code> or <code>(not (is-signer signer))</code> before adding.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-03</span> Creator Auto-Signs With No Opt-Out</h3>
+  <p><code>submit-tx</code> automatically counts the creator as the first signer (sigs starts at 1). With <code>REQUIRED-SIGS u2</code>, only one additional signature is needed. The creator cannot submit a proposal without also signing it, which may not always be desired in governance workflows.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+
+<table>
+  <tr><th>Feature</th><th>Status</th></tr>
+  <tr><td>Contract-held treasury</td><td>❌ Funds go to owner personally</td></tr>
+  <tr><td>Decentralized execution</td><td>❌ Owner-only execution (veto power)</td></tr>
+  <tr><td>Dynamic threshold</td><td>❌ Hardcoded to 2</td></tr>
+  <tr><td>Signer management</td><td>⚠️ Works but count easily corrupted</td></tr>
+  <tr><td>Transaction proposals</td><td>✅ Correct with deduplication</td></tr>
+  <tr><td>Signature collection</td><td>✅ Has-signed map prevents double-signing</td></tr>
+  <tr><td>Deposit tracking</td><td>⚠️ Bookkeeping only, no custody</td></tr>
+  <tr><td>Cancellation / expiry</td><td>❌ Missing</td></tr>
+  <tr><td>Events / logging</td><td>❌ No print statements</td></tr>
+</table>
+
+<h2>Positive Aspects</h2>
+<ul>
+  <li>Clean, well-structured code with descriptive error constants</li>
+  <li>Signature deduplication via <code>has-signed</code> map prevents double-signing</li>
+  <li>Amount validation on submit (<code>&gt; u0</code>)</li>
+  <li>Proper use of <code>unwrap!</code> for transaction lookups</li>
+  <li>Executed-state check prevents double-execution</li>
+</ul>
+
+<p><strong>Verdict:</strong> The contract has a <strong>fundamentally broken trust model</strong> — it appears to be a multisig but operates as a single-owner wallet. The owner personally holds all deposited funds and has sole execution authority, making the multi-signature approval process advisory at best. Two critical architectural flaws (fund custody and execution centralization) plus signer count corruption bugs make this unsuitable for any real value. A good learning exercise in Clarity maps and assertions, but needs major redesign for production use.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕</p>
+</footer>
+
+</body>
+</html>

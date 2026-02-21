@@ -204,6 +204,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/bugwatch.html">BugWatch Audit</a>
   <a href="/clarity-audit/orderbook.html">Orderbook Audit</a>
   <a href="/clarity-audit/glamora.html">Glamora Audit</a>
+  <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -212,7 +213,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">27</div>
+    <div class="num">28</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -220,11 +221,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">154</div>
+    <div class="num">164</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">29</div>
+    <div class="num">31</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -330,6 +331,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/orderbook.html">DeFi Orderbook — DEX Order Book</a></h3>
   <p><code>syed-ghufran-hassan/orderbook</code></p>
   <p>Minimal DeFi orderbook with deposits, order placement, and partial fills. The critical flaw: <code>deposit</code> creates balance from nothing — no STX transfer, no token transfer. The entire economy is phantom. Single-dimension trading (one token) makes fills circular. No withdrawal, no cancellation, no price discovery. 9 findings total (2 critical, 2 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet — Multi-Signature Treasury</a></h3>
+  <p><code>Dark-Brain07/stacks-builder-contracts</code> (multisig-wallet.clar)</p>
+  <p>Multi-signature wallet requiring multiple signers to approve STX transactions. Fundamentally broken trust model — the contract never holds funds (deposits go to owner personally) and only the owner can execute approved transactions, giving them unilateral veto power. Signer count corruption bugs can brick the wallet. 10 findings total (2 critical, 3 high, 2 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
