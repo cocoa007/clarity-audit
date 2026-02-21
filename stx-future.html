@@ -73,9 +73,18 @@ th { color: var(--text-muted); font-weight: 600; }
 
 <p>The contract implements a simple but elegant mechanism: STX-in → futures tokens → Stack → unlock → redeem STX. It includes a SIP-010-like token interface, authorized stacker list, and self-consistency checks at deployment.</p>
 
+<h3>Documented Limitations</h3>
+<p>The <a href="https://github.com/jcnelson/stx-future/tree/main?tab=readme-ov-file#limitations-and-caveats">README</a> explicitly acknowledges several trust assumptions:</p>
+<ul>
+  <li><strong>Custodian trust:</strong> The authorized stacker controls PoX reward addresses and could keep all BTC rewards. This is by design — the contract is not a trustless delegation service.</li>
+  <li><strong>No yield distribution:</strong> The contract handles STX custody and futures tokens but does not distribute PoX rewards on-chain. Reward disbursement is the custodian's responsibility.</li>
+  <li><strong>Full custody:</strong> Users' STX is held by the contract (not delegated), requiring trust in both the custodian and the contract code.</li>
+</ul>
+<p>These are <strong>not reported as findings below</strong> since they are acknowledged design decisions. The findings focus on implementation bugs and improvements beyond the documented scope.</p>
+
 <div class="stat-grid">
-  <div class="stat-box"><div class="number" style="color: var(--red)">2</div><div class="label">Critical</div></div>
-  <div class="stat-box"><div class="number" style="color: #da3633">2</div><div class="label">High</div></div>
+  <div class="stat-box"><div class="number" style="color: var(--red)">1</div><div class="label">Critical</div></div>
+  <div class="stat-box"><div class="number" style="color: #da3633">1</div><div class="label">High</div></div>
   <div class="stat-box"><div class="number" style="color: var(--yellow)">3</div><div class="label">Medium</div></div>
   <div class="stat-box"><div class="number" style="color: var(--blue)">2</div><div class="label">Low</div></div>
   <div class="stat-box"><div class="number" style="color: var(--text-muted)">2</div><div class="label">Informational</div></div>
@@ -104,27 +113,9 @@ th { color: var(--text-muted); font-weight: 600; }
 
 <h2>Findings</h2>
 
-<!-- C-01 -->
+<!-- C-01 (formerly C-02) -->
 <div class="finding">
-<h3><span class="severity critical">CRITICAL</span> C-01: Authorized Stacker Controls All PoX Reward Destination</h3>
-<p><strong>Location:</strong> <code>stack-stx-tranche</code> (line 150-185)</p>
-<p><strong>Description:</strong> The <code>stack-stx-tranche</code> function accepts an arbitrary <code>pox-addr</code> parameter from the caller. Any authorized stacker can direct ALL PoX stacking rewards (paid in BTC) to their own Bitcoin address. Futures token holders contribute the STX capital but receive zero yield — they can only redeem their original deposit.</p>
-<pre><code>(define-public (stack-stx-tranche (pox-addr { version: (buff 1), hashbytes: (buff 20) }))
-    (if (is-authorized tx-sender)
-        ;; stacker provides ANY pox-addr — all BTC rewards go there
-        ...
-        (pox-result (as-contract
-            (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox stack-stx
-                contract-balance pox-addr burn-block-height REWARD-CYCLE-LOCK-PERIOD)))
-        )
-</code></pre>
-<p><strong>Impact:</strong> Complete theft of stacking yield. Users contribute capital, authorized stacker takes all BTC rewards. This is the fundamental economic flaw — the contract creates a futures instrument with no yield mechanism for token holders.</p>
-<p><strong>Recommendation:</strong> Either hardcode the pox-addr at deployment (like AUTHORIZED-STACKERS), implement a reward-sharing mechanism, or require multi-sig approval for the reward address.</p>
-</div>
-
-<!-- C-02 -->
-<div class="finding">
-<h3><span class="severity critical">CRITICAL</span> C-02: <code>get-total-supply</code> Returns Wrong Value — Insolvency Risk</h3>
+<h3><span class="severity critical">CRITICAL</span> C-01: <code>get-total-supply</code> Returns STX Balance Instead of Token Supply</h3>
 <p><strong>Location:</strong> <code>get-total-supply</code> (line 205)</p>
 <p><strong>Description:</strong> The function returns <code>stx-get-balance</code> of the contract instead of <code>ft-get-supply stx-future</code>. These values diverge in critical scenarios:</p>
 <ul>
@@ -141,18 +132,9 @@ th { color: var(--text-muted); font-weight: 600; }
 <p><strong>Recommendation:</strong> Use <code>(ft-get-supply stx-future)</code> instead. Make it <code>define-read-only</code>.</p>
 </div>
 
-<!-- H-01 -->
+<!-- H-01 (formerly H-02) -->
 <div class="finding">
-<h3><span class="severity high">HIGH</span> H-01: No Yield Distribution — Futures are Strictly Worse Than Holding STX</h3>
-<p><strong>Location:</strong> Contract architecture</p>
-<p><strong>Description:</strong> The contract creates a futures instrument where users deposit STX and receive tokens, but there is no mechanism to distribute PoX stacking rewards to token holders. Users take on counterparty risk (authorized stacker, lock-up period, smart contract risk) for zero additional yield. The futures token is economically inferior to simply holding STX and stacking directly.</p>
-<p><strong>Impact:</strong> No rational user would buy futures tokens. The contract's economic model is broken — it socializes risk without socializing rewards. The authorized stacker captures 100% of the yield.</p>
-<p><strong>Recommendation:</strong> Implement a reward distribution mechanism. Options: (a) have the stacker deposit BTC rewards back to the contract, (b) use a separate reward pool with pro-rata claims, or (c) accept additional STX from rewards and increase the redemption ratio.</p>
-</div>
-
-<!-- H-02 -->
-<div class="finding">
-<h3><span class="severity high">HIGH</span> H-02: No Cancellation or Refund Before Stacking Lock</h3>
+<h3><span class="severity high">HIGH</span> H-01: No Cancellation or Refund Before Stacking Lock</h3>
 <p><strong>Location:</strong> <code>buy-stx-futures</code> / <code>redeem-stx-futures</code></p>
 <p><strong>Description:</strong> Once a user buys futures tokens, they cannot redeem until either (a) the stacking lock ends, or (b) the stacker fails to stack and the reward cycle begins. If the authorized stacker delays stacking, users' STX is locked in the contract with no exit mechanism until <code>FIRST-REWARD-CYCLE</code> starts.</p>
 <pre><code>;; Redemption requires:
@@ -243,9 +225,9 @@ th { color: var(--text-muted); font-weight: 600; }
 
 <h2>Recommendations Summary</h2>
 <ol>
-  <li><strong>Hardcode or restrict the PoX reward address</strong> — the single most impactful change. Without it, the authorized stacker captures all yield.</li>
   <li><strong>Fix <code>get-total-supply</code></strong> to use <code>ft-get-supply</code> — prevents supply/balance mismatch and first-come-first-served extraction.</li>
   <li><strong>Add a cancellation mechanism</strong> — allow futures holders to redeem before stacking locks occur.</li>
+  <li><strong>Consider on-chain reward distribution</strong> — documented as out-of-scope, but would reduce custodian trust requirements.</li>
   <li><strong>Implement proper SIP-010</strong> — add memo parameter, change public getters to read-only.</li>
   <li><strong>Update PoX contract reference</strong> — v1 is no longer active on mainnet.</li>
   <li><strong>Migrate to Clarity 4</strong> — use <code>as-contract?</code> with explicit asset allowances.</li>
