@@ -128,15 +128,16 @@ th { color: var(--text-muted); font-weight: 600; }
 <p><strong>Location:</strong> <code>get-total-supply</code> (line 205)</p>
 <p><strong>Description:</strong> The function returns <code>stx-get-balance</code> of the contract instead of <code>ft-get-supply stx-future</code>. These values diverge in critical scenarios:</p>
 <ul>
-  <li>During stacking: contract STX balance = 0 (locked in PoX), but token supply &gt; 0</li>
+  <li><code>stx-get-balance</code> includes locked (stacked) STX, so it won't drop to zero during stacking — but it still tracks a different quantity than outstanding futures tokens</li>
   <li>If extra STX is sent to the contract: balance inflates beyond token supply</li>
+  <li>After redemptions: balance decreases but <code>ft-get-supply</code> may not (if tokens aren't burned)</li>
   <li>External integrations relying on total supply see incorrect data</li>
 </ul>
 <pre><code>(define-public (get-total-supply)
     (ok (stx-get-balance (as-contract tx-sender))))
 ;; Should be: (ok (ft-get-supply stx-future))
 </code></pre>
-<p><strong>Impact:</strong> During the stacking period, the token appears to have zero supply. After unlock, if any extra STX arrives at the contract address, early redeemers can drain more than their fair share (first-come-first-served extraction of excess). DEX integrations using this function will price the token incorrectly.</p>
+<p><strong>Impact:</strong> The reported "total supply" reflects the contract's STX holdings rather than outstanding futures tokens. If extra STX arrives at the contract address, early redeemers can drain more than their fair share (first-come-first-served extraction of excess). DEX integrations using this function will price the token incorrectly.</p>
 <p><strong>Recommendation:</strong> Use <code>(ft-get-supply stx-future)</code> instead. Make it <code>define-read-only</code>.</p>
 </div>
 
@@ -243,7 +244,7 @@ th { color: var(--text-muted); font-weight: 600; }
 <h2>Recommendations Summary</h2>
 <ol>
   <li><strong>Hardcode or restrict the PoX reward address</strong> — the single most impactful change. Without it, the authorized stacker captures all yield.</li>
-  <li><strong>Fix <code>get-total-supply</code></strong> to use <code>ft-get-supply</code> — prevents insolvency reporting and first-come-first-served extraction.</li>
+  <li><strong>Fix <code>get-total-supply</code></strong> to use <code>ft-get-supply</code> — prevents supply/balance mismatch and first-come-first-served extraction.</li>
   <li><strong>Add a cancellation mechanism</strong> — allow futures holders to redeem before stacking locks occur.</li>
   <li><strong>Implement proper SIP-010</strong> — add memo parameter, change public getters to read-only.</li>
   <li><strong>Update PoX contract reference</strong> — v1 is no longer active on mainnet.</li>
