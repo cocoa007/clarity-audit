@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFT Marketplace Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>stacks-nft-marketplace — NFT Ecosystem</h1>
+<p class="subtitle">serayd61/stacks-nft-marketplace · 5 contracts · ~1,100 lines · February 21, 2026</p>
+
+<h2>Overview</h2>
+<p>A comprehensive NFT ecosystem comprising five contracts: a fixed-price marketplace with auctions (<code>nft-marketplace.clar</code>), an SIP-009 NFT collection (<code>nft-collection.clar</code>), fractional NFT ownership (<code>nft-fractional.clar</code>), NFT rental (<code>nft-rental.clar</code>), and NFT staking for rewards (<code>nft-staking.clar</code>).</p>
+
+<p>The fundamental flaw across all five contracts: <strong>none of them actually custody NFTs</strong>. The marketplace collects payment but never delivers NFTs. The fractional system sells shares of NFTs it doesn't hold. The rental system charges fees for access it can't enforce. The staking system rewards users for locking tokens that remain freely transferable. Additionally, multiple <code>as-contract</code> bugs cause funds to be permanently locked.</p>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="severity critical">CRITICAL</span></td><td>6</td></tr>
+<tr><td><span class="severity high">HIGH</span></td><td>5</td></tr>
+<tr><td><span class="severity medium">MEDIUM</span></td><td>8</td></tr>
+<tr><td><span class="severity low">LOW</span> / <span class="severity info">INFO</span></td><td>5</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-1</span> No NFT Escrow — Sellers Never Transfer NFTs</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar · <code>list-nft</code>, <code>buy-nft</code></p>
+<p>The marketplace never takes custody of NFTs. <code>list-nft</code> creates a map entry but never calls <code>nft-transfer?</code>. <code>buy-nft</code> sends STX to the seller but never delivers the NFT to the buyer. A seller can list, collect payment, and the buyer receives nothing.</p>
+<pre>;; list-nft: only creates a map entry
+(map-set listings listing-id { seller: tx-sender, ... })
+;; No nft-transfer? to escrow
+
+;; buy-nft: pays seller, never delivers NFT
+(try! (stx-transfer? seller-amount tx-sender seller))
+;; No nft-transfer? to buyer</pre>
+<p>The same issue applies to <code>create-auction</code> and <code>end-auction</code> — NFTs are never escrowed or delivered.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-2</span> Auction Bids Not Escrowed — Free Bidding</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar · <code>place-bid</code></p>
+<p>Bids are recorded but bidder funds are never transferred. Only a balance check is performed:</p>
+<pre>(asserts! (>= (stx-get-balance tx-sender) bid-amount) err-insufficient-funds)
+;; No stx-transfer? — funds stay with bidder</pre>
+<p>When <code>end-auction</code> settles, it attempts <code>stx-transfer?</code> from the winner who may no longer have sufficient funds. Previous bidders' funds are never refunded because they were never collected.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-3</span> claim-buyout-proceeds Sends STX to Itself</h3>
+<p><strong>Contract:</strong> nft-fractional.clar · <code>claim-buyout-proceeds</code></p>
+<p>The <code>as-contract</code> block makes <code>tx-sender</code> refer to the contract itself, so funds transfer from contract → contract (a no-op):</p>
+<pre>;; Inside as-contract, tx-sender = contract principal
+(try! (as-contract (stx-transfer? share-of-buyout tx-sender tx-sender)))
+;; Contract sends to itself — fraction holders get nothing</pre>
+<p>All buyout proceeds are permanently locked. The outer <code>tx-sender</code> (the claimer) must be captured in a <code>let</code> binding before entering <code>as-contract</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-4</span> claim-collateral Sends Collateral to Contract, Not Owner</h3>
+<p><strong>Contract:</strong> nft-rental.clar · <code>claim-collateral</code></p>
+<p>Identical <code>as-contract</code> bug — collateral from delinquent renters is transferred from the contract back to itself:</p>
+<pre>(try! (as-contract (stx-transfer? (get collateral-paid rental) tx-sender tx-sender)))
+;; NFT owner never receives the collateral</pre>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-5</span> No NFT Custody in Fractional, Rental, or Staking Contracts</h3>
+<p><strong>Contracts:</strong> nft-fractional.clar, nft-rental.clar, nft-staking.clar</p>
+<p>None of these contracts transfer NFTs into escrow:</p>
+<ul>
+<li><strong>Fractional:</strong> <code>fractionalize-nft</code> creates a vault but the owner retains the NFT. They can sell fractions and then transfer the NFT away — fraction holders own shares of nothing.</li>
+<li><strong>Rental:</strong> <code>rent-nft</code> charges rent and collateral but the NFT remains with the owner. The "rental" is purely bookkeeping with no on-chain access control.</li>
+<li><strong>Staking:</strong> <code>stake-nft</code> records a stake but the NFT remains freely transferable. Users can earn staking rewards while selling their NFT elsewhere.</li>
+</ul>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-6</span> Anyone Can List or Auction Any NFT</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar · <code>list-nft</code>, <code>create-auction</code></p>
+<p>Neither function verifies that <code>tx-sender</code> owns the specified NFT. Combined with C-1, an attacker lists someone else's NFT, a buyer pays, and the attacker collects the funds.</p>
+</div>
+
+<h2>High Severity Findings</h2>
+
+<div class="finding">
+<h3><span class="severity high">H-1</span> Hardcoded Treasury Address</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar</p>
+<pre>(define-constant treasury 'SP2PEBKJ2W1ZDDF2QQ6Y4FXKZEDPT9J9R2NKD9WJB)</pre>
+<p>Cannot be updated if the key is lost or compromised. All platform fees become irrecoverable.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-2</span> No Duplicate Listing Prevention</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar</p>
+<p>The same NFT can be listed multiple times simultaneously. A seller creates multiple listings for the same token and collects payment from multiple buyers. No per-NFT active listing tracking exists.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-3</span> Batch Mint Hardcoded to 10, Overcharges for count &gt; 10</h3>
+<p><strong>Contract:</strong> nft-collection.clar · <code>mint-batch</code></p>
+<pre>;; Charges for `count` tokens...
+(try! (stx-transfer? (* mint-price count) tx-sender contract-owner))
+;; ...but only iterates 10 times
+(fold mint-single (list u1 u2 u3 u4 u5 u6 u7 u8 u9 u10) ...)</pre>
+<p>If <code>count = 20</code>, user pays for 20 tokens but only receives 10. The excess payment is stolen.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-4</span> Buyout Price Manipulation by Vault Owner</h3>
+<p><strong>Contract:</strong> nft-fractional.clar · <code>update-fraction-price</code></p>
+<p>The vault owner can change the fraction price at any time, which recalculates the buyout price as <code>total-fractions × new-price × 2</code>. After selling fractions cheaply, the owner raises the price to make buyout prohibitively expensive, trapping minority shareholders.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-5</span> Rental Platform Fee Goes to Immutable contract-owner</h3>
+<p><strong>Contract:</strong> nft-rental.clar</p>
+<p>Platform fees are sent to <code>contract-owner</code> (a constant set at deploy time). Unlike a configurable treasury, this address can never be changed.</p>
+</div>
+
+<h2>Medium Severity Findings</h2>
+
+<div class="finding">
+<h3><span class="severity medium">M-1</span> Integer Truncation in Fee Calculations</h3>
+<p><strong>Contracts:</strong> nft-marketplace.clar, nft-rental.clar</p>
+<p>For small prices, <code>(/ (* price 250) 10000)</code> truncates to zero. Platform collects no fee on trades under 40 STX (marketplace) or small rental amounts.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-2</span> Approval System Has No Effect</h3>
+<p><strong>Contract:</strong> nft-collection.clar</p>
+<p>The <code>transfer</code> function only checks <code>(is-eq tx-sender sender)</code> but never checks <code>token-approvals</code> or <code>operator-approvals</code>. The entire ERC-721-style approval system is decorative — approved operators cannot transfer tokens.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-3</span> Token URIs Are All Identical</h3>
+<p><strong>Contract:</strong> nft-collection.clar · <code>mint</code></p>
+<pre>(map-set token-uris token-id (concat (var-get base-uri) ""))</pre>
+<p>Concatenates base URI with empty string. All tokens get the same metadata URI. Token ID is never appended.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-4</span> Royalties Recorded But Never Enforced</h3>
+<p><strong>Contract:</strong> nft-collection.clar, nft-marketplace.clar</p>
+<p><code>royalty-info</code> and <code>calculate-royalty</code> exist in the collection contract, but the marketplace's <code>buy-nft</code> never calls them. Creators receive no royalty payments on secondary sales.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-5</span> emergency-withdraw Can Underflow reward-pool</h3>
+<p><strong>Contract:</strong> nft-staking.clar</p>
+<pre>(var-set reward-pool (- (var-get reward-pool) amount))</pre>
+<p>No bounds check. If <code>amount &gt; reward-pool</code>, the subtraction causes an underflow panic, bricking the function.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-6</span> Expired Listings Still Cancellable</h3>
+<p><strong>Contract:</strong> nft-marketplace.clar · <code>cancel-listing</code></p>
+<p>No check for expiry or active status. Users can "cancel" already-expired or already-purchased listings.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-7</span> Staking Rewards Without Actual Lock</h3>
+<p><strong>Contract:</strong> nft-staking.clar</p>
+<p>Since NFTs are never escrowed (C-5), stakers earn rewards based on lock duration while the NFT remains freely transferable. A user could "stake" an NFT, sell it on a marketplace, and continue earning staking rewards.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-8</span> Anyone Can Fund Reward Pool</h3>
+<p><strong>Contract:</strong> nft-staking.clar · <code>add-to-reward-pool</code></p>
+<p>No access control on pool funding. Combined with <code>emergency-withdraw</code> (admin-only), this enables a bait-and-switch: temporarily fund the pool to attract stakers, then drain it.</p>
+</div>
+
+<h2>Informational</h2>
+<ul>
+<li><strong>No events:</strong> None of the contracts emit <code>print</code> statements for off-chain indexing.</li>
+<li><strong>No upgrade path:</strong> All contracts use <code>define-constant contract-owner</code> with no ownership transfer.</li>
+<li><strong>Stats can desync:</strong> Multiple sequential <code>map-set</code> calls for statistics tracking — if intermediate operations fail, counts become inconsistent.</li>
+<li><strong>Staking tiers defined but unused:</strong> The <code>stake-tiers</code> map is populated but <code>get-stake-bonus</code> uses hardcoded if/else instead of reading the map.</li>
+<li><strong>No re-listing mechanism:</strong> After cancellation, old listing IDs remain as inactive entries. No way to relist without creating a new ID.</li>
+</ul>
+
+<h2>Architecture</h2>
+<table>
+<tr><th>Contract</th><th>Role</th><th>Lines</th><th>Functions</th><th>Maps</th></tr>
+<tr><td>nft-marketplace</td><td>Fixed-price sales &amp; auctions</td><td>~230</td><td>10</td><td>4</td></tr>
+<tr><td>nft-collection</td><td>SIP-009 NFT with minting</td><td>~195</td><td>15</td><td>5</td></tr>
+<tr><td>nft-fractional</td><td>Fractionalize NFTs into shares</td><td>~210</td><td>9</td><td>4</td></tr>
+<tr><td>nft-rental</td><td>Time-limited NFT rental</td><td>~250</td><td>9</td><td>4</td></tr>
+<tr><td>nft-staking</td><td>Stake NFTs for STX rewards</td><td>~210</td><td>11</td><td>4</td></tr>
+</table>
+
+<h2>Verdict</h2>
+<p>This ecosystem has a <strong>fatal architectural flaw</strong>: none of the five contracts ever take custody of NFTs. Every operation — buying, selling, auctioning, fractionalizing, renting, staking — is purely bookkeeping with no on-chain enforcement. Combined with <code>as-contract</code> bugs that permanently lock funds (C-3, C-4), and the ability to list NFTs you don't own (C-6), the entire suite is <strong>not safe for production use</strong>. A complete redesign with proper NFT escrow via <code>contract-call?</code> is required.</p>
+
+<footer>
+<a href="index.html">← Back to index</a> · cocoa007 · February 2026
+</footer>
+
+</body>
+</html>

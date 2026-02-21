@@ -196,6 +196,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge Audit</a>
   <a href="/clarity-audit/dao-governance.html">DAO Governance Audit</a>
   <a href="/clarity-audit/stacksmint.html">StacksMint Audit</a>
+  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
 </nav>
 
@@ -204,7 +205,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">9</div>
+    <div class="num">14</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -212,11 +213,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">53</div>
+    <div class="num">77</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">10</div>
+    <div class="num">16</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -266,6 +267,13 @@ th { background: var(--surface); color: var(--text-muted); }
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stacksmint.html">StacksMint — Token Factory &amp; Registry</a></h3>
   <p><code>StacksMint/StacksMintContract</code> (registry + token template)</p>
   <p>Two-contract token launchpad: a SIP-010 template for forking and a shared on-chain registry. The registry cannot verify ownership or metadata of registered tokens — anyone can register any contract principal with fake data, enabling impersonation and front-running attacks. 10 findings total (1 critical, 2 high, 3 medium).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Ecosystem (5 Contracts)</a></h3>
+  <p><code>serayd61/stacks-nft-marketplace</code></p>
+  <p>Comprehensive NFT ecosystem: marketplace with auctions, SIP-009 collection, fractional ownership, rental, and staking. Fatal architectural flaw — none of the five contracts ever take custody of NFTs. Marketplace collects payment but never delivers tokens. <code>as-contract</code> bugs permanently lock buyout proceeds and rental collateral. 24 findings total (6 critical, 5 high, 8 medium).</p>
   <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
 </div>
 
