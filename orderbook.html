@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeFi Orderbook Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Home</a>
+  <a href="/clarity-audit/orderbook.html" class="active">DeFi Orderbook</a>
+</nav>
+
+<h1>DeFi Orderbook — DEX Order Book</h1>
+<p class="subtitle">
+  Repo: <a href="https://github.com/syed-ghufran-hassan/orderbook">syed-ghufran-hassan/orderbook</a> · 1 contract · ~85 lines<br>
+  Audited: February 21, 2026
+</p>
+
+<h2>Overview</h2>
+<p>A minimal DeFi orderbook on Stacks allowing users to deposit balances, place orders, and fill orders with partial-fill support. The contract demonstrates basic Clarity map operations but implements a <strong>simulated</strong> orderbook with no real token transfers — deposits create balance from nothing.</p>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>Severity</th><th>Count</th><th>Description</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>2</td><td>Phantom deposits, no withdrawal</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>2</td><td>Single-dimension trade, no cancel</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>3</td><td>Zero amounts, no price, fill edge case</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>2</td><td>No events, no cleanup</td></tr>
+</table>
+
+<h2>Critical Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">C-01</span> Deposit Creates Tokens From Nothing</h3>
+  <p>The <code>deposit</code> function increments an internal balance map without any <code>stx-transfer?</code> or token transfer. Users can call <code>deposit</code> with any amount to create unlimited fake balance.</p>
+<pre><code>(define-public (deposit (amount uint))
+    (begin
+        (map-set balances {user: tx-sender}
+            (+ (default-to u0 (map-get? balances {user: tx-sender})) amount))
+        (ok true)))</code></pre>
+  <p>The entire economic model is meaningless — anyone can mint unlimited balance with zero cost.</p>
+  <p><strong>Fix:</strong> Add <code>(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))</code> before crediting the balance.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity critical">C-02</span> No Withdrawal Function — Funds Permanently Locked</h3>
+  <p>There is no <code>withdraw</code> function. If the contract ever held real STX (after fixing C-01), deposited funds could never be recovered. Users have no exit path.</p>
+  <p><strong>Fix:</strong> Add a withdraw function that debits the balance map and transfers STX back to the user.</p>
+</div>
+
+<h2>High Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">H-01</span> Single-Dimension Orderbook — Circular Trade</h3>
+  <p>When a taker fills an order, the contract transfers the taker's balance to the maker. But there's only one token dimension — there is no "quote" asset. Filling an order just moves the same token back to the maker, making trades economically circular (taker pays X of token A, maker receives X of token A).</p>
+  <p>A real orderbook needs two assets: <code>base-token</code> and <code>quote-token</code>, with orders specifying a price (ratio between them).</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity high">H-02</span> No Cancel-Order Function</h3>
+  <p>Once an order is placed via <code>add-order</code>, the maker's balance is locked in the order with no way to cancel and reclaim it. The only recovery is having someone else fill the order — which just returns the same token type (see H-01).</p>
+  <p><strong>Fix:</strong> Add <code>cancel-order</code> that verifies <code>(is-eq tx-sender (get trader order))</code>, returns locked amount to maker's balance, and sets <code>active: false</code>.</p>
+</div>
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity medium">M-01</span> Zero-Amount Orders and Fills Allowed</h3>
+  <p>Neither <code>add-order</code> nor <code>fill-order</code> validates that amounts are greater than zero. Users can create zero-amount orders (wasting map storage) and zero-amount fills (no-op transactions that still modify state).</p>
+  <p><strong>Fix:</strong> Add <code>(asserts! (> amount u0) err-invalid-amount)</code> to both functions.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-02</span> No Price Discovery Mechanism</h3>
+  <p>Orders contain only <code>{trader, amount, active}</code> — no price field. Without price, there's no bid/ask spread, no matching engine, and no price discovery. This is effectively a FIFO queue, not an orderbook.</p>
+  <p>A functional orderbook needs at minimum: <code>price: uint</code>, <code>side: (string-ascii 4)</code> ("buy"/"sell"), and a matching algorithm.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">M-03</span> Partial Fill Edge Case With Zero Fills</h3>
+  <p>Since zero fills are allowed (M-01), the <code>fill-order</code> active-status check works correctly but allows no-op fills that still trigger state writes:</p>
+<pre><code>(let ((new-amount (- (get amount order) fill-amount))     ;; unchanged
+      (new-active (if (>= fill-amount (get amount order))  ;; still true
+                      false true)))
+    (map-set orders ...)  ;; unnecessary write</code></pre>
+</div>
+
+<h2>Low Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity low">L-01</span> No Events or Print Statements</h3>
+  <p>No <code>print</code> statements for deposits, order creation, fills, or any state changes. Off-chain indexers and UIs cannot track contract activity without polling every block.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">L-02</span> No Order Expiry or Cleanup</h3>
+  <p>Filled orders remain in the map permanently with <code>active: false</code>. No mechanism exists to clean up stale entries or set expiry times on orders. Over time this wastes on-chain storage.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+
+<p>The contract demonstrates basic Clarity patterns (maps, variables, assertions, partial fills) but falls far short of a functional DEX:</p>
+
+<table>
+  <tr><th>Feature</th><th>Status</th></tr>
+  <tr><td>Real token transfers (STX or SIP-010)</td><td>❌ Missing — phantom balances</td></tr>
+  <tr><td>Two-sided market (base/quote)</td><td>❌ Single dimension</td></tr>
+  <tr><td>Price / matching engine</td><td>❌ No price field</td></tr>
+  <tr><td>Order cancellation</td><td>❌ No cancel function</td></tr>
+  <tr><td>Withdrawal</td><td>❌ No withdraw function</td></tr>
+  <tr><td>Balance tracking</td><td>✅ Internal map</td></tr>
+  <tr><td>Order creation</td><td>✅ With counter</td></tr>
+  <tr><td>Partial fills</td><td>✅ Correct accounting</td></tr>
+  <tr><td>Read-only queries</td><td>✅ get-order, get-balance</td></tr>
+</table>
+
+<p><strong>Verdict:</strong> Proof-of-concept / learning exercise demonstrating Clarity fundamentals. The partial-fill logic is correctly implemented, but the contract cannot serve as a real DEX without token transfers, price discovery, and a two-asset model. Not suitable for any value transfer.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕</p>
+</footer>
+
+</body>
+</html>
