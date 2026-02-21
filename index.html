@@ -35,17 +35,8 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-h1 {
-  font-size: 2rem;
-  margin-bottom: 0.25rem;
-  color: var(--accent);
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  margin-bottom: 2rem;
-}
+h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
 
 h2 {
   font-size: 1.4rem;
@@ -55,28 +46,8 @@ h2 {
   border-bottom: 1px solid var(--border);
 }
 
-h3 {
-  font-size: 1.1rem;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
 p, li { margin-bottom: 0.75rem; }
 ul, ol { padding-left: 1.5rem; }
-
-.severity {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-right: 0.5rem;
-}
-.severity.critical { background: var(--red); color: #fff; }
-.severity.medium { background: var(--yellow); color: #000; }
-.severity.low { background: var(--blue); color: #000; }
-.severity.info { background: var(--text-muted); color: #000; }
-.severity.good { background: var(--green); color: #000; }
 
 pre {
   background: var(--surface);
@@ -87,7 +58,6 @@ pre {
   margin: 1rem 0;
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  line-height: 1.5;
 }
 
 code {
@@ -99,16 +69,6 @@ code {
 }
 
 pre code { background: none; padding: 0; }
-
-.finding {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.25rem;
-  margin: 1rem 0;
-}
-
-.finding h3 { margin-top: 0; }
 
 .stat-grid {
   display: grid;
@@ -125,28 +85,8 @@ pre code { background: none; padding: 0; }
   text-align: center;
 }
 
-.stat-card .num {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.stat-card .label {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.toc {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.25rem;
-  margin: 1.5rem 0;
-}
-
-.toc ul { list-style: none; padding-left: 0; }
-.toc li { margin-bottom: 0.4rem; }
-.toc li::before { content: "→ "; color: var(--text-muted); }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
 
 .nav {
   display: flex;
@@ -156,18 +96,79 @@ pre code { background: none; padding: 0; }
   border-bottom: 1px solid var(--border);
 }
 
-.nav a {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
 .nav a:hover, .nav a.active { color: var(--accent); }
 
-footer {
-  margin-top: 3rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+.audit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+}
+
+.audit-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.audit-card .card-header a {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.audit-card .card-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.audit-card .repo { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+
+.confidence { font-size: 0.8rem; white-space: nowrap; }
+
+.findings-compact {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
   color: var(--text-muted);
-  font-size: 0.85rem;
+}
+.findings-compact .c { color: var(--red); }
+.findings-compact .h { color: #da3633; }
+.findings-compact .m { color: var(--yellow); }
+.findings-compact .l { color: var(--blue); }
+.findings-compact .i { color: var(--text-muted); }
+
+.audit-card .summary {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.audit-card .date {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
 }
 
 table {
@@ -183,37 +184,19 @@ th, td {
 }
 th { background: var(--surface); color: var(--text-muted); }
 
-.emoji { font-size: 1.2em; }
+footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
 </style>
 </head>
 <body>
 
 <nav class="nav">
-  <a href="/clarity-audit/" class="active">Home</a>
-  <a href="/clarity-audit/market-factory.html">Market Factory Audit</a>
-  <a href="/clarity-audit/quests.html">Quests Audit</a>
-  <a href="/clarity-audit/p2p-lending.html">P2P Lending Audit</a>
-  <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge Audit</a>
-  <a href="/clarity-audit/dao-governance.html">DAO Governance Audit</a>
-  <a href="/clarity-audit/stacksmint.html">StacksMint Audit</a>
-  <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Audit</a>
-  <a href="/clarity-audit/yield-elite.html">Yield Elite Audit</a>
-  <a href="/clarity-audit/stx-escrow.html">STX Escrow Audit</a>
-  <a href="/clarity-audit/crowdfund.html">Crowdfund Audit</a>
-  <a href="/clarity-audit/reguguard.html">ReguGuard Audit</a>
-  <a href="/clarity-audit/bugwatch.html">BugWatch Audit</a>
-  <a href="/clarity-audit/orderbook.html">Orderbook Audit</a>
-  <a href="/clarity-audit/glamora.html">Glamora Audit</a>
-  <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet Audit</a>
-  <a href="/clarity-audit/curatechain.html">CurateChain Audit</a>
-  <a href="/clarity-audit/satguard.html">SatGuard Audit</a>
-  <a href="/clarity-audit/sbtcmarket.html">sBTC Market Audit</a>
-  <a href="/clarity-audit/stackhub.html">StackHub Audit</a>
-  <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
-  <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market Audit</a>
-  <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch Audit</a>
-  <a href="/clarity-audit/stx-yield.html">STX Yield Staking Audit</a>
-  <a href="/clarity-audit/stx-future.html">STX Future Audit</a>
+  <a href="/clarity-audit/" class="active">Audits</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
 </nav>
@@ -223,204 +206,360 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
+    <div class="num">24</div>
+    <div class="label">Audits</div>
+  </div>
+  <div class="stat-card">
     <div class="num">46</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">31</div>
-    <div class="label">Patterns Documented</div>
-  </div>
-  <div class="stat-card">
-    <div class="num">216</div>
+    <div class="num">259</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">39</div>
+    <div class="num">47</div>
     <div class="label">Critical</div>
   </div>
 </div>
 
 <h2>What This Is</h2>
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
-<p>I'm building deep knowledge of Clarity by studying real production contracts: how they handle math, authorization, state, and the edge cases that matter.</p>
 
 <h2>Audits</h2>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-future.html">STX Future — Stacked STX Futures Tranches</a></h3>
-  <p><code>jcnelson/stx-future</code> (1 contract: stx-future.clar, 213 lines)</p>
-  <p>Futures tranches for Stacked STX by Stacks core developer Jude Nelson. Users deposit STX and receive fungible futures tokens 1:1, an authorized stacker locks the pool in PoX, then holders redeem after unlock. Critical finding: the authorized stacker controls the PoX reward address — they capture 100% of BTC stacking yield while users bear all the risk. Total supply function returns contract STX balance instead of token supply, enabling insolvency during stacking and first-come-first-served extraction of excess funds. Hardcoded PoX v1 address makes the contract non-functional on current mainnet. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stx-future.html">STX Future — Stacked STX Futures</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">jcnelson/stx-future</span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Futures tranches for Stacked STX. Authorized stacker captures 100% of BTC yield; hardcoded PoX v1 makes it non-functional on current mainnet. <em>Some findings corrected after deeper review.</em></p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch — Timed Asset Transfer</a></h3>
-  <p><code>CMPGFB/Dead-Man-Switch-Contracts</code> (2 contracts: main dead man switch + UTXO variant)</p>
-  <p>Dead man's switch for automatic asset transfer to a beneficiary if the owner fails to check in. The initialize function has no access control — anyone can front-run deployment to hijack the contract and become the owner. The UTXO contract calls non-existent <code>send-bitcoin</code> function and uses invalid string error types, making it undeployable. The owner retains full withdrawal access even after the switch triggers, defeating the core mechanism. Token allowlist is defined but never enforced. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/dead-man-switch.html">Dead Man's Switch — Timed Asset Transfer</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">CMPGFB/Dead-Man-Switch-Contracts</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">UTXO contract calls non-existent <code>send-bitcoin</code> and uses invalid error types — undeployable. Initialize has no access control.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market — Bitcoin-Anchored Prediction Market</a></h3>
-  <p><code>phessophissy/btc-prediction-market</code> (5 contracts: v1 + v2 + v3 + PMT token + SIP-010 trait)</p>
-  <p>Decentralized prediction market using Bitcoin block hashes for settlement. The claim-winnings function sends payouts back to the contract instead of the user due to tx-sender resolving to the contract address inside as-contract. The owner can drain all user deposits via withdraw-fees with no limit check. V2 and V3 are incomplete — they accept creation fees but have no betting, settlement, or claim functions. Emergency withdrawal has no timelock, enabling instant rug pulls. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/btc-prediction-market.html">BTC Prediction Market</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">phessophissy/btc-prediction-market</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Payouts sent back to contract via as-contract bug. V2/V3 accept fees but have no betting or claims. Owner can drain all deposits.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stackhub.html">StackHub — Multi-Contract DeFi Platform</a></h3>
-  <p><code>AdekunleBamz/stackhub</code> (4 contracts: NFT Marketplace, Token Launchpad, Staking Vault, Service Registry)</p>
-  <p>DeFi platform with four fee-generating contracts. The staking vault is custodial — funds go directly to the owner's wallet, not the contract, making it an architectural rug-pull vector. The token launchpad charges 5 STX to create "tokens" that are just map entries with no actual FT minting. Neither contract implements standard SIP traits. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stackhub.html">StackHub — Multi-Contract DeFi Platform</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">AdekunleBamz/stackhub</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Staking vault sends funds to owner's wallet — architectural rug-pull vector. Token launchpad creates map entries, not actual FTs.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/flashstack.html">FlashStack — Flash Loan Protocol</a></h3>
-  <p><code>mattglory/Flashstack</code> (13 contracts: core + sBTC token + 10 receivers + trait)</p>
-  <p>Atomic flash-minting protocol for sBTC against PoX-4 locked STX. The sBTC token has a deployer backdoor allowing unlimited minting outside the flash-loan mechanism. The repayment check uses balance deltas instead of supply invariants, enabling receivers to keep minted tokens. Fees are burned instead of collected — the protocol earns zero revenue. 12 findings total (2 critical, 3 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/flashstack.html">FlashStack — Flash Loan Protocol</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">mattglory/Flashstack</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Deployer backdoor allows unlimited sBTC minting. Repayment check uses balance deltas — receivers can keep minted tokens. Fees burned.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/satguard.html">SatGuard Protocol — Insurance Pool</a></h3>
-  <p><code>Mosas2000/SatGuard-Protocol</code></p>
-  <p>Bitcoin-backed micro-insurance protocol with pool creation, contribution-weighted claim voting, and payouts. The contract never calls stx-transfer? — the entire insurance mechanism is pure bookkeeping with no real funds. Withdrawal share calculation is an identity function (x*y/y=x), causing underflow for late withdrawers. Claimants can vote on their own claims. 10 findings total (2 critical, 2 high, 3 medium, 2 low, 1 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/satguard.html">SatGuard Protocol — Insurance Pool</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Mosas2000/SatGuard-Protocol</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Never calls stx-transfer? — entire insurance mechanism is pure bookkeeping with no real funds. Withdrawal math is identity function.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/sbtcmarket.html">sBTC Prediction Market v0 — Complete Set AMM</a></h3>
-  <p><code>kai-builder/sbtcmarket-v0</code></p>
-  <p>Binary outcome prediction market using sBTC collateral with Pyth oracle resolution. Found an unrestricted mock-resolve backdoor allowing anyone to steal all vault funds, plus refund underflow that permanently locks user funds. 11 findings total (2 critical, 2 high, 3 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/sbtcmarket.html">sBTC Prediction Market v0</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">kai-builder/sbtcmarket-v0</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Unrestricted mock-resolve backdoor lets anyone steal all vault funds. Refund underflow permanently locks user funds.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/market-factory.html">Market Factory v18 — LMSR Prediction Market</a></h3>
-  <p><code>SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA.market-factory-v18-bias</code></p>
-  <p>LMSR prediction market with bias/virtual liquidity. Found integer truncation in STX-scale math causes ~46% of sell positions to revert, plus a self-service cap bypass in the auto-buy functions. 10 findings total.</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 20, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/market-factory.html">Market Factory v18 — LMSR Prediction Market</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">SP3N5CN...market-factory-v18-bias</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Integer truncation in STX-scale math causes ~46% of sell positions to revert. Self-service cap bypass in auto-buy functions.</p>
+  <p class="date">February 20, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/quests.html">Quests Contract — Quest/Challenge System</a></h3>
-  <p><code>SushilBro/quests-contract</code> (quests + treasury + helper)</p>
-  <p>Quest system where participants lock tokens and complete activities for refunds. Found self-certifiable activity completion (no verification), unconditional refund that defeats the incentive model, and a treasury accounting bug. 10 findings total.</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 20, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/quests.html">Quests — Quest/Challenge System</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">SushilBro/quests-contract</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Self-certifiable activity completion with no verification. Unconditional refund defeats the incentive model. Treasury accounting bug.</p>
+  <p class="date">February 20, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/p2p-lending.html">P2P Lending Pool — Collateralized Lending</a></h3>
-  <p><code>esthhdam-stack/P2P-Lending-Pool</code></p>
-  <p>Single-asset STX lending pool with flash loans and liquidation. Every outbound transfer is broken due to systemic <code>as-contract</code> misuse — all deposited funds permanently locked. 12 findings total (3 critical, 3 high, 3 medium, 3 low).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/p2p-lending.html">P2P Lending Pool — Collateralized Lending</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">esthhdam-stack/P2P-Lending-Pool</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">3L</span></span>
+  </div>
+  <p class="summary">Every outbound transfer broken due to systemic as-contract misuse — all deposited funds permanently locked.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge — AI-Guided Bridge Security</a></h3>
-  <p><code>Smithkeem/SentinelBridge</code></p>
-  <p>AI-guided cross-chain bridge security system with risk assessment, incident response, and dynamic limits. No actual token transfers occur — the bridge is pure bookkeeping. Transfer limit ratchets to zero permanently via integer division bug. 11 findings total (2 critical, 3 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/sentinel-bridge.html">SentinelBridge — AI-Guided Bridge Security</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Smithkeem/SentinelBridge</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">No actual token transfers — pure bookkeeping bridge. Transfer limit ratchets to zero permanently via integer division bug.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/dao-governance.html">DAO Governance — veToken Model (5 Contracts)</a></h3>
-  <p><code>serayd61/stacks-dao-governance</code></p>
-  <p>Curve-inspired veToken DAO with governance token, proposal manager, timelock, treasury, and voting escrow. The voting escrow has an infinitely recursive <code>to-int</code> that aborts every lock attempt, the proposal manager uses hardcoded voting power with its threshold commented out, and the five contracts are not integrated with each other. 14 findings total (3 critical, 4 high, 4 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/dao-governance.html">DAO Governance — veToken Model (5 Contracts)</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">serayd61/stacks-dao-governance</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">4H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Voting escrow has infinitely recursive to-int that aborts every lock. Five contracts not integrated with each other.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stacksmint.html">StacksMint — Token Factory &amp; Registry</a></h3>
-  <p><code>StacksMint/StacksMintContract</code> (registry + token template)</p>
-  <p>Two-contract token launchpad: a SIP-010 template for forking and a shared on-chain registry. The registry cannot verify ownership or metadata of registered tokens — anyone can register any contract principal with fake data, enabling impersonation and front-running attacks. 10 findings total (1 critical, 2 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stacksmint.html">StacksMint — Token Factory & Registry</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">StacksMint/StacksMintContract</span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Registry can't verify ownership of registered tokens — anyone can register any contract with fake data.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/yield-elite.html">StacksYield Elite — Multi-Tier Staking Protocol</a></h3>
-  <p><code>sienna-enzo/stacks-yield-elite</code></p>
-  <p>Multi-tier liquid staking protocol with governance, time-lock bonuses, and tiered yield multipliers. Withdrawal function sends STX back to the contract instead of the user (permanent fund lock). Stake function overwrites positions instead of accumulating. Fungible token defined with zero max supply — no rewards can ever mint. 10 findings total (2 critical, 3 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/yield-elite.html">StacksYield Elite — Multi-Tier Staking</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">sienna-enzo/stacks-yield-elite</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">1L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Withdrawal sends STX back to contract (permanent lock). FT defined with zero max supply — no rewards can ever mint.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Ecosystem (5 Contracts)</a></h3>
-  <p><code>serayd61/stacks-nft-marketplace</code></p>
-  <p>Comprehensive NFT ecosystem: marketplace with auctions, SIP-009 collection, fractional ownership, rental, and staking. Fatal architectural flaw — none of the five contracts ever take custody of NFTs. Marketplace collects payment but never delivers tokens. <code>as-contract</code> bugs permanently lock buyout proceeds and rental collateral. 24 findings total (6 critical, 5 high, 8 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/nft-marketplace.html">NFT Marketplace Ecosystem (5 Contracts)</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">serayd61/stacks-nft-marketplace</span>
+    <span class="findings-compact"><span class="c">6C</span> <span class="h">5H</span> <span class="m">8M</span> <span class="l">3L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">None of the five contracts ever take custody of NFTs. Marketplace collects payment without delivering tokens.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-yield.html">STX Yield Staking — MasterChef-style Reward Accumulator</a></h3>
-  <p><code>cypherpulse/stx-yield</code> (stx-yield-staking-v1.clar, 406 lines)</p>
-  <p>MasterChef-style STX staking protocol with admin-funded reward pool. Completely non-functional: uses <code>tx-self</code> (a non-existent Clarity keyword), <code>update-rewards</code> returns bool but is used as uint everywhere (type mismatch), and <code>stake</code> transfers STX from the user back to themselves. Emergency withdraw drains all funds including user stakes. Despite well-structured comments and correct conceptual math, the code was never compiled or tested. 11 findings total (3 critical, 2 high, 2 medium, 2 low, 2 informational).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stx-yield.html">STX Yield Staking — MasterChef-style</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">cypherpulse/stx-yield</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">2H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Uses tx-self (non-existent keyword), type mismatches everywhere — never compiled or tested. Completely non-functional.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stablecoin-bridge.html">BTC Stablecoin Bridge LP — Collateralized Stablecoin + AMM Pool</a></h3>
-  <p><code>promise-code/btc-stablecoin-bridge-lp</code> (btc-stablecoin-bridge.clar)</p>
-  <p>Bitcoin-backed stablecoin with integrated liquidity pool. Fatally flawed: the entire system runs on phantom internal balances with no real STX/BTC transfers — completely non-functional. Square root function returns x/2+1 instead of √x, inflating LP tokens by orders of magnitude. Owner-controlled oracle can crash or inflate all vault collateral ratios at will. No liquidation, no swap, no collateral withdrawal. 12 findings total (3 critical, 2 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stablecoin-bridge.html">BTC Stablecoin Bridge LP</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">promise-code/btc-stablecoin-bridge-lp</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Phantom internal balances with no real transfers — completely non-functional. Square root returns x/2+1 instead of √x.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/stx-escrow.html">STX Escrow — Trustless P2P Escrow (3 Contracts)</a></h3>
-  <p><code>serayd61/stx-escrow</code></p>
-  <p>Three-contract escrow system with dispute arbitration and NFT swap support. The core STX escrow works, but the arbitration contract collects real STX (dispute fees, arbiter stakes) for a resolution system that cannot enforce outcomes. NFT contract has no NFT transfer mechanism — deposited STX has no path to completion. 14 findings total (3 critical, 3 high, 5 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stx-escrow.html">STX Escrow — Trustless P2P Escrow (3 Contracts)</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">serayd61/stx-escrow</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">3H</span> <span class="m">5M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Core escrow works, but arbitration collects real STX for a resolution system that can't enforce outcomes. NFT contract has no transfer mechanism.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/crowdfund.html">Stacks Crowdfund — Decentralized Fundraising Platform</a></h3>
-  <p><code>serayd61/stacks-crowdfund</code></p>
-  <p>Crowdfunding platform with campaigns, deadlines, and refund mechanism. All contributions are sent directly to a hardcoded external treasury — the contract never holds funds. claim-funds and claim-refund update bookkeeping but perform zero STX transfers. 9 findings total (3 critical, 1 high, 2 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/crowdfund.html">Stacks Crowdfund — Decentralized Fundraising</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">serayd61/stacks-crowdfund</span>
+    <span class="findings-compact"><span class="c">3C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">All contributions sent to hardcoded external treasury. claim-funds and claim-refund update bookkeeping but transfer zero STX.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity high">HIGH</span> <a href="/clarity-audit/reguguard.html">ReguGuard — Regulatory Document Management &amp; Impact Analysis</a></h3>
-  <p><code>Egidigbi25/ReguGuard</code></p>
-  <p>On-chain regulatory document lifecycle with AI agent summarization, auditor review, dispute resolution, and predictive impact scoring. No financial functions, but the "immutable audit trail" goal is undermined by last-write-wins data patterns and unenforced state machine transitions. 10 findings total (0 critical, 3 high, 5 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/reguguard.html">ReguGuard — Regulatory Document Management</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Egidigbi25/ReguGuard</span>
+    <span class="findings-compact"><span class="h">3H</span> <span class="m">5M</span> <span class="l">1L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Immutable audit trail undermined by last-write-wins patterns and unenforced state machine transitions. No financial functions.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/bugwatch.html">BugWatch — AI-Driven Bug Bounty Platform</a></h3>
-  <p><code>Mgid26/BugWatch</code></p>
-  <p>Decentralized bug bounty platform with AI oracle assessment, staking, reputation, and appeals. The critical flaw: bounties are calculated and tracked in state but never actually paid out — no STX transfer, no bounty fund. Reporters can only recover their own stake. AI auditors cannot be removed once added. Appeal window anchored to submission time, not assessment time. 13 findings total (1 critical, 3 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/bugwatch.html">BugWatch — AI-Driven Bug Bounty</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Mgid26/BugWatch</span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">3L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Bounties calculated and tracked but never paid out — no STX transfer exists. AI auditors can't be removed once added.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/glamora.html">Glamora — Decentralized Fashion Social Platform</a></h3>
-  <p><code>Terese678/glamora</code> (main + storage + bridge-adapter + nft + tokens)</p>
-  <p>Ambitious fashion social platform with dual-token payments (sBTC + USDCx), subscriptions, NFT marketplace, creator vaults, and bridge integration. Public-user story is broken at storage layer — tips and follows only work between creators. NFT marketplace collects payment without transferring tokens. Platform fees permanently locked. 12 findings total (2 critical, 3 high, 4 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/glamora.html">Glamora — Fashion Social Platform</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Terese678/glamora</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Tips and follows only work between creators. NFT marketplace collects payment without transferring tokens. Fees permanently locked.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/orderbook.html">DeFi Orderbook — DEX Order Book</a></h3>
-  <p><code>syed-ghufran-hassan/orderbook</code></p>
-  <p>Minimal DeFi orderbook with deposits, order placement, and partial fills. The critical flaw: <code>deposit</code> creates balance from nothing — no STX transfer, no token transfer. The entire economy is phantom. Single-dimension trading (one token) makes fills circular. No withdrawal, no cancellation, no price discovery. 9 findings total (2 critical, 2 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/orderbook.html">DeFi Orderbook — DEX Order Book</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">syed-ghufran-hassan/orderbook</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">1L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Deposit creates balance from nothing — no actual transfer. Single-dimension trading makes fills circular. No withdrawal or cancellation.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity high">HIGH</span> <a href="/clarity-audit/curatechain.html">CurateChain — Content Curation Protocol</a></h3>
-  <p><code>elliot-martins/CurateChain</code></p>
-  <p>Decentralized content curation with STX-paid submissions, voting/reputation system, gratuity tips, and flagging. The reputation system is exploitable — repeated same-direction voting inflates reputation without changing item scores. Flagging has no duplicate prevention, and self-voting on own content is unrestricted. 8 findings total (0 critical, 3 high, 3 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/curatechain.html">CurateChain — Content Curation Protocol</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">elliot-martins/CurateChain</span>
+    <span class="findings-compact"><span class="h">3H</span> <span class="m">3M</span> <span class="l">1L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Reputation exploitable via repeated same-direction voting. No duplicate flag prevention. Self-voting unrestricted.</p>
+  <p class="date">February 21, 2026</p>
 </div>
 
-<div class="finding">
-  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet — Multi-Signature Treasury</a></h3>
-  <p><code>Dark-Brain07/stacks-builder-contracts</code> (multisig-wallet.clar)</p>
-  <p>Multi-signature wallet requiring multiple signers to approve STX transactions. Fundamentally broken trust model — the contract never holds funds (deposits go to owner personally) and only the owner can execute approved transactions, giving them unilateral veto power. Signer count corruption bugs can brick the wallet. 10 findings total (2 critical, 3 high, 2 medium).</p>
-  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/multisig-wallet.html">Multisig Wallet — Multi-Signature Treasury</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo">Dark-Brain07/stacks-builder-contracts</span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Contract never holds funds (deposits go to owner). Owner has unilateral veto on approved transactions. Signer count bugs can brick wallet.</p>
+  <p class="date">February 21, 2026</p>
 </div>
+
+<h2>Confidence Ratings</h2>
+<p>Each audit includes a confidence rating reflecting how thoroughly findings were verified:</p>
+<ul>
+  <li>🟢 <strong>HIGH</strong> — findings verified against source code (clear bugs, won't compile, non-existent keywords)</li>
+  <li>🟡 <strong>MEDIUM</strong> — careful source review, some assumptions about multi-contract interactions or economic design</li>
+  <li>🔴 <strong>LOW</strong> — complex system, couldn't verify all interactions</li>
+</ul>
 
 <h2>Contracts Studied</h2>
 
