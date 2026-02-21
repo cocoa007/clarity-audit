@@ -208,6 +208,7 @@ th { background: var(--surface); color: var(--text-muted); }
   <a href="/clarity-audit/curatechain.html">CurateChain Audit</a>
   <a href="/clarity-audit/satguard.html">SatGuard Audit</a>
   <a href="/clarity-audit/sbtcmarket.html">sBTC Market Audit</a>
+  <a href="/clarity-audit/flashstack.html">FlashStack Audit</a>
   <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
   <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
 </nav>
@@ -217,7 +218,7 @@ th { background: var(--surface); color: var(--text-muted); }
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">31</div>
+    <div class="num">44</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
@@ -225,11 +226,11 @@ th { background: var(--surface); color: var(--text-muted); }
     <div class="label">Patterns Documented</div>
   </div>
   <div class="stat-card">
-    <div class="num">193</div>
+    <div class="num">205</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">35</div>
+    <div class="num">37</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -239,6 +240,13 @@ th { background: var(--surface); color: var(--text-muted); }
 <p>I'm building deep knowledge of Clarity by studying real production contracts: how they handle math, authorization, state, and the edge cases that matter.</p>
 
 <h2>Audits</h2>
+
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/flashstack.html">FlashStack — Flash Loan Protocol</a></h3>
+  <p><code>mattglory/Flashstack</code> (13 contracts: core + sBTC token + 10 receivers + trait)</p>
+  <p>Atomic flash-minting protocol for sBTC against PoX-4 locked STX. The sBTC token has a deployer backdoor allowing unlimited minting outside the flash-loan mechanism. The repayment check uses balance deltas instead of supply invariants, enabling receivers to keep minted tokens. Fees are burned instead of collected — the protocol earns zero revenue. 12 findings total (2 critical, 3 high, 3 medium, 2 low, 2 informational).</p>
+  <p style="color: var(--text-muted); font-size: 0.85rem;">February 21, 2026</p>
+</div>
 
 <div class="finding">
   <h3><span class="severity critical">CRITICAL</span> <a href="/clarity-audit/satguard.html">SatGuard Protocol — Insurance Pool</a></h3>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashStack Protocol Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/flashstack.html" class="active">FlashStack Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>FlashStack Protocol — Flash Loan Security Audit</h1>
+<p class="subtitle">
+  <a href="https://github.com/mattglory/Flashstack">mattglory/Flashstack</a> ·
+  Commit: <code><a href="https://github.com/mattglory/Flashstack/tree/5928466bf8989d4d52379006e11a8e7f229f17c5">5928466</a></code> (2026-02-11) ·
+  Audited: February 21, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>FlashStack is an atomic flash-minting protocol for sBTC on the Stacks blockchain. Users with STX locked in PoX-4 can flash-mint sBTC (up to 1/3 of their locked STX value), execute arbitrary receiver callbacks, and repay within the same transaction. The protocol includes a core flash-mint engine, a custom sBTC token with mint/burn privileges, a receiver trait interface, and 10+ receiver implementations for arbitrage, liquidation, leverage looping, collateral swaps, and yield optimization.</p>
+<p>The codebase spans 13 Clarity contracts totaling ~1,200 lines. All contracts use Clarity v2 (epoch 2.5). The architecture follows the EIP-3156 flash loan pattern adapted for Clarity's single-transaction execution model.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 — Flash loans, sBTC minting/burning, DeFi composability</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>2 — Has tests, scripts, multiple iterations (v1→v2→v3)</td><td>4</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>3 — 13 contracts, 1200+ lines, trait-based callback pattern</td><td>6</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>0 — 0 stars, 1 fork</td><td>0</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>3 — Flash loans on Stacks, unique mechanism</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total (pre-penalty)</strong></td><td><strong>23.5 / 10 = 2.35</strong></td></tr>
+  <tr><td colspan="3"><strong>Clarity v2 penalty</strong></td><td><strong>-0.5</strong></td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>1.85 ≥ 1.8 ✓</strong></td></tr>
+</table>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>sBTC token allows unrestricted minting by deployer — infinite token creation</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>Flash-mint repayment check is circumventable — receiver can drain minted tokens</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Burned tokens disappear but fees are never collected — protocol earns nothing</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>Admin has unilateral power to drain all flash-mintable value</td></tr>
+  <tr><td>H-03</td><td><span class="severity high">HIGH</span></td><td>Receiver contracts use hardcoded fee calculations — desync with core fee rate</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Collateral is based on test map, not real PoX-4 — mock never removed</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Block volume tracking uses <code>block-height</code> not <code>stacks-block-height</code></td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>DEX price-setting functions in receivers have no access control</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>Fee rounding to zero on small amounts — free flash loans</td></tr>
+  <tr><td>L-02</td><td><span class="severity low">LOW</span></td><td>No fee upper bound validation allows admin to set 100% fee</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Clarity v2 — should migrate to v4 for <code>as-contract?</code> and <code>restrict-assets?</code></td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>flashstack-core-v2 is incomplete — missing variables, constants, and admin functions</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">C-01</span> sBTC token allows unrestricted minting by deployer — infinite token creation</h3>
+<p><strong>Location:</strong> <code>sbtc-token.clar</code>, <code>mint</code> function</p>
+<p><strong>Description:</strong> The sBTC token's <code>mint</code> function has a dual authorization path: <code>contract-caller == flash-minter</code> OR <code>tx-sender == CONTRACT-OWNER</code>. The <code>tx-sender</code> check means the deployer can mint unlimited sBTC at any time by calling <code>mint</code> directly, completely outside the flash-loan mechanism. This is not just an admin privilege — it's a backdoor that undermines the entire flash-loan invariant (tokens should only exist during flash execution).</p>
+<pre><code>(define-public (mint (amount uint) (recipient principal))
+  (begin
+    (asserts! (or (is-eq contract-caller (var-get flash-minter))
+                   (is-eq tx-sender CONTRACT-OWNER))  ;; &lt;-- deployer can mint anytime
+              ERR-NOT-AUTHORIZED)
+    (ft-mint? sbtc amount recipient)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> The deployer can mint infinite sBTC to any address, inflating supply without collateral. If sBTC has any real value (pegged or traded), this is a rug-pull vector. Even the <code>burn</code> function has the same backdoor — the deployer can burn anyone's tokens.</p>
+<p><strong>Recommendation:</strong> Remove <code>tx-sender == CONTRACT-OWNER</code> from both <code>mint</code> and <code>burn</code>. Only the flash-minter contract should be able to mint/burn. For initial setup, use a one-time setup function or constructor pattern.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">C-02</span> Flash-mint repayment check is circumventable — receiver can drain minted tokens</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, <code>flash-mint</code> function</p>
+<p><strong>Description:</strong> The repayment verification checks that the <em>contract's own balance</em> increased by <code>total-owed</code> after the callback. However, the minted tokens go to the <em>receiver contract</em>, not the core contract. The receiver can transfer tokens to the core contract's balance AND keep the remainder. Since <code>total-owed = amount + fee</code> and the protocol mints exactly <code>total-owed</code> to the receiver, the receiver must transfer all of it back — but the check only verifies the core contract balance delta, not that the receiver's balance is zero.</p>
+<pre><code>;; Mint amount + fee to receiver
+(try! (contract-call? .sbtc-token mint total-owed receiver-principal))
+
+;; Execute callback
+(match (contract-call? receiver execute-flash amount borrower)
+  success (begin
+    (let (
+      (balance-after (unwrap! (as-contract (contract-call? .sbtc-token get-balance tx-sender)) ...))
+    )
+      ;; Only checks core balance increased
+      (asserts! (>= balance-after (+ balance-before total-owed)) ERR-REPAY-FAILED)
+      ;; Then burns total-owed from core
+      (try! (as-contract (contract-call? .sbtc-token burn total-owed tx-sender)))
+    )))</code></pre>
+<p><strong>Impact:</strong> A malicious receiver can: (1) receive <code>total-owed</code> tokens, (2) transfer <code>total-owed</code> to the core contract (passing the check), (3) but also mint additional tokens or accumulate from previous flash loans. More critically, if a receiver is whitelisted but has a re-entrancy path or secondary callback, it could manipulate the balance check. The fundamental issue is that the invariant should verify <code>total supply unchanged</code>, not just core balance.</p>
+<p><strong>Recommendation:</strong> Instead of checking balance delta, check that the total sBTC supply after the callback equals the supply before the callback. This is the canonical flash-loan invariant: <code>supply-after == supply-before</code> (the minted tokens must be fully returned for burning).</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-01</span> Burned tokens disappear but fees are never collected — protocol earns nothing</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, <code>flash-mint</code></p>
+<p><strong>Description:</strong> The protocol mints <code>amount + fee</code>, then burns <code>amount + fee</code> (the full <code>total-owed</code>) from the core contract. The fee is burned along with the principal — it's destroyed, not collected. The <code>total-fees-collected</code> variable increments as a counter, but no sBTC is ever retained by the protocol or transferred to an admin/treasury.</p>
+<pre><code>;; Burns the entire total-owed, including the fee
+(try! (as-contract (contract-call? .sbtc-token burn total-owed tx-sender)))</code></pre>
+<p><strong>Impact:</strong> The protocol has zero revenue. The fee mechanism is purely cosmetic. If the protocol is meant to generate revenue for maintenance, development, or stakers, it currently cannot.</p>
+<p><strong>Recommendation:</strong> Burn only <code>amount</code> and transfer <code>fee</code> to a treasury address. Alternatively, keep the fee in the core contract for later withdrawal by admin.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-02</span> Admin has unilateral power to drain all flash-mintable value</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, admin functions; <code>sbtc-token.clar</code>, <code>set-flash-minter</code></p>
+<p><strong>Description:</strong> The admin (single EOA) can: (1) <code>set-admin</code> to transfer ownership, (2) <code>set-fee</code> up to 1% per loan, (3) <code>set-max-single-loan</code> and <code>set-max-block-volume</code> to arbitrary values, (4) <code>add-approved-receiver</code> to whitelist a malicious receiver, (5) <code>set-test-stx-locked</code> to fake any collateral. Combined with C-01 (deployer mint), a compromised admin key means total loss of protocol integrity.</p>
+<p><strong>Impact:</strong> Single point of failure. Admin key compromise = total protocol compromise.</p>
+<p><strong>Recommendation:</strong> Implement timelocked admin actions, multisig requirement, or at minimum separate roles for different admin functions. Remove <code>set-test-stx-locked</code> before any deployment.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">H-03</span> Receiver contracts use hardcoded fee calculations — desync with core fee rate</h3>
+<p><strong>Location:</strong> <code>example-arbitrage-receiver.clar</code>, <code>liquidation-receiver.clar</code>, <code>snp-flashstack-receiver.clar</code>, and others</p>
+<p><strong>Description:</strong> Most receiver contracts hardcode the fee calculation as <code>(/ (* amount u5) u10000)</code> (5 basis points). Only <code>test-receiver.clar</code> and <code>snp-flashstack-receiver-v3.clar</code> correctly query the core contract's fee rate via <code>get-fee-basis-points</code>. If the admin changes the fee rate, these hardcoded receivers will calculate the wrong repayment amount and either fail (if fee increased) or overpay (if fee decreased).</p>
+<pre><code>;; Hardcoded in most receivers:
+(fee (/ (* amount u5) u10000))
+
+;; Correct approach (only in test-receiver and v3):
+(fee-bp (unwrap! (contract-call? .flashstack-core get-fee-basis-points) ...))
+(fee (/ (* amount fee-bp) u10000))</code></pre>
+<p><strong>Impact:</strong> Fee desync causes transaction failures or fund leakage. If fee is raised, existing receivers revert (denial of service). If lowered, receivers overpay (wasted funds).</p>
+<p><strong>Recommendation:</strong> All receivers should query the fee dynamically from the core contract, as <code>test-receiver</code> and <code>snp-flashstack-receiver-v3</code> already do.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-01</span> Collateral is based on test map, not real PoX-4 — mock never removed</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, <code>get-stx-locked</code> and <code>set-test-stx-locked</code></p>
+<p><strong>Description:</strong> The production PoX-4 integration is commented out and replaced with a <code>test-locked-stx</code> map that the admin can set arbitrarily. The comment says "TODO: Remove this before mainnet deployment" but it's the only active implementation. There's no compile-time or deploy-time guard against shipping the test version.</p>
+<p><strong>Impact:</strong> If deployed as-is, collateral checks are meaningless — admin can grant flash-mint access to anyone by setting fake locked STX values.</p>
+<p><strong>Recommendation:</strong> Implement a deployment checklist. Use Clarinet deployment plans to ensure the production version is deployed. Consider a feature flag pattern that disables test functions after initialization.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-02</span> Block volume tracking uses <code>block-height</code> not <code>stacks-block-height</code></h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, flash-mint circuit breaker</p>
+<p><strong>Description:</strong> The per-block volume limit uses <code>block-height</code> (the keyword, which in Clarity v2 refers to the burn chain block height). Since Stacks 2.1+, <code>stacks-block-height</code> should be used for Stacks-specific logic. Using Bitcoin block height for rate limiting means the volume window is ~10 minutes instead of the expected Stacks block time, which can vary.</p>
+<pre><code>(let (
+  (current-block-volume (default-to u0 (map-get? block-loan-volume block-height)))
+  ...
+)</code></pre>
+<p><strong>Impact:</strong> Rate limiting may be more or less restrictive than intended depending on Bitcoin vs Stacks block time divergence.</p>
+<p><strong>Recommendation:</strong> Use <code>stacks-block-height</code> for Stacks-specific rate limiting.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">M-03</span> DEX price-setting functions in receivers have no access control</h3>
+<p><strong>Location:</strong> <code>example-arbitrage-receiver.clar</code> (<code>set-dex-a-price</code>, <code>set-dex-b-price</code>), <code>dex-aggregator-receiver.clar</code> (<code>set-alex-price</code>, <code>set-velar-price</code>, <code>set-bitflow-price</code>)</p>
+<p><strong>Description:</strong> These public functions allow anyone to set the simulated DEX prices. While labeled as "for testing," they're public functions on deployed contracts with no access control.</p>
+<pre><code>(define-public (set-dex-a-price (price uint))
+  (begin
+    (asserts! (> price u0) ERR-ARBITRAGE-FAILED)
+    (ok (var-set dex-a-price price))  ;; Anyone can call
+  )
+)</code></pre>
+<p><strong>Impact:</strong> If these receivers are deployed alongside the core contract, anyone can manipulate the price feeds that guide arbitrage decisions.</p>
+<p><strong>Recommendation:</strong> Add admin-only checks or remove test functions before deployment.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-01</span> Fee rounding to zero on small amounts — free flash loans</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, fee calculation</p>
+<p><strong>Description:</strong> The fee formula <code>(/ (* amount 5) 10000)</code> rounds down to zero for amounts less than 2,000 sats (0.00002 sBTC). This enables free flash loans for small amounts.</p>
+<p><strong>Impact:</strong> Minimal financial impact given the small amounts involved, but it creates a free-rider vector for high-frequency small flash loans.</p>
+<p><strong>Recommendation:</strong> Enforce a minimum fee: <code>(max u1 (/ (* amount fee-bp) u10000))</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">L-02</span> No fee upper bound validation — admin can set punitive fees</h3>
+<p><strong>Location:</strong> <code>flashstack-core.clar</code>, <code>set-fee</code></p>
+<p><strong>Description:</strong> The fee validation caps at 100 basis points (1%), but uses <code>ERR-UNAUTHORIZED</code> as the error code instead of a dedicated <code>ERR-INVALID-FEE</code>. The cap itself is reasonable but the error message is misleading.</p>
+<p><strong>Impact:</strong> Minor UX issue — confusing error when fee validation fails.</p>
+<p><strong>Recommendation:</strong> Use <code>ERR-INVALID-AMOUNT</code> for fee validation errors.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-01</span> Clarity v2 — should migrate to v4 for enhanced security builtins</h3>
+<p><strong>Description:</strong> All contracts use Clarity v2 (epoch 2.5). Clarity v4 introduces <code>as-contract?</code> with explicit asset allowances and <code>restrict-assets?</code>, which would significantly improve the security of the flash-mint pattern. The current <code>as-contract</code> usage in the core contract (for balance checks and burns) would benefit from explicit asset restrictions.</p>
+<p><strong>Recommendation:</strong> Upgrade to Clarity v4 and use <code>as-contract?</code> with <code>with-ft</code> allowances for all sBTC operations.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">I-02</span> flashstack-core-v2 is incomplete — missing variables, constants, and admin functions</h3>
+<p><strong>Description:</strong> The <code>flashstack-core-v2.clar</code> file contains only the <code>flash-mint</code> function but references undefined variables (<code>flash-fee-basis-points</code>, <code>admin</code>, <code>total-flash-mints</code>, etc.) and constants (<code>MIN-COLLATERAL-RATIO</code>). It also uses the <code>flash-receiver</code> trait but doesn't re-import it. This file will not compile.</p>
+<p><strong>Recommendation:</strong> Either complete v2 or remove it to avoid confusion. The active contracts in <code>Clarinet.toml</code> don't include it, but its presence in the repo is misleading.</p>
+</div>
+
+<h2>Architecture Analysis</h2>
+<h3>Flash Loan Flow</h3>
+<ol>
+  <li>Borrower calls <code>flash-mint(amount, receiver)</code></li>
+  <li>Core checks: pause state, whitelist, circuit breakers, collateral (PoX-4 locked STX)</li>
+  <li>Core records <code>balance-before</code> of its own sBTC balance</li>
+  <li>Core mints <code>amount + fee</code> to the receiver contract</li>
+  <li>Core calls <code>receiver.execute-flash(amount, borrower)</code></li>
+  <li>Receiver executes strategy (arbitrage, liquidation, etc.)</li>
+  <li>Receiver transfers <code>amount + fee</code> back to core contract</li>
+  <li>Core checks <code>balance-after >= balance-before + total-owed</code></li>
+  <li>Core burns <code>total-owed</code> from its own balance</li>
+</ol>
+
+<h3>What Works Well</h3>
+<ul>
+  <li><strong>Circuit breakers:</strong> Per-loan and per-block volume limits are a good safety measure</li>
+  <li><strong>Receiver whitelist:</strong> Prevents arbitrary callback targets</li>
+  <li><strong>Collateral requirement:</strong> 300% collateralization ratio is conservative</li>
+  <li><strong>Trait-based receiver pattern:</strong> Clean separation of concerns</li>
+  <li><strong>Balance-check repayment:</strong> Atomic verification within the same transaction</li>
+</ul>
+
+<h2>Recommendations (Priority Order)</h2>
+<ol>
+  <li><strong>Remove deployer mint/burn backdoor</strong> (C-01) — This is the highest-priority fix. The sBTC token should only be mintable/burnable by the flash-minter contract.</li>
+  <li><strong>Use supply-based repayment check</strong> (C-02) — Replace balance delta check with total supply invariant: <code>supply-after == supply-before</code>.</li>
+  <li><strong>Separate fee from burn</strong> (H-01) — Burn only the principal amount; retain or transfer the fee to a treasury.</li>
+  <li><strong>Remove test collateral map</strong> (M-01) — Enable the real PoX-4 integration before any deployment.</li>
+  <li><strong>Upgrade to Clarity v4</strong> (I-01) — Use <code>as-contract?</code> with explicit asset allowances for all privileged operations.</li>
+</ol>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Independent audit — <a href="/clarity-audit/">Full portfolio</a></p>
+</footer>
+
+</body>
+</html>
