@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stacks DEX Pool V5 Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Stacks DEX Pool V5 — AMM Pool Contract</h1>
+<p class="subtitle">
+  <a href="https://explorer.hiro.so/txid/SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F.pool-v5-c6?chain=mainnet">SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F.pool-v5-c6</a> ·
+  DeFi / AMM · February 23, 2026 · Deployed at block 6752881
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Contract</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">649</div>
+    <div class="label">Lines</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">9</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">2C 2H</div>
+    <div class="label">Critical/High</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>A Uniswap v2-style constant product AMM (x·y=k) on Stacks. Supports bidirectional token swaps, LP share management, and bulk operations. Uses Clarity 3. Deployed on mainnet alongside token-x-c6 and token-y-c6 SIP-010 tokens.</p>
+<p>Key features: 30bps swap fee, Newton's method integer sqrt for initial LP shares, deadline-based MEV protection, slippage protection, bulk swap/liquidity operations (up to 10 swaps or 5 liquidity ops per tx).</p>
+
+<h2>Findings</h2>
+
+<div class="finding" style="border-color: var(--red);">
+<h3><span class="severity critical">CRITICAL</span> C-01: No Token Pair Binding — Complete Asset Drain</h3>
+<p>The contract never stores which token contracts were used during <code>initialize-pool</code>. Every function accepts arbitrary <code>&lt;ft-trait&gt;</code> parameters. An attacker can:</p>
+<ol>
+<li>Deploy a malicious SIP-010 token whose <code>transfer</code> always returns <code>(ok true)</code> but moves nothing</li>
+<li>Call <code>swap-x-for-y</code> passing the fake token as <code>token-x</code> and the real token as <code>token-y</code></li>
+<li>The fake transfer "succeeds" (no tokens sent in), but the contract sends real <code>token-y</code> to the attacker</li>
+<li>Repeat to drain the entire reserve-y balance</li>
+</ol>
+<p><strong>Impact:</strong> Total loss of all pool funds. Any user can drain both reserves.</p>
+<pre><code>;; Attack: pass fake-token as token-x, real-token as token-y
+;; fake-token.transfer returns (ok true) but doesn't move tokens
+(contract-call? .pool-v5-c6 swap-x-for-y
+  .fake-token    ;; attacker's malicious SIP-010
+  .real-token-y  ;; the real token held by pool
+  u1000000       ;; "input" amount (fake, costs nothing)
+  u1             ;; min-dy
+  tx-sender      ;; receive real tokens here
+  u999999999     ;; deadline far in future
+)</code></pre>
+<p><strong>Fix:</strong> Store <code>token-x-principal</code> and <code>token-y-principal</code> at initialization. Validate every call:</p>
+<pre><code>(define-data-var token-x-addr principal tx-sender)
+(define-data-var token-y-addr principal tx-sender)
+
+;; In every function:
+(asserts! (is-eq (contract-of token-x) (var-get token-x-addr)) ERR_WRONG_TOKEN)
+(asserts! (is-eq (contract-of token-y) (var-get token-y-addr)) ERR_WRONG_TOKEN)</code></pre>
+</div>
+
+<div class="finding" style="border-color: var(--red);">
+<h3><span class="severity critical">CRITICAL</span> C-02: Bulk Operations Swallow Failures Silently</h3>
+<p><code>bulk-swap-x-for-y</code> uses <code>map</code> over swap entries, calling a private wrapper that calls the public <code>swap-x-for-y</code>. In Clarity, <code>map</code> collects all results — if one swap returns <code>(err)</code>, the error is captured in the list but <strong>other swaps still execute</strong>. The outer function returns <code>(ok (list ...))</code> regardless.</p>
+<p>This means: a user submitting 10 bulk swaps might have 3 fail silently. The failed ones revert their individual state changes, but the user sees <code>(ok ...)</code> and may not realize partial execution occurred.</p>
+<p><strong>Impact:</strong> Users may lose funds through unnoticed partial execution. Combined with C-01, an attacker could mix legitimate and malicious swaps in one bulk operation.</p>
+<p><strong>Fix:</strong> Use <code>fold</code> with early termination on first error, or validate all inputs before executing any swaps.</p>
+</div>
+
+<div class="finding" style="border-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-01: Fee Recipient Permanently Set by First Caller</h3>
+<p><code>initialize-pool</code> sets <code>fee-recipient</code> to <code>tx-sender</code> with no way to change it. If the initializer's key is compromised, all future fees flow to the attacker. There is no admin/governance mechanism to update the fee recipient.</p>
+<p><strong>Impact:</strong> Permanent fee theft if initializer key is compromised. No recovery mechanism.</p>
+<p><strong>Fix:</strong> Add a governance mechanism to update <code>fee-recipient</code> with appropriate access controls.</p>
+</div>
+
+<div class="finding" style="border-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-02: No Access Control on Pool Initialization</h3>
+<p>Anyone can call <code>initialize-pool</code> and become the fee recipient. In a race condition, a front-runner could initialize with dust amounts, becoming the permanent fee recipient while providing negligible liquidity.</p>
+<p><strong>Impact:</strong> Fee theft via front-running. Initializer with dust amounts captures all future fees.</p>
+<p><strong>Fix:</strong> Add owner/deployer check: <code>(asserts! (is-eq tx-sender contract-deployer) ERR_UNAUTHORIZED)</code></p>
+</div>
+
+<div class="finding" style="border-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-01: Reserve State Desync Risk</h3>
+<p>Reserves are tracked via <code>reserve-x</code> and <code>reserve-y</code> state variables rather than querying actual token balances. If tokens are sent directly to the contract (not via swap/add-liquidity), the reserves desync from reality. This creates a permanent arbitrage opportunity or loss depending on direction.</p>
+<p><strong>Fix:</strong> Add a <code>sync</code> function that reads actual balances, or use balance-based accounting.</p>
+</div>
+
+<div class="finding" style="border-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-02: Integer Sqrt Limited Newton Iterations</h3>
+<p>The <code>int-sqrt</code> function uses exactly 8 Newton iterations from <code>n/2</code>. For extremely large products (token amounts &gt; 10^15 multiplied together), 8 iterations may not converge, producing an incorrect sqrt. This affects initial LP share calculation.</p>
+<p><strong>Impact:</strong> Incorrect LP shares for initial liquidity deposit with very large token amounts.</p>
+<p><strong>Fix:</strong> Add a convergence check: <code>(asserts! (&lt;= (* result result) n) ERR_SQRT_FAILED)</code></p>
+</div>
+
+<div class="finding" style="border-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-03: Rounding-Based Value Extraction</h3>
+<p>Integer division in <code>add-liquidity</code> and <code>remove-liquidity</code> always rounds down. An attacker can repeatedly add/remove small amounts of liquidity to extract rounding dust over many transactions. With enough iterations, this drains value from other LPs.</p>
+<p><strong>Fix:</strong> Round in favor of the pool (round up for deposits, round down for withdrawals) using <code>(+ (/ (* a b) c) (if (> (mod (* a b) c) u0) u1 u0))</code>.</p>
+</div>
+
+<div class="finding" style="border-color: var(--blue);">
+<h3><span class="severity low">LOW</span> L-01: No LP Share Transfer Mechanism</h3>
+<p>LP shares are stored in a <code>map</code> with no transfer function. LPs cannot sell or transfer their position without removing liquidity first. This limits composability — no LP tokens for other DeFi protocols to integrate with.</p>
+</div>
+
+<div class="finding" style="border-color: var(--text-muted);">
+<h3><span class="severity info">INFO</span> I-01: Clarity 3 — Missing Clarity 4 Safety Features</h3>
+<p>Contract uses Clarity 3. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances, which would make the <code>as-contract</code> calls in swap/remove-liquidity functions safer by restricting which assets the contract can transfer. Upgrading would provide defense-in-depth against C-01.</p>
+</div>
+
+<h2>Architecture</h2>
+<p>Standard constant-product AMM with these components:</p>
+<ul>
+<li><strong>Swaps:</strong> x·y=k with 30bps fee deducted from input, sent directly to fee recipient</li>
+<li><strong>LP Management:</strong> Proportional share-based system with sqrt-based initial mint</li>
+<li><strong>Bulk Ops:</strong> Batch up to 10 swaps or 5 liquidity operations per transaction</li>
+<li><strong>Price Oracle:</strong> None — no TWAP or cumulative price tracking</li>
+</ul>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><span class="severity good">GOOD</span> Deadline parameter for MEV protection on swaps</li>
+<li><span class="severity good">GOOD</span> Slippage protection on all operations (min-dy, min-dx, min-shares, min-x, min-y)</li>
+<li><span class="severity good">GOOD</span> Minimum liquidity constant prevents zero-share deposits</li>
+<li><span class="severity good">GOOD</span> Clean error code taxonomy with distinct ranges (1xx=swap, 2xx=pool)</li>
+<li><span class="severity good">GOOD</span> Read-only quote functions for all operations (off-chain simulation)</li>
+</ul>
+
+<h2>Summary</h2>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="severity critical">CRITICAL</span></td><td>2</td></tr>
+<tr><td><span class="severity high">HIGH</span></td><td>2</td></tr>
+<tr><td><span class="severity medium">MEDIUM</span></td><td>3</td></tr>
+<tr><td><span class="severity low">LOW</span></td><td>1</td></tr>
+<tr><td><span class="severity info">INFO</span></td><td>1</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>9</strong></td></tr>
+</table>
+<p><strong>Overall Assessment: DO NOT USE</strong> — The missing token pair binding (C-01) is a complete asset drain vulnerability. Anyone can steal all pool funds by passing a malicious token contract. This contract should not hold any value until C-01 is fixed.</p>
+
+<footer>
+  <p>Audited by <a href="https://github.com/cocoa007">cocoa007</a> ☕ · <a href="/clarity-audit/">Clarity Audit Notes</a></p>
+  <p>This is an independent security review, not a formal audit engagement. Always verify findings independently.</p>
+</footer>
+
+</body>
+</html>

@@ -206,19 +206,19 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">25</div>
+    <div class="num">26</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">46</div>
+    <div class="num">47</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">259</div>
+    <div class="num">268</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">47</div>
+    <div class="num">49</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/pool-v5-c6.html">Stacks DEX Pool V5 — AMM Pool Contract</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F.pool-v5-c6?chain=mainnet">SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F</a></span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">1L</span> <span class="i">1I</span></span>
+  </div>
+  <p class="summary">Uniswap v2-style AMM on Stacks. <strong>Critical: no token pair binding allows complete asset drain via fake token contracts.</strong> Bulk operations swallow failures silently. Fee recipient permanently set by first caller.</p>
+  <p class="date">February 23, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
