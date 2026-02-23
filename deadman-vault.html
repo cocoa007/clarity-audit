@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deadman Vault Protocol Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">Home</a>
+  <a href="/clarity-audit/deadman-vault.html" class="active">Deadman Vault Audit</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Deadman Vault Protocol — Security Audit</h1>
+<p class="subtitle">
+  Deployed: <code><a href="https://explorer.hiro.so/address/SP1N3809W9CBWWX04KN3TCQHP8A9GN520BD4JMP8Z?chain=mainnet">SP1N3809W9CBWWX04KN3TCQHP8A9GN520BD4JMP8Z</a></code> ·
+  6 contracts · 385 lines ·
+  Audited: February 23, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Deadman Vault Protocol is a dead man's switch system on Stacks. Users deposit STX into vaults with configurable release conditions: block-height timeout, inactivity detection, or multi-sig threshold approval. When conditions are met, a designated beneficiary receives the funds.</p>
+
+<p>The protocol is split across 6 contracts: <code>deadman-vault-core</code> (orchestrator), <code>release-handler</code> (STX release), <code>delegation-registry</code> (beneficiary/cosigner management), <code>condition-engine</code> (trigger evaluation), <code>admin-config</code> (protocol parameters), and <code>activity-tracker</code> (inactivity monitoring).</p>
+
+<h3>Architecture</h3>
+<pre><code>User → deadman-vault-core → admin-config (read config)
+                           → delegation-registry (set beneficiary, cosigners)
+                           → condition-engine → activity-tracker (check inactivity)
+                           → release-handler → delegation-registry (get beneficiary)
+</code></pre>
+
+<h2>Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> DV-C01: release-handler Cannot Transfer Funds — STX Held in Wrong Contract</h3>
+
+<p><strong>Location:</strong> <code>deadman-vault-core.create-vault</code> / <code>release-handler.execute-release</code></p>
+
+<p>When a user creates a vault, STX is transferred to <code>deadman-vault-core</code>:</p>
+
+<pre><code>(try! (stx-transfer? amount tx-sender (as-contract tx-sender)))</code></pre>
+
+<p>But when release is triggered, <code>release-handler.execute-release</code> tries to send STX from its own balance:</p>
+
+<pre><code>(match (as-contract (stx-transfer? amount tx-sender beneficiary)) ...)</code></pre>
+
+<p>Inside <code>as-contract</code>, <code>tx-sender</code> becomes <code>release-handler</code>'s address — but the STX is locked in <code>deadman-vault-core</code>, not <code>release-handler</code>. <strong>All releases will fail with insufficient balance.</strong> Funds are permanently locked in the core contract.</p>
+
+<p><strong>Impact:</strong> Total loss of deposited funds. No mechanism exists to transfer STX from core to release-handler.</p>
+
+<p><strong>Fix:</strong> Either (a) have <code>deadman-vault-core</code> do the STX transfer directly via <code>as-contract</code>, or (b) deposit into <code>release-handler</code> instead of core.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> DV-C02: Inter-Contract Authorization Uses tx-sender — All Cross-Contract Calls Fail</h3>
+
+<p><strong>Location:</strong> <code>release-handler.is-authorized</code>, <code>delegation-registry.is-authorized</code></p>
+
+<p>Both contracts check authorization via:</p>
+
+<pre><code>(define-private (is-authorized)
+  (or (is-eq tx-sender (var-get authorized-caller))
+      (is-eq tx-sender CONTRACT-OWNER)))</code></pre>
+
+<p>In Clarity, <code>tx-sender</code> is <strong>always the original transaction sender</strong> (the user), not the calling contract. When <code>deadman-vault-core</code> calls <code>delegation-registry.set-beneficiary</code>, <code>tx-sender</code> is the user — not <code>deadman-vault-core</code>.</p>
+
+<p>Since <code>authorized-caller</code> defaults to <code>CONTRACT-OWNER</code> (the deployer), <strong>only the deployer can successfully execute any vault operation</strong>. Regular users will hit <code>ERR-NOT-AUTHORIZED</code> on vault creation (when it tries to set beneficiary).</p>
+
+<p><strong>Impact:</strong> Protocol is completely unusable for non-deployer users.</p>
+
+<p><strong>Fix:</strong> Use <code>contract-caller</code> instead of <code>tx-sender</code> for inter-contract authorization:</p>
+
+<pre><code>(define-private (is-authorized)
+  (or (is-eq contract-caller (var-get authorized-caller))
+      (is-eq contract-caller CONTRACT-OWNER)))</code></pre>
+
+<p>And call <code>set-authorized-caller</code> with <code>deadman-vault-core</code>'s address after deployment.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> DV-H01: cancel-vault Allows Bypass of Time-Lock</h3>
+
+<p><strong>Location:</strong> <code>deadman-vault-core.cancel-vault</code></p>
+
+<p>The vault owner can cancel and reclaim funds at any time before release — including immediately after creation. This defeats the purpose of a dead man's switch: the owner can always cancel, making the beneficiary designation meaningless until the owner is truly incapacitated.</p>
+
+<p>A dead man's switch should lock funds <em>irrevocably</em> once created, with only the condition-triggered release as the exit path. Otherwise the owner can simply cancel when the condition approaches.</p>
+
+<p><strong>Impact:</strong> Undermines the core value proposition. A beneficiary cannot rely on receiving funds.</p>
+
+<p><strong>Fix:</strong> Add a grace period after which cancellation is no longer possible, or remove cancel entirely and rely on the inactivity condition reset (ping) as the "I'm alive" mechanism.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> DV-H02: No Re-entrancy Protection on cancel-vault</h3>
+
+<p><strong>Location:</strong> <code>deadman-vault-core.cancel-vault</code></p>
+
+<pre><code>(map-set vaults vault-id (merge vault { released: true }))
+(match (as-contract (stx-transfer? ...))
+  success (begin
+    (print { event: "vault-cancelled", vault-id: vault-id, owner: tx-sender })
+    (ok true))
+  error (err u610))</code></pre>
+
+<p>The <code>released</code> flag is set <em>before</em> the STX transfer, which is good (checks-effects-interactions). However, if the transfer fails, the vault is permanently marked as released even though funds were not returned. The owner loses access to their STX.</p>
+
+<p><strong>Impact:</strong> On transfer failure, funds are permanently locked — vault marked released but STX not returned.</p>
+
+<p><strong>Fix:</strong> Only set <code>released: true</code> after confirming the transfer succeeded, or revert the flag on failure.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> DV-M01: Single Beneficiary Despite max-beneficiaries Config</h3>
+
+<p><strong>Location:</strong> <code>admin-config</code> / <code>delegation-registry</code></p>
+
+<p><code>admin-config</code> defines <code>max-beneficiaries</code> (default 5), but <code>delegation-registry</code> only stores one beneficiary per vault via <code>(define-map vault-beneficiary uint principal)</code>. The config parameter is unused and misleading.</p>
+
+<p><strong>Impact:</strong> Misleading configuration. Users may expect multi-beneficiary support that doesn't exist.</p>
+
+<p><strong>Fix:</strong> Either implement multi-beneficiary with split amounts, or remove the <code>max-beneficiaries</code> config parameter.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> DV-M02: Cosigner Limit Hardcoded to 5 in is-cosigner Check</h3>
+
+<p><strong>Location:</strong> <code>delegation-registry.is-cosigner</code></p>
+
+<pre><code>(define-read-only (is-cosigner (vault-id uint) (who principal))
+  (or
+    (is-eq (some who) (map-get? vault-cosigner { vault-id: vault-id, index: u0 }))
+    (is-eq (some who) (map-get? vault-cosigner { vault-id: vault-id, index: u1 }))
+    (is-eq (some who) (map-get? vault-cosigner { vault-id: vault-id, index: u2 }))
+    (is-eq (some who) (map-get? vault-cosigner { vault-id: vault-id, index: u3 }))
+    (is-eq (some who) (map-get? vault-cosigner { vault-id: vault-id, index: u4 }))))</code></pre>
+
+<p>The admin can set <code>max-cosigners</code> up to 10, but <code>is-cosigner</code> only checks indices 0-4. Cosigners at indices 5-9 can be added but can never submit approvals (they fail the <code>ERR-NOT-COSIGNER</code> check).</p>
+
+<p><strong>Impact:</strong> Cosigners at index 5+ are silently ignored. Threshold conditions may become impossible to meet.</p>
+
+<p><strong>Fix:</strong> Extend the check to all 10 indices, or enforce that <code>max-cosigners</code> cannot exceed 5.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> DV-M03: Activity Tracker Has No Integration with Vault Operations</h3>
+
+<p><strong>Location:</strong> <code>activity-tracker</code> / <code>deadman-vault-core</code></p>
+
+<p>The inactivity condition relies on <code>activity-tracker.ping()</code>, but nothing in the protocol automatically pings when the owner interacts with their vault (create, cancel, add-cosigner). The owner must separately call <code>ping()</code> to prove liveness.</p>
+
+<p>Worse: <em>anyone</em> can call ping on behalf of themselves, but there's no mechanism for the vault owner to be auto-pinged. If the owner forgets to ping but is otherwise active on-chain, they could lose their funds.</p>
+
+<p><strong>Impact:</strong> Poor UX; inactivity condition doesn't reflect actual on-chain activity.</p>
+
+<p><strong>Fix:</strong> Auto-ping in <code>create-vault</code>, <code>cancel-vault</code>, and <code>add-cosigner</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">LOW</span> DV-L01: No Vault Deposit Top-Up</h3>
+
+<p><strong>Location:</strong> <code>deadman-vault-core</code></p>
+
+<p>Once created, a vault's amount is fixed. There's no way to add more STX to an existing vault. Users must create a new vault for additional deposits, fragmenting their dead man's switch setup.</p>
+
+<p><strong>Impact:</strong> Inconvenience; vault fragmentation.</p>
+
+<p><strong>Fix:</strong> Add a <code>deposit</code> function that increases an existing vault's amount.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">LOW</span> DV-L02: No Event Emission for Cosigner Actions</h3>
+
+<p><strong>Location:</strong> <code>delegation-registry</code></p>
+
+<p>Adding cosigners and submitting approvals don't emit print events. This makes off-chain monitoring and indexing difficult.</p>
+
+<p><strong>Impact:</strong> Reduced observability for vault participants.</p>
+
+<p><strong>Fix:</strong> Add <code>print</code> events for <code>add-cosigner</code> and <code>submit-approval</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">INFO</span> DV-I01: Not Using Clarity 4</h3>
+
+<p>The contracts don't specify a Clarity version, defaulting to Clarity 3 or below. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances, which would help prevent the fund misdirection issue in DV-C01.</p>
+
+<p><strong>Recommendation:</strong> Upgrade to Clarity 4 and use <code>as-contract?</code> with <code>with-stx</code> allowances for explicit STX transfer authorization.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">INFO</span> DV-I02: Clean Modular Architecture</h3>
+
+<p>Despite the critical bugs, the architectural separation into 6 focused contracts is well-designed. Each contract has a single responsibility: config, tracking, conditions, delegation, release, and orchestration. The error code namespacing (u100s, u200s, etc.) is clean and avoids collisions.</p>
+
+<p>This is a solid foundation that would work correctly once the authorization model and fund flow are fixed.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<tr><th>ID</th><th>Severity</th><th>Title</th><th>Status</th></tr>
+<tr><td>DV-C01</td><td><span class="severity critical">CRITICAL</span></td><td>release-handler Cannot Transfer Funds — STX Held in Wrong Contract</td><td>Open</td></tr>
+<tr><td>DV-C02</td><td><span class="severity critical">CRITICAL</span></td><td>Inter-Contract Authorization Uses tx-sender — All Cross-Contract Calls Fail</td><td>Open</td></tr>
+<tr><td>DV-H01</td><td><span class="severity high">HIGH</span></td><td>cancel-vault Allows Bypass of Time-Lock</td><td>Open</td></tr>
+<tr><td>DV-H02</td><td><span class="severity high">HIGH</span></td><td>cancel-vault Marks Released on Transfer Failure</td><td>Open</td></tr>
+<tr><td>DV-M01</td><td><span class="severity medium">MEDIUM</span></td><td>Single Beneficiary Despite max-beneficiaries Config</td><td>Open</td></tr>
+<tr><td>DV-M02</td><td><span class="severity medium">MEDIUM</span></td><td>Cosigner Limit Hardcoded to 5 in is-cosigner</td><td>Open</td></tr>
+<tr><td>DV-M03</td><td><span class="severity medium">MEDIUM</span></td><td>Activity Tracker Not Integrated with Vault Operations</td><td>Open</td></tr>
+<tr><td>DV-L01</td><td><span class="severity low">LOW</span></td><td>No Vault Deposit Top-Up</td><td>Open</td></tr>
+<tr><td>DV-L02</td><td><span class="severity low">LOW</span></td><td>No Event Emission for Cosigner Actions</td><td>Open</td></tr>
+<tr><td>DV-I01</td><td><span class="severity info">INFO</span></td><td>Not Using Clarity 4</td><td>Open</td></tr>
+<tr><td>DV-I02</td><td><span class="severity info">INFO</span></td><td>Clean Modular Architecture (Positive)</td><td>—</td></tr>
+</table>
+
+<h2>Contracts Reviewed</h2>
+
+<table>
+<tr><th>Contract</th><th>Lines</th><th>Purpose</th></tr>
+<tr><td><code>deadman-vault-core</code></td><td>127</td><td>Primary orchestrator — vault creation, release, cancellation</td></tr>
+<tr><td><code>release-handler</code></td><td>38</td><td>STX transfer to beneficiary on release</td></tr>
+<tr><td><code>delegation-registry</code></td><td>81</td><td>Beneficiary and co-signer management</td></tr>
+<tr><td><code>condition-engine</code></td><td>46</td><td>Release condition evaluation</td></tr>
+<tr><td><code>admin-config</code></td><td>62</td><td>Protocol-level parameters</td></tr>
+<tr><td><code>activity-tracker</code></td><td>31</td><td>Liveness ping tracking</td></tr>
+</table>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007</a> · <a href="https://cocoa007.github.io/clarity-audit/">Clarity Audit Notes</a></p>
+  <p>Deployed on Stacks mainnet at <a href="https://explorer.hiro.so/address/SP1N3809W9CBWWX04KN3TCQHP8A9GN520BD4JMP8Z?chain=mainnet">SP1N3809W9CBWWX04KN3TCQHP8A9GN520BD4JMP8Z</a></p>
+  <p>This audit is provided as-is for educational purposes. It is not a guarantee of security.</p>
+</footer>
+
+</body>
+</html>
