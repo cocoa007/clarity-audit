@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">30</div>
+    <div class="num">31</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">49</div>
+    <div class="num">50</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">305</div>
+    <div class="num">313</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -238,6 +238,19 @@ footer {
     <span class="findings-compact"><span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
   </div>
   <p class="summary">XYK constant-product AMM router. <strong>High: <code>get-dx</code> quote uses wrong fee parameters (x-fees instead of y-fees), diverging from actual swap output.</strong> Add-liquidity has no max-y-amount bound (sandwich vector). Clean architecture with proper pool registration and slippage protection.</p>
+  <p class="date">February 24, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/charisma-token.html">Charisma Token (CHA) — Wrapped Governance Token</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-token?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">SIP-010 wrapper for Charisma governance token with rate-limiting and red-pill gates. <strong>High: unwrap liquidity cap is dead code — always bypassed due to logic error in red-pill check.</strong> Cumulative block-counter will eventually permanently lock operations.</p>
   <p class="date">February 24, 2026</p>
 </div>
 

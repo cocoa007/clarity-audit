@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Charisma Token (CHA) — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Charisma Token (CHA)</h1>
+<p class="subtitle">SIP-010 fungible token wrapper with liquidity locks, red-pill gates, and DAO governance — core token of the Charisma gamified DeFi protocol</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-token?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-token</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://charisma.rocks">Charisma</a> — gamified DeFi on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses <code>as-contract</code> without asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>226</td></tr>
+  <tr><td>SHA-256</td><td><code>4cbb8c40d54f67887194c4b63987ffbb4645d0474df60ef5795f89d03fa2635c</code></td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — self-contained wrapper contract, all logic auditable inline; external dependencies (dungeon-master, red-pill-nft, dme000-governance-token) noted but not reviewed</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>CHA is a wrapped token representing the Charisma governance token (<code>dme000-governance-token</code>). Users <strong>wrap</strong> governance tokens into CHA and <strong>unwrap</strong> CHA back — a 1:1 wrapper with rate-limiting mechanics:</p>
+<ul>
+  <li><strong>Red-pill gate</strong>: Only holders of the <code>red-pill-nft</code> can wrap or unwrap.</li>
+  <li><strong>Liquidity lock</strong>: A global <code>block-counter</code> increments on each wrap/unwrap, creating a cooldown period before the next operation.</li>
+  <li><strong>Flow cap</strong>: Each wrap is capped at <code>max-liquidity-flow</code> (default 100 tokens).</li>
+  <li><strong>DAO governance</strong>: All parameters are configurable by the <code>dungeon-master</code> DAO or its extensions.</li>
+</ul>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Wrapping</strong>: Transfer governance tokens to contract → mint equivalent CHA to user</li>
+  <li><strong>Unwrapping</strong>: Burn CHA from user → transfer governance tokens from contract to user</li>
+  <li><strong>SIP-010</strong>: Standard fungible token interface (transfer, balance, supply, metadata)</li>
+  <li><strong>Batch</strong>: <code>send-many</code> for up to 200 recipients in a single transaction</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li>The <code>dungeon-master</code> DAO (SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ) is trusted to configure parameters responsibly</li>
+  <li>DAO extensions (approved via <code>is-extension</code>) have full administrative power over token metadata and rate limits</li>
+  <li>The <code>red-pill-nft</code> contract correctly reports holder status</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Liquidity flow cap on <code>unwrap</code> is dead code — always bypassed</h3>
+  </div>
+  <p><strong>Location:</strong> <code>unwrap</code> function, lines ~113-126</p>
+  <p><strong>Description:</strong> The <code>unwrap</code> function attempts to cap the withdrawal amount using <code>max-liquidity-flow</code>, but the cap condition can never trigger. The guard <code>(try! (is-red-pilled))</code> aborts the transaction entirely if the caller lacks the red-pill NFT, meaning execution only continues when <code>red-pilled</code> is <code>(ok true)</code> — i.e., the bound variable <code>red-pilled</code> is always <code>true</code>.</p>
+  <p>The cap condition is:</p>
+<pre><code>(amount-out (if (and (not red-pilled) (> amount max-amount)) max-amount amount))</code></pre>
+  <p>Since <code>red-pilled</code> is always <code>true</code>, <code>(not red-pilled)</code> is always <code>false</code>, the <code>and</code> short-circuits, and <code>amount-out</code> is always <code>amount</code> — the cap never applies.</p>
+  <p><strong>Impact:</strong> Any red-pill holder can unwrap an unlimited amount of CHA in a single transaction, bypassing the intended liquidity flow rate limit. The <code>wrap</code> function correctly caps at <code>max-liquidity-flow</code>, but <code>unwrap</code> does not. This creates an asymmetric rate limit: inflows are throttled but outflows are not. A large holder could drain all governance tokens held by the contract in a single unwrap, potentially impacting other users who haven't unwrapped yet.</p>
+  <p><strong>Recommendation:</strong> Remove the <code>(not red-pilled)</code> condition and apply the cap unconditionally, matching the <code>wrap</code> logic:</p>
+<pre><code>;; Fix: match the wrap function's capping logic
+(amount-out (if (> amount max-amount) max-amount amount))</code></pre>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Monotonically increasing <code>block-counter</code> will eventually permanently lock all wrapping/unwrapping</h3>
+  </div>
+  <p><strong>Location:</strong> <code>wrap</code> and <code>unwrap</code> functions; <code>is-unlocked</code> read-only</p>
+  <p><strong>Description:</strong> Every call to <code>wrap</code> or <code>unwrap</code> increments <code>block-counter</code> by <code>blocks-per-tx</code> (default 1). The unlock check requires:</p>
+<pre><code>(>= block-height (+ unlock-block (var-get block-counter)))</code></pre>
+  <p>Since <code>unlock-block</code> is a constant set at deploy time and <code>block-counter</code> only ever increases, the required block height grows without bound. After enough transactions, the counter will push the unlock threshold far beyond the current block height, creating extended lockout periods. With <code>blocks-per-tx = 1</code>, after N transactions, the contract requires <code>unlock-block + N</code> blocks to have passed — meaning the contract is locked until the chain catches up.</p>
+  <p><strong>Impact:</strong> The contract becomes progressively harder to use over time. In high-activity periods, the lock could extend days or weeks into the future. The DAO can mitigate by reducing <code>blocks-per-tx</code> (minimum 1), but it cannot reset the counter — there is no <code>set-block-counter</code> function. This is likely by design (rate limiting), but the lack of a reset mechanism or decay function means the lockout is permanent and cumulative.</p>
+  <p><strong>Recommendation:</strong> Add a DAO-callable function to reset or reduce <code>block-counter</code>, or implement a sliding window mechanism instead of a cumulative counter. Alternatively, change the unlock logic to compare the <em>last transaction block</em> rather than accumulating a counter:</p>
+<pre><code>;; Alternative: per-transaction cooldown instead of cumulative counter
+(define-data-var last-tx-block uint u0)
+(define-read-only (is-unlocked)
+  (ok (asserts! (>= block-height (+ (var-get last-tx-block) (var-get blocks-per-tx))) err-liquidity-lock))
+)</code></pre>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: <code>set-decimals</code> allows post-deployment decimal change breaking all integrations</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-decimals</code> function</p>
+  <p><strong>Description:</strong> The DAO can change the token's reported decimal places at any time. All existing balances, DeFi pool ratios, price feeds, and UI displays assume a fixed decimal value. Changing decimals from 6 to (say) 18 would make 1 CHA appear as 0.000000000001 CHA in all integrations, effectively repricing the token.</p>
+  <p><strong>Impact:</strong> Breaking change for all downstream integrations — DEX pools, wallets, block explorers, price oracles. Could be used maliciously by a compromised DAO to manipulate displayed prices.</p>
+  <p><strong>Recommendation:</strong> Remove <code>set-decimals</code> and make decimals a constant, or add a governance timelock. Token decimals are a fundamental property that should not change post-deployment.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Pre-Clarity 4 <code>as-contract</code> grants blanket asset access</h3>
+  </div>
+  <p><strong>Location:</strong> <code>unwrap</code> function — <code>(as-contract (contract-call? ... transfer ...))</code></p>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> to transfer governance tokens from itself to the user during unwrap. In pre-Clarity 4, <code>as-contract</code> gives the enclosed expression access to move <em>any</em> asset the contract holds — not just the intended governance tokens. If the contract ever holds other tokens (e.g., from accidental sends or future extensions), those could theoretically be extracted by a malicious extension that passes the <code>is-dao-or-extension</code> check.</p>
+  <p><strong>Impact:</strong> Low — the contract is purpose-built as a wrapper and shouldn't hold arbitrary assets. However, upgrading to Clarity 4's <code>as-contract?</code> with <code>with-ft</code> would provide defense in depth.</p>
+  <p><strong>Recommendation:</strong> When upgrading to Clarity 4, use:</p>
+<pre><code>(as-contract? (with-ft 'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dme000-governance-token)
+  (contract-call? 'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dme000-governance-token
+    transfer amount-out current-contract sender none))</code></pre>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No input validation on <code>wrap</code>/<code>unwrap</code> amount — zero-amount calls waste block-counter</h3>
+  </div>
+  <p><strong>Location:</strong> <code>wrap</code> and <code>unwrap</code> functions</p>
+  <p><strong>Description:</strong> Neither <code>wrap</code> nor <code>unwrap</code> checks that the amount is greater than zero. A call with <code>amount = 0</code> would still increment <code>block-counter</code>, consuming rate-limit budget without any economic purpose. Since <code>ft-mint?</code> and <code>ft-burn?</code> with zero amounts succeed in Clarity, the transaction completes normally.</p>
+  <p><strong>Impact:</strong> A griefer with a red-pill NFT could repeatedly call wrap/unwrap with 0 to inflate the block-counter, extending the lockout for all users at minimal cost (only tx fees).</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (> amount u0) err-invalid-input)</code> at the start of both functions.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: No max supply defined for CHA token</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-fungible-token charisma)</code></p>
+  <p><strong>Description:</strong> The token is defined without a maximum supply parameter. Supply is bounded only by the amount of governance tokens deposited (1:1 wrapping), so this is not exploitable — but it means Clarity's built-in supply cap enforcement is not used.</p>
+  <p><strong>Recommendation:</strong> Informational only. If a hard cap is desired, use <code>(define-fungible-token charisma u&lt;max-supply&gt;)</code>.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: <code>transfer</code> does not emit <code>memo</code> via <code>print</code></h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer</code> function</p>
+  <p><strong>Description:</strong> The SIP-010 <code>transfer</code> function accepts an optional memo but does not <code>print</code> it. While not required by SIP-010, many indexers and explorers rely on printed memos for transfer tracking and metadata.</p>
+  <p><strong>Recommendation:</strong> Add a conditional print:</p>
+<pre><code>(match memo to-print (print to-print) 0x)</code></pre>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: <code>unlock-block</code> captures deploy-time block height</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-constant unlock-block block-height)</code></p>
+  <p><strong>Description:</strong> The unlock block is permanently set to the block height at deployment. Combined with the cumulative block-counter, this means the "unlock" threshold is always <code>deploy-block + total-tx-count</code>. This is the intended design for rate-limiting but means the contract's behavior depends on when it was deployed — redeploying at a later block height would effectively reset the rate limit.</p>
+  <p><strong>Recommendation:</strong> Informational. Document this behavior for integrators.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Clean SIP-010 implementation</strong> — standard trait compliance with proper sender authorization in <code>transfer</code></li>
+  <li><strong>Bounded DAO parameters</strong> — <code>blocks-per-tx</code> and <code>max-liquidity-flow</code> have min/max bounds, preventing extreme values</li>
+  <li><strong>Rate limiting design</strong> — the global cooldown mechanism is a creative approach to preventing flash-loan-style attacks on the wrapper</li>
+  <li><strong>Burn function</strong> — users can burn their own CHA, providing a deflationary mechanism</li>
+  <li><strong>Metadata update events</strong> — <code>set-token-uri</code> properly emits a <code>token-metadata-update</code> event for indexers</li>
+</ul>
+
+<h2>Summary</h2>
+<p>The Charisma Token is a well-structured SIP-010 wrapper with thoughtful rate-limiting mechanics. The primary concern is <strong>H-01</strong>: the liquidity flow cap on <code>unwrap</code> is completely bypassed due to a logic error in the red-pill check, creating an asymmetry where inflows are throttled but outflows are not. The cumulative block-counter design (<strong>M-01</strong>) will eventually create permanent lockouts without DAO intervention, and the mutable decimals (<strong>M-02</strong>) are a footgun for integrators. Overall, the contract's attack surface is limited by its single-purpose design — it holds governance tokens and wraps/unwraps them, with no complex DeFi logic.</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">All audits</a></p>
+  <p>Contract SHA-256: <code>4cbb8c40d54f67887194c4b63987ffbb4645d0474df60ef5795f89d03fa2635c</code></p>
+</footer>
+
+</body>
+</html>
