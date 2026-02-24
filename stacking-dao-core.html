@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Core v1 Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>StackingDAO Core v1 — Security Audit</h1>
+<p class="subtitle">
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v1?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v1</a></code> ·
+  Clarity 2 ·
+  Audited: February 24, 2026
+</p>
+<p class="subtitle" style="margin-top:-1rem">
+  Also reviewed: <code>SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.reserve-v1</code> (119 lines) ·
+  <code>SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-withdraw-nft</code> (183 lines)
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  StackingDAO is a liquid staking protocol on Stacks. Users deposit STX and receive stSTX tokens representing their staked position. The core contract manages deposits, withdrawal initiation (via NFT receipts), actual withdrawals after cycle completion, and reward distribution with configurable commission.
+</p>
+<p>
+  The architecture follows a DAO pattern: all privileged operations are gated by <code>.dao check-is-protocol</code>, meaning security depends entirely on the integrity of the DAO's protocol registry. The reserve contract holds idle STX and tracks stacking balances. A withdrawal NFT contract provides transferable receipts for pending withdrawals.
+</p>
+<p>
+  <strong>Audit confidence: Medium.</strong> Core contract logic is straightforward and well-structured. The main risk is the hardcoded pox-3 dependency which makes this version obsolete — StackingDAO has likely migrated to a v2 core referencing pox-4. Multi-contract interactions were reviewed across core, reserve, and NFT contracts.
+</p>
+
+<h2>Documented Limitations</h2>
+<ul>
+  <li>Withdrawals are subject to PoX cycle timing — users must wait for the stacking cycle to end</li>
+  <li>Stacking rewards management is described as a "manual process" in comments</li>
+  <li>The protocol relies on the DAO's protocol registry for all access control</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Reasoning</th></tr>
+  <tr><td>Financial risk (×3)</td><td>3</td><td>DeFi liquid staking — holds and transfers significant STX value</td></tr>
+  <tr><td>Deployment (×2)</td><td>3</td><td>Deployed on Stacks mainnet</td></tr>
+  <tr><td>Complexity (×2)</td><td>2</td><td>~300 lines core + 119 reserve + 183 NFT = ~600 lines total across 3 contracts</td></tr>
+  <tr><td>User exposure (×1.5)</td><td>3</td><td>Well-known protocol, significant TVL</td></tr>
+  <tr><td>Novelty (×1.5)</td><td>2</td><td>First liquid staking protocol audited in this series</td></tr>
+  <tr><td colspan="3"><strong>Final score: (9+6+4+4.5+3) / 10 = 2.65</strong> ✅ Above 1.8 threshold</td></tr>
+</table>
+<p><em>Clarity 2 penalty: 2.65 − 0.5 = <strong>2.15</strong></em></p>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-01: Hardcoded pox-3 Reference Makes Contract Non-Functional on Current Mainnet</h3>
+  <p><strong>Location:</strong> <code>stacking-dao-core-v1</code> — <code>get-pox-cycle</code>, <code>get-next-withdraw-cycle</code>, <code>withdraw</code></p>
+  <p><strong>Description:</strong> The contract hardcodes calls to <code>SP000000000000000000002Q6VF78.pox-3</code> for all PoX cycle calculations. Since the Stacks network has upgraded to pox-4, these calls may return stale or incorrect cycle data, causing deposits to calculate wrong stSTX amounts and withdrawals to use incorrect timing.</p>
+  <pre><code>(define-read-only (get-pox-cycle)
+  (contract-call? 'SP000000000000000000002Q6VF78.pox-3 current-pox-reward-cycle)
+)
+
+(define-read-only (get-next-withdraw-cycle)
+  (let (
+    (current-cycle (get-pox-cycle))
+    (prepare-length (get prepare-cycle-length
+      (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox-3 get-pox-info))))
+    (start-block-next-cycle
+      (contract-call? 'SP000000000000000000002Q6VF78.pox-3
+        reward-cycle-to-burn-height (+ current-cycle u1)))
+  ) ...</code></pre>
+  <p><strong>Impact:</strong> All cycle-dependent logic (deposits, withdrawal initiation, withdrawal timing, reward accounting) relies on pox-3 data. If pox-3 returns outdated values after the pox-4 upgrade, users could initiate withdrawals for the wrong cycle or be unable to complete withdrawals at expected times. The contract is effectively deprecated.</p>
+  <p><strong>Recommendation:</strong> Migrate to a new core contract version referencing <code>pox-4</code> (or the current active PoX contract). StackingDAO likely already has a v2 core contract addressing this. Users should be migrated away from this version.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-01: No Slippage Protection on Deposit</h3>
+  <p><strong>Location:</strong> <code>stacking-dao-core-v1</code> — <code>deposit</code></p>
+  <p><strong>Description:</strong> The <code>deposit</code> function calculates the stSTX amount based on the current exchange rate but provides no <code>min-ststx-amount</code> parameter for slippage protection. The exchange rate can change between transaction submission and execution.</p>
+  <pre><code>(define-public (deposit (reserve-contract &lt;reserve-trait&gt;)
+                        (stx-amount uint)
+                        (referrer (optional principal)))
+  (let (
+    (stx-ststx (try! (get-stx-per-ststx reserve-contract)))
+    (ststx-to-receive (/ (* stx-amount u1000000) stx-ststx))
+  )
+    ;; No minimum output check
+    ...</code></pre>
+  <p><strong>Impact:</strong> If the exchange rate shifts unfavorably between tx submission and mining (e.g., via a large reward addition changing the rate), users receive fewer stSTX than expected. While <code>add-rewards</code> is protocol-restricted (limiting sandwich attack vectors), natural rate changes during high-activity periods could still cause unexpected outcomes.</p>
+  <p><strong>Recommendation:</strong> Add an optional <code>min-ststx</code> parameter: <code>(asserts! (>= ststx-to-receive min-ststx) (err ERR_SLIPPAGE))</code></p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-02: <code>add-rewards</code> Accepts Arbitrary Cycle IDs Without Bounds Checking</h3>
+  <p><strong>Location:</strong> <code>stacking-dao-core-v1</code> — <code>add-rewards</code></p>
+  <p><strong>Description:</strong> The <code>add-rewards</code> function accepts any <code>cycle-id</code> without validating that it corresponds to an actual past cycle that generated rewards. A protocol operator could accidentally (or maliciously) attribute rewards to the wrong cycle, corrupting the accounting.</p>
+  <pre><code>(define-public (add-rewards
+  (commission-contract &lt;commission-trait&gt;)
+  (staking-contract &lt;staking-trait&gt;)
+  (reserve principal) (stx-amount uint) (cycle-id uint))
+  (let (
+    (current-cycle-info (get-cycle-info cycle-id))
+    ;; No validation: cycle-id <= current-pox-cycle
+    ...</code></pre>
+  <p><strong>Impact:</strong> Rewards attributed to future cycles would inflate the reported rewards for cycles that haven't happened. Rewards attributed to the wrong past cycle corrupt the historical record. The caller must be a registered protocol, limiting the attack surface, but operational errors are plausible.</p>
+  <p><strong>Recommendation:</strong> Add validation: <code>(asserts! (&lt;= cycle-id (get-pox-cycle)) (err ERR_INVALID_CYCLE))</code></p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-01: Pre-Clarity 4 <code>as-contract</code> Without Asset Restrictions</h3>
+  <p><strong>Location:</strong> <code>stacking-dao-core-v1</code> — <code>init-withdraw</code>, <code>withdraw</code>; <code>reserve-v1</code> — <code>request-stx-for-withdrawal</code>, <code>request-stx-to-stack</code>, <code>get-stx</code></p>
+  <p><strong>Description:</strong> Both contracts use the legacy <code>as-contract</code> form which grants blanket asset access to the enclosed expression. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>, etc.) that restrict which assets the contract can move.</p>
+  <p><strong>Impact:</strong> Any code executing under <code>as-contract</code> has unrestricted ability to transfer any asset the contract holds. In a complex multi-contract system, this increases the blast radius if any protocol-registered contract is compromised. With <code>as-contract?</code>, only explicitly allowed asset types could be moved.</p>
+  <p><strong>Recommendation:</strong> When migrating to a Clarity 4 version, replace all <code>as-contract</code> calls with <code>(as-contract? (with-stx) ...)</code> for STX-only operations, or <code>(as-contract? (with-ft .ststx-token) ...)</code> where stSTX transfers are needed.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-02: Potential Arithmetic Underflow in Reserve Tracking Variables</h3>
+  <p><strong>Location:</strong> <code>reserve-v1</code> — <code>request-stx-for-withdrawal</code>, <code>return-stx-from-stacking</code></p>
+  <p><strong>Description:</strong> The reserve uses unsigned integer subtraction to track <code>stx-for-withdrawals</code> and <code>stx-stacking</code>. If these values become desynchronized from actual balances (e.g., due to an operational error by a protocol contract), the subtraction underflows and the transaction aborts.</p>
+  <pre><code>;; If requested-stx > stx-for-withdrawals, this underflows and aborts
+(var-set stx-for-withdrawals (- (var-get stx-for-withdrawals) requested-stx))
+
+;; Same risk here
+(var-set stx-stacking (- (unwrap-panic (get-stx-stacking)) stx-amount))</code></pre>
+  <p><strong>Impact:</strong> An accounting desync would make withdrawals or stacking return operations permanently fail until the tracking variables are corrected. Since these functions are protocol-restricted, the risk is limited to operational errors rather than external attacks.</p>
+  <p><strong>Recommendation:</strong> Add defensive checks: <code>(asserts! (&gt;= (var-get stx-for-withdrawals) requested-stx) (err ERR_INSUFFICIENT))</code> to fail gracefully instead of aborting.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-01: Commission Rounding Loss for Small Reward Amounts</h3>
+  <p><strong>Location:</strong> <code>stacking-dao-core-v1</code> — <code>add-rewards</code></p>
+  <p><strong>Description:</strong> Commission is calculated as <code>(/ (* stx-amount commission) u10000)</code>. For small <code>stx-amount</code> values (under ~20 STX at 5% commission), integer division truncates the commission to 0, meaning no commission is collected. The full amount goes to the reserve as rewards.</p>
+  <p><strong>Impact:</strong> Negligible — rewards are typically large aggregate amounts. The protocol benefits (more goes to stakers), but the commission contract/stakers miss out on small fractions.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-02: Entire Security Model Depends on DAO Protocol Registry</h3>
+  <p><strong>Location:</strong> All contracts — <code>.dao check-is-protocol</code></p>
+  <p><strong>Description:</strong> Every privileged operation in the system is gated by a single check: whether the caller is registered in the DAO's protocol list. The reserve's <code>get-stx</code> function allows any registered protocol to extract arbitrary amounts of STX to any address. This means compromise of the DAO contract (or a malicious governance proposal) could drain all funds.</p>
+  <p><strong>Impact:</strong> This is a deliberate architectural choice for upgradability — the DAO can register new protocol contracts without redeploying core infrastructure. However, it concentrates all trust in the DAO's governance mechanism. Users should understand that their deposited STX is ultimately secured by DAO governance, not by the core contract's logic alone.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-03: Zero-Indexed NFT IDs in Withdrawal NFT</h3>
+  <p><strong>Location:</strong> <code>ststx-withdraw-nft</code> — <code>mint-for-protocol</code></p>
+  <p><strong>Description:</strong> The withdrawal NFT starts minting at ID 0 (the initial value of <code>last-id</code>). While <code>get-last-token-id</code> per SIP-009 typically returns the highest minted ID, here it returns the <em>next</em> ID to be minted (since it's incremented after minting). This is a minor deviation from convention but doesn't cause functional issues — the core contract correctly uses <code>get-last-token-id</code> before minting to predict the NFT ID.</p>
+  <pre><code>(define-data-var last-id uint u0)
+
+(define-public (mint-for-protocol (recipient principal))
+  (let ((next-id (+ u1 (var-get last-id))))
+    ;; Mints at current last-id (starts at 0), then increments
+    (try! (nft-mint? ststx-withdraw (var-get last-id) recipient))
+    (var-set last-id next-id)
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> Third-party tools or marketplaces that assume 1-indexed SIP-009 NFTs may miscount or skip NFT ID 0. No functional impact on the core withdrawal flow.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+<ul>
+  <li><strong>Deposit flow:</strong> User sends STX → reserve contract. Core calculates stSTX at current exchange rate and mints stSTX to user. Exchange rate = total STX (reserve balance + stacking) / stSTX supply.</li>
+  <li><strong>Withdrawal flow (2-step):</strong> (1) <code>init-withdraw</code>: user sends stSTX to core, receives withdrawal NFT. STX amount locked in reserve accounting. (2) <code>withdraw</code>: after cycle completes, user burns NFT, receives STX from reserve.</li>
+  <li><strong>Reward flow:</strong> Protocol operators call <code>add-rewards</code> with STX earned from stacking. Commission is split off; remainder sent to reserve, increasing the stSTX exchange rate for all holders.</li>
+  <li><strong>Multi-contract system:</strong> Core ↔ Reserve ↔ DAO ↔ stSTX Token ↔ Withdraw NFT. All inter-contract calls are DAO-gated.</li>
+</ul>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>Source verified on-chain via <a href="https://api.hiro.so/v2/contracts/source/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG/stacking-dao-core-v1">Hiro API</a></p>
+</footer>
+
+</body>
+</html>
