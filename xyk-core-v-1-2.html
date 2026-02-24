@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: XYK Core v1.2 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>XYK Core v1.2 — AMM DEX Router</h1>
+<p class="subtitle">Core router contract for XYK-style constant-product AMM pools on Stacks</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/0xda5f8b6e45410d4d21f0cd1fba8b44a6a40a8ca07b3e2ace0c8bc2cffd64c492?chain=mainnet">SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.xyk-core-v-1-2</a></code></td></tr>
+  <tr><td>Protocol</td><td>XYK DEX — constant-product AMM on Stacks (pool-per-contract architecture)</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>2 (Epoch 2.5 — pre-Clarity 4, uses trait-based delegation without <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>986</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — single-contract audit; pool-trait implementations not reviewed; actual fund custody delegated to pool contracts</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>This contract is a <strong>router/orchestrator</strong> for XYK-style (constant-product, x·y=k) AMM pools. It does not hold funds itself — all token custody, LP minting/burning, and balance tracking are delegated to individual pool contracts via the <code>xyk-pool-trait</code> interface. The core contract manages pool registration, admin access control, and coordinates swap/liquidity operations across the pool contracts.</p>
+
+<p><strong>Architecture:</strong> Each trading pair has its own dedicated pool contract implementing <code>xyk-pool-trait</code>. The core contract validates pool registration (via an internal <code>pools</code> map) and token trait matching before forwarding operations. This is a clean separation of concerns — the core handles routing logic while pools handle custody.</p>
+
+<p><strong>Admin model:</strong> Up to 5 admins (stored in a list), with the deployer being irremovable. Admins control pool creation, fee parameters, pool status, and fee recipient addresses. No timelock or multi-sig requirement.</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: <code>get-dx</code> Quote Uses Wrong Fee Parameters</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-dx</code> function</p>
+  <p><strong>Description:</strong> The <code>get-dx</code> function computes how many x-tokens a user would receive for a given y-token input. However, it reads <code>x-protocol-fee</code> and <code>x-provider-fee</code> from the pool data, when it should read <code>y-protocol-fee</code> and <code>y-provider-fee</code> — because fees are charged on the <em>input</em> token (y in this case).</p>
+  <p>The actual <code>swap-y-for-x</code> function correctly uses <code>y-protocol-fee</code> and <code>y-provider-fee</code>. This means the quote function returns different values from what the swap actually produces.</p>
+  <pre><code>;; get-dx — INCORRECT: reads x-fees for a y-input operation
+(protocol-fee (get x-protocol-fee pool-data))
+(provider-fee (get x-provider-fee pool-data))
+
+;; swap-y-for-x — CORRECT: reads y-fees for a y-input operation
+(protocol-fee (get y-protocol-fee pool-data))
+(provider-fee (get y-provider-fee pool-data))</code></pre>
+  <p><strong>Impact:</strong> Any UI or contract relying on <code>get-dx</code> to estimate swap output will get incorrect values. If x-fees ≠ y-fees (which is configurable per pool), users may set inappropriate slippage parameters based on the wrong quote, leading to either failed transactions (if the real output is lower) or accepting worse prices than necessary (if the real output is higher). On a mainnet DEX, this directly affects user trading experience and potentially enables more effective sandwich attacks when the quote overestimates output.</p>
+  <p><strong>Recommendation:</strong> Change <code>get-dx</code> to read <code>y-protocol-fee</code> and <code>y-provider-fee</code>. Since this contract is already deployed, a v1-3 deployment would be needed, or UIs should use <code>swap-y-for-x</code> with a dry-run call instead of <code>get-dx</code>.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: <code>add-liquidity</code> Missing Max Y-Amount — Sandwich Vector</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-liquidity</code> function</p>
+  <p><strong>Description:</strong> When adding liquidity, the user specifies <code>x-amount</code> and <code>min-dlp</code> (minimum LP tokens). The y-amount is computed automatically as <code>(x-amount × y-balance) / x-balance</code>. There is no <code>max-y-amount</code> parameter to bound how many y-tokens the user will transfer.</p>
+  <pre><code>;; y-amount is computed, not bounded by the caller
+(y-amount (/ (* x-amount y-balance) x-balance))
+;; Only min-dlp is checked, not max-y-amount
+(asserts! (>= dlp min-dlp) ERR_MINIMUM_LP_AMOUNT)</code></pre>
+  <p><strong>Impact:</strong> A sandwich attacker can manipulate the pool ratio between a user's transaction submission and execution. By skewing the pool to have a higher y/x ratio, the attacker forces the LP provider to contribute more y-tokens than expected. The <code>min-dlp</code> check doesn't fully protect against this because the LP amount is proportional to x-amount, not y-amount. The user gets the expected LP tokens but overpays in y-token value.</p>
+  <p><strong>Recommendation:</strong> Add a <code>max-y-amount</code> parameter to <code>add-liquidity</code> and assert <code>(<= y-amount max-y-amount)</code>. Alternatively, the <code>get-dlp</code> function returns both <code>dlp</code> and <code>y-amount</code> — UIs should display the computed y-amount prominently so users can set post-conditions accordingly.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Admin Operations Have No Timelock or Multi-Sig Requirement</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-x-fees</code>, <code>set-y-fees</code>, <code>set-fee-address</code>, <code>set-pool-status</code></p>
+  <p><strong>Description:</strong> Any single admin can instantly change pool fees (up to 99.99% in BPS), redirect fee revenue to a new address, or disable any pool. There is no timelock, multi-sig threshold, or cool-down period. The fee ceiling check only requires <code>(< (+ protocol-fee provider-fee) BPS)</code>, meaning fees can be set to 9999 BPS (99.99%).</p>
+  <p><strong>Impact:</strong> A compromised admin key can immediately set fees to near-100%, redirect all protocol fees to an attacker address, or disable pools to grief users. For a mainnet DEX, this represents significant centralization risk. Users have no warning period to exit positions before fee changes take effect.</p>
+  <p><strong>Recommendation:</strong> Implement a timelock (e.g., 144 blocks / ~24h) for fee changes and fee-address updates. Consider requiring 2-of-N admin signatures for critical operations. Cap total fees at a reasonable maximum (e.g., 10% / 1000 BPS).</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Public Pool Creation Trusts Arbitrary Pool-Trait Implementations</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code>, <code>set-public-pool-creation</code></p>
+  <p><strong>Description:</strong> When <code>public-pool-creation</code> is enabled, anyone can call <code>create-pool</code> with any contract implementing <code>xyk-pool-trait</code>. The core contract validates token matching and fee parameters, but cannot verify the pool contract's implementation is honest. A malicious pool contract could implement <code>pool-transfer</code> to steal tokens, <code>update-pool-balances</code> to report fake balances, or <code>get-pool</code> to return manipulated data.</p>
+  <p><strong>Impact:</strong> If public pool creation is enabled, an attacker can register a trojan pool contract. Users interacting with that pool through the core router (which appears legitimate) would have their tokens routed to the malicious contract. The <code>is-valid-pool</code> check only verifies registration, not implementation safety.</p>
+  <p><strong>Recommendation:</strong> Keep <code>public-pool-creation</code> disabled (it defaults to <code>false</code>). If public creation is desired, maintain an allowlist of approved pool-trait implementations (verified contract hashes). With Clarity 4, <code>contract-hash?</code> could enforce that only known-good pool contracts are registered.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Vacuous Burn-Amount Check in <code>create-pool</code></h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code> function</p>
+  <p><strong>Description:</strong> The check <code>(asserts! (>= (- total-shares burn-amount) u0) ERR_MINIMUM_LP_AMOUNT)</code> is vacuous. Since both values are <code>uint</code>, the subtraction would cause a runtime underflow panic if <code>burn-amount > total-shares</code>, aborting the transaction before the assert is ever evaluated. The result of any uint subtraction that doesn't underflow is always ≥ 0.</p>
+  <pre><code>;; This check can never fail — it either panics (underflow) or is always true
+(asserts! (>= (- total-shares burn-amount) u0) ERR_MINIMUM_LP_AMOUNT)</code></pre>
+  <p><strong>Impact:</strong> Minimal — the underflow panic provides equivalent protection (the tx aborts). However, users get an unhelpful runtime panic instead of a clear error code. The pool creator also doesn't receive the meaningful <code>ERR_MINIMUM_LP_AMOUNT</code> error.</p>
+  <p><strong>Recommendation:</strong> Replace with <code>(asserts! (>= total-shares burn-amount) ERR_MINIMUM_LP_AMOUNT)</code> to provide the correct error before any underflow. Consider also asserting a minimum remaining shares (e.g., <code>(> (- total-shares burn-amount) u0)</code>) to prevent the creator from burning 100% of LP tokens.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Fee Rounding to Zero on Small Swaps</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> Fees are calculated as <code>(/ (* amount fee) BPS)</code>. For small swap amounts where <code>amount × fee < 10000</code>, integer division truncates to zero. For example, with a 30 BPS fee (0.3%), any swap of less than 334 units pays zero fees.</p>
+  <p><strong>Impact:</strong> Low — an attacker could split a large swap into many small sub-swaps to avoid fees entirely. However, each transaction has a base STX fee, so the gas cost of splitting likely exceeds the fee savings for most token denominations. This is primarily a revenue leakage issue for the protocol and liquidity providers.</p>
+  <p><strong>Recommendation:</strong> Use ceiling division for fees: <code>(/ (+ (* amount fee) (- BPS u1)) BPS)</code>. This ensures any non-zero fee rate always charges at least 1 unit.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 — No <code>as-contract?</code> Asset Allowances</h3>
+  </div>
+  <p><strong>Description:</strong> The contract is deployed on Clarity 2 (Epoch 2.5). Pool contracts likely use <code>as-contract</code> for token transfers, which grants blanket asset access. Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances would provide language-level protection against pool contracts moving unexpected assets.</p>
+  <p><strong>Recommendation:</strong> For future versions, deploy on Clarity 4 and use <code>as-contract?</code> with explicit asset allowances in pool contracts.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Quote Functions Are <code>define-public</code> Instead of <code>define-read-only</code></h3>
+  </div>
+  <p><strong>Description:</strong> <code>get-dy</code>, <code>get-dx</code>, and <code>get-dlp</code> are quote/estimation functions that don't modify state. However, they are <code>define-public</code> because they call <code>contract-call?</code> on the pool trait (which requires public context in Clarity 2). This means callers pay transaction fees for read operations.</p>
+  <p><strong>Recommendation:</strong> UIs should call these via <code>callReadOnlyFunction</code> (Stacks.js) to avoid on-chain execution costs. This is a Clarity 2 limitation — the functions cannot be <code>define-read-only</code> because they make cross-contract calls.</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: <code>withdraw-liquidity</code> Works When Pool Is Disabled — Good Design</h3>
+  </div>
+  <p><strong>Description:</strong> Unlike <code>swap-x-for-y</code>, <code>swap-y-for-x</code>, and <code>add-liquidity</code>, the <code>withdraw-liquidity</code> function does not check <code>pool-status</code>. This means liquidity providers can always exit their positions even when the pool is paused by admins.</p>
+  <p><strong>Assessment:</strong> This is correct and intentional design. Users should always be able to withdraw their funds regardless of admin actions. This is a positive security property.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+
+<h3>What This Contract Does Well</h3>
+<ul>
+  <li><strong>Clean separation of concerns</strong> — the core contract handles routing/validation while pools handle custody. This limits blast radius of bugs in either layer.</li>
+  <li><strong>Pool registration with validity checks</strong> — <code>is-valid-pool</code> prevents swaps/liquidity operations on unregistered contracts.</li>
+  <li><strong>Token trait enforcement</strong> — every operation verifies that the provided token traits match the pool's registered tokens, preventing token substitution attacks.</li>
+  <li><strong>Irremovable deployer admin</strong> — prevents admin lockout scenarios.</li>
+  <li><strong>Minimum burnt shares on pool creation</strong> — mitigates the classic first-depositor share inflation attack.</li>
+  <li><strong>Slippage protection on all swap and withdraw operations</strong> — <code>min-dy</code>, <code>min-dx</code>, <code>min-x-amount</code>, <code>min-y-amount</code> params.</li>
+  <li><strong>Withdrawals always available</strong> — pool disabling doesn't trap user funds.</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li><strong>Pool contracts are honest</strong> — the core contract trusts pool-trait implementations to correctly transfer tokens, track balances, and mint/burn LP. A malicious pool can lie about any of these.</li>
+  <li><strong>Admins act in good faith</strong> — a single compromised admin can set near-100% fees, redirect fees, or disable pools.</li>
+  <li><strong>Token contracts are SIP-010 compliant</strong> — the core contract calls <code>transfer</code> on token traits; malicious token contracts could have side effects.</li>
+</ul>
+
+<h2>Scoring</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Notes</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>DeFi AMM — holds/routes real tokens via pool contracts</td></tr>
+  <tr><td>Deployment likelihood</td><td>3</td><td>Deployed on Stacks mainnet</td></tr>
+  <tr><td>Code complexity</td><td>3</td><td>986 lines, multi-contract system (core + pool traits)</td></tr>
+  <tr><td>User exposure</td><td>2</td><td>Active DEX with multiple pools</td></tr>
+  <tr><td>Novelty</td><td>1</td><td>Similar AMM category to existing audits (ALEX, Bitflow)</td></tr>
+  <tr><td colspan="2"><strong>Final Score</strong></td><td><strong>2.55 / 3.0</strong> — (9+6+6+3+1.5)/10</td></tr>
+</table>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · Independent audit — not affiliated with the contract deployer</p>
+</footer>
+
+</body>
+</html>

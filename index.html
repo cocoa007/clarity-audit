@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">29</div>
+    <div class="num">30</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">48</div>
+    <div class="num">49</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">296</div>
+    <div class="num">305</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/xyk-core-v-1-2.html">XYK Core v1.2 — AMM DEX Router</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/0xda5f8b6e45410d4d21f0cd1fba8b44a6a40a8ca07b3e2ace0c8bc2cffd64c492?chain=mainnet">SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">XYK constant-product AMM router. <strong>High: <code>get-dx</code> quote uses wrong fee parameters (x-fees instead of y-fees), diverging from actual swap output.</strong> Add-liquidity has no max-y-amount bound (sandwich vector). Clean architecture with proper pool registration and slippage protection.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
