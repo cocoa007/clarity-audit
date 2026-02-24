@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitflow swap-helper-v1-03 Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Bitflow swap-helper-v1-03 — Security Audit</h1>
+<p class="subtitle">
+  <a href="https://explorer.hiro.so/txid/0x6ce760683bb8bc8beda64cd7dad0686055b954db46dd1fb5486cd945506c1972?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.swap-helper-v1-03</a> ·
+  On-chain source (immutable) ·
+  Audited: February 24, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  <strong>swap-helper-v1-03</strong> is Bitflow/ALEX's DEX routing contract deployed on Stacks mainnet. It acts as a
+  stateless swap router that finds the optimal path between two tokens across two pool types:
+  <strong>fixed-weight-pool-v1-01</strong> (50/50 weighted pools with wSTX as base) and
+  <strong>simple-weight-pool-alex</strong> (ALEX governance token as base).
+</p>
+<p>
+  The contract supports direct swaps, 2-hop routes (through wSTX or ALEX), and 3-hop cross-pool routes
+  (e.g., token → wSTX → ALEX → token). It also provides oracle price feeds (instant and EMA-resilient),
+  fee calculation helpers, and route discovery.
+</p>
+<p>
+  <strong>457 lines</strong> · Pre-Clarity 4 · No <code>as-contract</code> usage · No token custody ·
+  All tokens flow through underlying pool contracts.
+</p>
+
+<h3>Priority Score: 2.65 / 3.0</h3>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 — DeFi swap routing</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 — Deployed mainnet</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>2 — 457 lines, multi-pool routing</td><td>2</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>3 — Major Stacks DEX</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 — DEX router category</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>26.5 / 30 = 2.65</strong></td></tr>
+</table>
+
+<h3>Architecture</h3>
+<p>The contract is a <strong>pure routing layer</strong> — it holds no tokens and has no admin functions. The only mutable state is two oracle price maps (<code>fwp-oracle-resilient-map</code> and <code>simple-oracle-resilient-map</code>) updated as a side effect of swaps.</p>
+<p>Route resolution follows a priority cascade:</p>
+<ol>
+  <li><strong>Fixed-weight pool</strong> — direct or 2-hop through wSTX</li>
+  <li><strong>Simple-weight pool</strong> — direct or 2-hop through ALEX</li>
+  <li><strong>Fixed → Simple</strong> — cross-pool via wSTX → ALEX bridge</li>
+  <li><strong>Simple → Fixed</strong> — cross-pool via ALEX → wSTX bridge (implicit fallthrough)</li>
+</ol>
+
+<h3>Audit Confidence: Medium</h3>
+<p>Source verified on-chain via Hiro API. Findings verified against source. Some assumptions about underlying pool contract behavior (not in scope).</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <h3><span class="severity high">High</span> H-01: Intermediate swaps in multi-hop routes lack slippage protection</h3>
+  <p><strong>Location:</strong> <code>swap-helper</code> function — all multi-hop branches</p>
+  <p><strong>Description:</strong> When routing through 2 or 3 hops, intermediate swap calls pass <code>none</code> for the <code>min-dy</code> parameter. Only the final output is checked against the user's slippage tolerance. This means an attacker can sandwich the intermediate swap(s) to extract value, as long as the final output still meets the user's minimum.</p>
+  <pre><code>;; Example: fixed→simple 3-hop route (token-x → wSTX → ALEX → token-y)
+;; First swap: no slippage check
+(get dx (try! (contract-call? .fixed-weight-pool-v1-01 swap-y-for-wstx
+  token-x-trait u50000000 dx none)))             ;; ← none = no min-dy
+
+;; Second swap: no slippage check
+(get dy (try! (contract-call? .fixed-weight-pool-v1-01 swap-wstx-for-y
+  .age000-governance-token u50000000 ... none)))  ;; ← none = no min-dy
+
+;; Third swap: only this one checks min-dy
+(get dy (try! (contract-call? .simple-weight-pool-alex swap-alex-for-y
+  token-y-trait ... min-dy)))                     ;; ← user's slippage check</code></pre>
+  <p><strong>Impact:</strong> In a 3-hop route, a sandwich attacker can manipulate intermediate pool prices to extract MEV. The attacker front-runs with a large trade on an intermediate pool, the victim's intermediate swap executes at a worse price, and the attacker back-runs to profit. The final output may still meet the user's <code>min-dy</code> if the slippage tolerance is generous, but the user receives less than they would have without the attack. With tight slippage, the tx reverts entirely (griefing).</p>
+  <p><strong>Recommendation:</strong> Pass calculated intermediate minimums based on expected rates with a tolerance band, or use a cumulative slippage check approach. Alternatively, document that callers should set tight <code>min-dy</code> values to limit total extractable value across all hops.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity medium">Medium</span> M-01: Oracle resilient maps are writable by any swapper — potential price manipulation</h3>
+  <p><strong>Location:</strong> <code>fwp-oracle-resilient-map</code>, <code>simple-oracle-resilient-map</code> — updated in <code>swap-helper</code></p>
+  <p><strong>Description:</strong> The resilient oracle maps are updated by every <code>swap-helper</code> call with an exponential moving average (EMA). While the EMA smoothing provides some resistance, any user can influence the oracle price by executing swaps. A series of directional swaps can gradually shift the resilient oracle toward a target price.</p>
+  <pre><code>;; EMA update formula in fwp-oracle-resilient-internal:
+(ok (+ (mul-down (- ONE_8 (get oracle-average pool))
+         (try! (fwp-oracle-instant-internal token-x token-y)))
+       (mul-down (get oracle-average pool) value)))</code></pre>
+  <p><strong>Impact:</strong> If other contracts on Stacks use <code>oracle-resilient-helper</code> as a price feed (e.g., for liquidations or collateral valuation), an attacker could manipulate the oracle over multiple blocks. The cost is the swap fees plus any slippage incurred. The <code>oracle-average</code> parameter from the pool determines the smoothing factor — a high value makes manipulation harder but slower to react to real price changes.</p>
+  <p><strong>Recommendation:</strong> Contracts consuming these oracle values should apply their own sanity checks (e.g., max deviation from external price feeds, TWAP over multiple blocks). Consider adding a separate oracle update mechanism with access controls rather than coupling oracle updates to swap execution.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <h3><span class="severity medium">Medium</span> M-02: Swap fallthrough assumes simple→fixed route without validation</h3>
+  <p><strong>Location:</strong> <code>swap-helper</code> — final else branch</p>
+  <p><strong>Description:</strong> After checking fixed-weight, simple-weight, and fixed→simple routes, the <code>swap-helper</code> function falls through to an implicit simple→fixed route without first validating that <code>is-from-simple-alex-to-fixed</code> returns a non-zero value. If a token pair doesn't match any known route, the function will attempt the simple→fixed swap anyway, resulting in a confusing error from the underlying pool contract rather than a clear "no route found" error.</p>
+  <pre><code>;; In swap-helper: the final else branch handles simple→fixed
+;; but never checks is-from-simple-alex-to-fixed first
+(if (> (is-from-fixed-to-simple-alex token-x token-y) u0)
+    ;; ... handle fixed→simple ...
+    ;; ELSE: assumes simple→fixed without validation ↓
+    (if (is-eq token-y .token-wstx)
+        ;; attempts swap-y-for-alex then swap-alex-for-wstx
+        ...</code></pre>
+  <p><strong>Impact:</strong> Users passing unsupported token pairs will get opaque errors from downstream pool contracts instead of a clear routing error. This complicates debugging and could cause front-end integration issues. No funds at risk — the underlying calls will simply fail.</p>
+  <p><strong>Recommendation:</strong> Add an explicit check: <code>(asserts! (> (is-from-simple-alex-to-fixed token-x token-y) u0) ERR-NO-ROUTE)</code> before the fallthrough branch.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity low">Low</span> L-01: Division by zero in <code>div-down</code> when pool balance is zero</h3>
+  <p><strong>Location:</strong> <code>div-down</code> private function</p>
+  <p><strong>Description:</strong> The <code>div-down</code> function checks for <code>a = 0</code> but not <code>b = 0</code>. If a pool has a zero balance for one token (e.g., drained pool), any oracle query against that pool will panic with a runtime division-by-zero error.</p>
+  <pre><code>(define-private (div-down (a uint) (b uint))
+  (if (is-eq a u0)
+    u0
+    (/ (* a ONE_8) b)  ;; panics if b = 0
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Low — a pool with zero balance would already be non-functional. However, the panic aborts the entire transaction rather than returning a graceful error, which could affect multi-step transactions that query oracle prices.</p>
+  <p><strong>Recommendation:</strong> Add a check: <code>(if (is-eq b u0) u0 (/ (* a ONE_8) b))</code> or return an error response.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity low">Low</span> L-02: <code>fee-helper</code> returns <code>u0</code> silently for unknown routes</h3>
+  <p><strong>Location:</strong> <code>fee-helper</code> — final else branch</p>
+  <p><strong>Description:</strong> When a token pair doesn't match any known route configuration, <code>fee-helper</code> returns <code>(ok u0)</code> instead of an error. A caller relying on this function to display fees to users would show "0% fee" for unsupported pairs, which is misleading.</p>
+  <pre><code>;; Final else in fee-helper:
+u0  ;; silently returns 0 fee for unknown routes</code></pre>
+  <p><strong>Impact:</strong> Front-end or integrating contracts may display incorrect fee information. No direct funds at risk since <code>swap-helper</code> would fail independently for unsupported pairs.</p>
+  <p><strong>Recommendation:</strong> Return an error (e.g., <code>(err u7001)</code>) for unrecognized routes instead of <code>u0</code>.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity info">Info</span> I-01: Hardcoded 50/50 pool weights limit routing flexibility</h3>
+  <p><strong>Location:</strong> All <code>fixed-weight-pool-v1-01</code> calls</p>
+  <p><strong>Description:</strong> Every call to the fixed-weight pool uses hardcoded weight parameters <code>u50000000 u50000000</code> (50%/50%). This limits the router to only 50/50 balanced pools and cannot route through pools with different weight configurations (e.g., 80/20).</p>
+  <p><strong>Impact:</strong> Design limitation — not a vulnerability. Pools with non-50/50 weights are unreachable through this helper.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity info">Info</span> I-02: Pre-Clarity 4 deployment</h3>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> The contract was deployed before Clarity 4 (epoch 3.3). It does not use <code>as-contract</code> and holds no tokens, so the absence of Clarity 4's <code>as-contract?</code> with explicit asset allowances is not a direct risk here. However, any future version that needs to custody tokens should use Clarity 4.</p>
+  <p><strong>Impact:</strong> Informational. The contract's stateless routing design mitigates the usual pre-Clarity 4 risks.</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <h3><span class="severity info">Info</span> I-03: <code>route-helper</code> returns raw pair for unknown routes instead of error</h3>
+  <p><strong>Location:</strong> <code>route-helper</code> — final else branch</p>
+  <p><strong>Description:</strong> When no known route exists between two tokens, <code>route-helper</code> returns <code>(list token-x token-y)</code> as if a direct route exists. This is misleading — callers may attempt a swap that will fail.</p>
+  <pre><code>;; Final else in route-helper:
+(list token-x token-y)  ;; implies direct route exists</code></pre>
+  <p><strong>Impact:</strong> Informational — front-ends may show a route that doesn't actually work.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>No token custody:</strong> The contract never holds tokens — all transfers flow through the underlying pool contracts. This eliminates an entire class of vulnerabilities (rug pulls, stuck funds, unauthorized transfers).</li>
+  <li><strong>No admin functions:</strong> There are no owner-only functions, no upgrade mechanism, and no pause functionality. The contract is fully immutable and permissionless.</li>
+  <li><strong>No <code>as-contract</code> usage:</strong> The contract never acts with its own authority, so there's no risk of malicious token contracts exploiting <code>as-contract</code> scope.</li>
+  <li><strong>EMA-based resilient oracle:</strong> The resilient oracle uses exponential moving averages rather than raw spot prices, providing some resistance to flash-loan-style manipulation.</li>
+  <li><strong>Clean routing logic:</strong> Despite the complexity of multi-pool routing, the cascade logic is well-structured and covers the necessary permutations.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>
+  The swap-helper-v1-03 contract is a well-designed stateless DEX routing layer. Its primary strength is that it
+  <strong>never holds tokens</strong> — it delegates all custody and transfer logic to the underlying pool contracts,
+  significantly reducing the attack surface.
+</p>
+<p>
+  The most significant finding is <strong>H-01</strong>: intermediate swaps in multi-hop routes have no slippage protection,
+  making users vulnerable to sandwich attacks on intermediate legs. This is a common pattern in DEX routers but should be
+  mitigated with tighter slippage controls or documented prominently for integrators.
+</p>
+<p>
+  The oracle manipulation risk (M-01) depends on how widely the resilient oracle values are consumed by other protocols.
+  If used as a price feed for lending/liquidation, it should be hardened with additional checks.
+</p>
+<p>
+  Overall, the contract's <strong>immutable, stateless, and custody-free</strong> design makes it relatively low-risk for a DeFi routing contract.
+</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>Source: <a href="https://api.hiro.so/v2/contracts/source/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9/swap-helper-v1-03">On-chain (Hiro API)</a></p>
+</footer>
+
+</body>
+</html>
