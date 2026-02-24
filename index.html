@@ -206,7 +206,7 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">32</div>
+    <div class="num">33</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
@@ -214,7 +214,7 @@ footer {
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">320</div>
+    <div class="num">326</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/stackswap-swap-router-v1b.html">StackSwap Swap Router v1b — Multi-Hop Router</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-router-v1b?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275</a></span>
+    <span class="findings-compact"><span class="m">1M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Two-hop swap router for StackSwap DEX. <strong>Clean, minimal design — stateless and custody-free.</strong> Both hops have user-specified slippage protection (better than most routers). Missing swap deadline enables mempool delay attacks. Companion to <a href="/clarity-audit/stackswap-swap-v5k.html">stackswap-swap-v5k audit</a>.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stackswap Swap Router v1b — Clarity Audit</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono','Fira Code','Cascadia Code',monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; line-height:1.6; max-width:860px; margin:0 auto; padding:2rem 1.5rem; }
+a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+h1 { font-size:1.8rem; margin-bottom:0.25rem; color:var(--accent); }
+.subtitle { color:var(--text-muted); font-size:0.95rem; margin-bottom:2rem; }
+h2 { font-size:1.4rem; margin-top:2.5rem; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border); }
+h3 { font-size:1.1rem; margin-top:1.5rem; margin-bottom:0.5rem; }
+p,li { margin-bottom:0.75rem; } ul,ol { padding-left:1.5rem; }
+pre { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1rem; overflow-x:auto; margin:1rem 0; font-family:var(--font-mono); font-size:0.85rem; }
+code { font-family:var(--font-mono); font-size:0.9em; background:var(--surface); padding:2px 6px; border-radius:3px; } pre code { background:none; padding:0; }
+.finding { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1.25rem; margin:1rem 0; }
+.finding-header { display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; }
+.severity { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.8rem; font-weight:700; }
+.severity.medium { background:var(--yellow); color:#000; }
+.severity.low { background:var(--blue); color:#000; }
+.severity.info { background:var(--text-muted); color:#000; }
+.finding-title { font-weight:600; font-size:1rem; }
+.finding-meta { font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+th,td { padding:0.5rem 0.75rem; border:1px solid var(--border); text-align:left; }
+th { background:var(--surface); color:var(--text-muted); }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1rem; margin:1.5rem 0; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; text-align:center; }
+.stat-card .num { font-size:1.8rem; font-weight:700; color:var(--accent); }
+.stat-card .label { color:var(--text-muted); font-size:0.85rem; }
+.back { display:inline-block; margin-bottom:1.5rem; color:var(--text-muted); font-size:0.9rem; }
+footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem; }
+</style>
+</head>
+<body>
+
+<a href="/clarity-audit/" class="back">← All Audits</a>
+
+<h1>Stackswap Swap Router v1b</h1>
+<p class="subtitle">
+  Multi-hop swap router for StackSwap DEX<br>
+  <strong>Contract:</strong> <a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-router-v1b?chain=mainnet"><code>SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-router-v1b</code></a><br>
+  <strong>Source:</strong> <a href="https://api.hiro.so/v2/contracts/source/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275/stackswap-swap-router-v1b">Hiro API (on-chain)</a><br>
+  <strong>Clarity Version:</strong> Pre-Clarity 4 (no epoch 3.3 features)<br>
+  <strong>Confidence:</strong> 🟢 HIGH — complete source reviewed, all findings verified against on-chain code<br>
+  <strong>Date:</strong> February 24, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This is the multi-hop swap router for <strong>StackSwap</strong>, one of the earliest DEXes on Stacks. It performs two-hop swaps through a bridge token: <code>from → bridge → to</code>, routing both legs through the StackSwap AMM (<code>stackswap-swap-v5k</code>).</p>
+
+<p>The contract is remarkably simple at ~60 lines — a single public function <code>router-swap</code>. It uses a balance-delta approach to calculate actual amounts received at each hop, which is the correct pattern for composable DEX routers. The contract is <strong>stateless and custody-free</strong> — it holds no funds and relies entirely on the underlying swap contract for asset transfers.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li>Single function: <code>router-swap</code> — two sequential swaps through a bridge token</li>
+  <li>Delegates to <code>stackswap-swap-v5k</code> for both swap legs (swap-x-for-y / swap-y-for-x)</li>
+  <li>Uses <code>stackswap-security-list-v1a.is-secure-router-or-user</code> for access control</li>
+  <li>Balance-delta calculation between hops ensures actual received amounts feed into the second swap</li>
+  <li>Both hops have user-specified minimum output amounts (<code>from-2-bridge-min-amt</code>, <code>bridge-2-to-min-amt</code>)</li>
+</ul>
+
+<h3>What's Good</h3>
+<ul>
+  <li><strong>Both hops have min-amount slippage protection</strong> — unlike many multi-hop routers that pass hardcoded <code>u1</code> for intermediate swaps</li>
+  <li><strong>Balance-delta approach</strong> for calculating bridge amounts is correct and composable</li>
+  <li><strong>Stateless design</strong> — no stored funds, no admin functions, minimal attack surface</li>
+  <li><strong>Security list check on <code>contract-caller</code></strong> — properly prevents unauthorized contract integrations</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity medium">MEDIUM</span>
+    <span class="finding-title">M-01: No Swap Deadline — Mempool Delay Attack</span>
+  </div>
+  <div class="finding-meta">Location: <code>router-swap</code> function</div>
+  <p>The router has no deadline parameter. A swap transaction can sit in the mempool indefinitely and execute at a time when market conditions have changed dramatically, resulting in the user receiving far less than expected.</p>
+  <p><strong>How it works:</strong> A user submits a swap with min-amounts based on current prices. The transaction gets delayed (congestion, low fee, or deliberate withholding by a miner). Hours or days later, prices have moved significantly. The transaction executes and still passes the min-amount checks (if the user set them loosely), but the user receives much less value than they would have at submission time.</p>
+  <pre><code>;; No deadline check — swap can execute at any future block
+(define-public (router-swap
+  (from &lt;sip-010-token&gt;) 
+  (bridge &lt;sip-010-token&gt;)
+  (to &lt;sip-010-token&gt;)
+  (from-lp &lt;liquidity-token&gt;)
+  (to-lp &lt;liquidity-token&gt;)
+  (from-type bool)
+  (to-type bool)
+  (from-amt uint)
+  (from-2-bridge-min-amt uint)
+  (bridge-2-to-min-amt uint)
+  ;; Missing: (deadline uint) with (asserts! (&lt;= block-height deadline) ERR_EXPIRED)
+)</code></pre>
+  <p><strong>Impact:</strong> Users may unknowingly execute swaps at stale prices. Combined with sandwich attacks (manipulate price → let delayed tx execute → reverse), this becomes a MEV extraction vector.</p>
+  <p><strong>Recommendation:</strong> Add a <code>deadline</code> parameter (block height) and assert <code>(&lt;= block-height deadline)</code> at the start of the function. This is standard practice in Uniswap-style routers.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity low">LOW</span>
+    <span class="finding-title">L-01: Redundant Boolean Logic — <code>(and from-type true)</code></span>
+  </div>
+  <div class="finding-meta">Location: <code>router-swap</code>, lines with <code>if</code> conditions</div>
+  <p>Both swap direction checks use <code>(and from-type true)</code> and <code>(and to-type true)</code>, which are logically equivalent to just <code>from-type</code> and <code>to-type</code>. The <code>(and x true)</code> pattern is a no-op.</p>
+  <pre><code>;; Current (redundant):
+(if (and from-type true) ...)
+(if (and to-type true) ...)
+
+;; Should be:
+(if from-type ...)
+(if to-type ...)</code></pre>
+  <p><strong>Impact:</strong> No functional impact. This is dead code that suggests the developer may have intended a second condition that was never added, or it's a copy-paste artifact.</p>
+  <p><strong>Recommendation:</strong> Simplify to <code>(if from-type ...)</code> and <code>(if to-type ...)</code>.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity low">LOW</span>
+    <span class="finding-title">L-02: <code>pre_from_amt</code> Computed but Never Used</span>
+  </div>
+  <div class="finding-meta">Location: <code>router-swap</code>, initial <code>let</code> block</div>
+  <p>The function reads the user's initial <code>from</code> token balance into <code>pre_from_amt</code> but never references it. The return value uses the input parameter <code>from-amt</code> directly instead of computing a delta like it does for bridge and to tokens.</p>
+  <pre><code>(let
+    (
+        (pre_from_amt (unwrap-panic (contract-call? from get-balance tx-sender)))  ;; never used
+        ...
+    )
+    ...
+    (ok (list from-amt delta_bridge_amt delta_to_amt))  ;; uses from-amt, not delta
+)</code></pre>
+  <p><strong>Impact:</strong> Wastes gas on an unnecessary external call. More importantly, the return value reports the <em>requested</em> input amount rather than the <em>actual</em> amount deducted, which could differ if the token has transfer fees or rebasing mechanics.</p>
+  <p><strong>Recommendation:</strong> Either remove <code>pre_from_amt</code> or compute <code>delta_from_amt</code> for an accurate return value: <code>(- pre_from_amt (contract-call? from get-balance tx-sender))</code>.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">INFO</span>
+    <span class="finding-title">I-01: <code>unwrap-panic</code> on External Trait Calls</span>
+  </div>
+  <div class="finding-meta">Location: All <code>get-balance</code> calls</div>
+  <p>All six <code>get-balance</code> calls use <code>unwrap-panic</code>. If any token's <code>get-balance</code> returns an error (e.g., a non-compliant SIP-010 implementation), the entire transaction aborts with a runtime error rather than a descriptive error code.</p>
+  <p><strong>Impact:</strong> Poor error reporting. Users see a generic abort rather than understanding which token failed. Not exploitable, but degrades UX.</p>
+  <p><strong>Recommendation:</strong> Use <code>unwrap!</code> with descriptive error codes (e.g., <code>ERR_BALANCE_CHECK_FAILED</code>).</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">INFO</span>
+    <span class="finding-title">I-02: Centralized Security List Gate</span>
+  </div>
+  <div class="finding-meta">Location: <code>router-swap</code>, <code>asserts!</code> on security list</div>
+  <p>Access to the router is gated by <code>stackswap-security-list-v1a.is-secure-router-or-user</code>. This external contract controls who can use the router. If the security list is misconfigured or the StackSwap team removes a previously-approved caller, integrations break without warning.</p>
+  <pre><code>(asserts! (contract-call? .stackswap-security-list-v1a is-secure-router-or-user contract-caller) ERR_INVALID_ROUTER)</code></pre>
+  <p><strong>Impact:</strong> Standard centralization trade-off. The security list provides protection against malicious contract interactions but creates a single point of control. This is a reasonable design choice for a DEX router.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">INFO</span>
+    <span class="finding-title">I-03: Pre-Clarity 4 Contract</span>
+  </div>
+  <div class="finding-meta">Location: Contract-wide</div>
+  <p>This contract predates Clarity 4 (epoch 3.3). However, since the router <strong>never uses <code>as-contract</code></strong> and holds no assets, the absence of Clarity 4's <code>as-contract?</code> with explicit asset allowances is not a security concern here. The contract operates entirely under the user's authority via <code>tx-sender</code>.</p>
+  <p><strong>Impact:</strong> None for this specific contract. Noted for completeness.</p>
+</div>
+
+<h2>Priority Matrix Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (DeFi swap router)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>1 (~60 lines)</td><td>2</td><td>2</td></tr>
+  <tr><td>User exposure</td><td>3 (StackSwap — established DEX)</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>1 (similar to other router audits)</td><td>1.5</td><td>1.5</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>2.3 / 3.0</strong></td></tr>
+</table>
+<p>Clarity version penalty: -0.5 → <strong>Final: 1.8</strong> (meets threshold)</p>
+
+<h2>Conclusion</h2>
+<p>This is a <strong>well-designed, minimal router</strong> with a small attack surface. The stateless, custody-free architecture means there are no stored funds to steal. Both swap legs have user-specified slippage protection, which is better than many competing routers that pass hardcoded minimums for intermediate hops.</p>
+
+<p>The only actionable finding is the missing swap deadline (M-01), which is a standard DEX router issue. The remaining findings are cosmetic (redundant logic, unused variable) or informational (centralized security list, pre-Clarity 4).</p>
+
+<p><strong>Overall risk: LOW.</strong> This contract's simplicity is its strength. The real security surface is in the underlying <code>stackswap-swap-v5k</code> AMM contract (see <a href="/clarity-audit/stackswap-swap-v5k.html">separate audit</a>).</p>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007</a> ☕ · <a href="/clarity-audit/">All Audits</a> · Source verified on-chain via Hiro API</p>
+</footer>
+
+</body>
+</html>
