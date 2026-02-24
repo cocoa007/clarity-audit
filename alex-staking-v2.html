@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX alex-staking-v2 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX alex-staking-v2</h1>
+<p class="subtitle">Token migration wrapper for ALEX staking — converts token-alex ↔ age000-governance-token and delegates to reserve pool</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.alex-staking-v2?chain=mainnet">SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.alex-staking-v2</a></code></td></tr>
+  <tr><td>Protocol</td><td>ALEX — leading DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>2 (pre-Clarity 4 — uses <code>as-contract</code> without asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>104</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — thin wrapper; security depends heavily on external token contracts and reserve pool not reviewed here</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract is a thin migration wrapper in the ALEX staking system. It serves two purposes:</p>
+<ol>
+  <li><strong>Token swap on stake</strong>: Burns <code>token-alex</code> from the user, mints <code>age000-governance-token</code> to the user, then stakes via the reserve pool.</li>
+  <li><strong>Token swap on claim</strong>: Claims rewards from the reserve pool, burns <code>age000-governance-token</code>, and mints <code>token-alex</code> back to the user.</li>
+</ol>
+<p>The contract also implements the ALEX DAO extension and proposal traits, allowing it to be enabled/disabled via governance. Its <code>execute</code> function disables <code>alex-staking</code> (v1) and enables itself (v2).</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Token migration</strong>: Converts between <code>.token-alex</code> and <code>'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.age000-governance-token</code></li>
+  <li><strong>Staking delegation</strong>: All actual staking logic lives in <code>alex-reserve-pool</code></li>
+  <li><strong>Access control</strong>: DAO-or-extension pattern for admin functions; blocklist for user-facing functions</li>
+  <li><strong>Read-only proxies</strong>: 18 read-only functions that simply forward calls to the reserve pool</li>
+</ul>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>This is a proxy contract — the reserve pool (<code>alex-reserve-pool</code>) contains the actual staking logic, reward calculations, and state. This audit covers only the wrapper logic.</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (DeFi staking)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>1 (104 lines, thin wrapper)</td><td>2</td><td>2</td></tr>
+  <tr><td>User exposure</td><td>3 (ALEX is largest DEX on Stacks)</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>1 (similar staking category)</td><td>1.5</td><td>1.5</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.3 / 3.0</strong> (−0.5 Clarity version penalty → 1.8 ✅)</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Blocklist bypass via direct reserve pool interaction</h3>
+  </div>
+  <p><strong>Location:</strong> <code>stake-tokens</code>, <code>claim-staking-reward</code></p>
+  <p><strong>Description:</strong> The blocklist only applies to users who interact through this contract. Since the underlying <code>alex-reserve-pool</code> is a separate deployed contract, blocklisted users can bypass the restriction by calling the reserve pool directly (or through another authorized extension), completely defeating the blocklist mechanism.</p>
+  <pre><code>(define-public (stake-tokens (amount-token uint) (lock-period uint))
+  (let ((sender tx-sender))
+    (asserts! (not (is-blocklisted-or-default sender)) ERR-NOT-AUTHORIZED)
+    ;; ... user can skip this contract entirely</code></pre>
+  <p><strong>Impact:</strong> Blocklisted addresses (e.g., sanctioned entities) can still stake and claim rewards by interacting with the reserve pool directly, unless that contract also enforces its own blocklist.</p>
+  <p><strong>Recommendation:</strong> The blocklist should be enforced at the reserve pool level, not just at this wrapper. Alternatively, the reserve pool should restrict which contracts can call its staking functions to ensure all interactions flow through blocklist-enforcing wrappers.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Blocklist check occurs after reserve pool state change in claim flow</h3>
+  </div>
+  <p><strong>Location:</strong> <code>claim-staking-reward</code>, lines 67-75</p>
+  <p><strong>Description:</strong> In <code>claim-staking-reward</code>, the reserve pool's <code>claim-staking-reward</code> is called inside the <code>let</code> binding — before the blocklist assertion. While the entire transaction reverts on assertion failure (so no funds are lost), this ordering wastes gas for blocklisted users and is inconsistent with <code>stake-tokens</code> which checks the blocklist first.</p>
+  <pre><code>(define-public (claim-staking-reward (target-cycle uint))
+  (let (
+    (sender tx-sender)
+    ;; Reserve pool claim executes FIRST
+    (claimed (try! (contract-call? ... claim-staking-reward ...)))
+    (total-claimed (+ (get to-return claimed) (get entitled-token claimed))))
+    ;; Blocklist check happens AFTER
+    (asserts! (not (is-blocklisted-or-default sender)) ERR-NOT-AUTHORIZED)
+    ...</code></pre>
+  <p><strong>Impact:</strong> No direct security impact (transaction reverts fully), but violates fail-fast principle and wastes gas for blocklisted users.</p>
+  <p><strong>Recommendation:</strong> Move the blocklist check before the <code>let</code> block or make it the first binding that can short-circuit.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: claim-staking-reward-many silently includes individual failures</h3>
+  </div>
+  <p><strong>Location:</strong> <code>claim-staking-reward-many</code>, line 77</p>
+  <p><strong>Description:</strong> The batch claim function uses <code>map</code> over <code>claim-staking-reward</code> and wraps the result in <code>(ok ...)</code>. Since each individual claim returns a response type, failures for specific cycles are captured as <code>(err ...)</code> values within the list but the outer call still succeeds. Users may not realize some claims failed.</p>
+  <pre><code>(define-public (claim-staking-reward-many (target-cycles (list 1000 uint)))
+  (ok (map claim-staking-reward target-cycles)))</code></pre>
+  <p><strong>Impact:</strong> Users calling this function may believe all claims succeeded when some silently failed. No funds are lost, but claimed amounts may be less than expected without clear indication.</p>
+  <p><strong>Recommendation:</strong> Consider using <code>fold</code> to accumulate results and revert on any failure, or return a count of successful vs failed claims.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No lock-period bounds validation</h3>
+  </div>
+  <p><strong>Location:</strong> <code>stake-tokens</code>, line 59</p>
+  <p><strong>Description:</strong> The <code>lock-period</code> parameter is passed directly to the reserve pool without any local validation. While the reserve pool presumably validates this, defense-in-depth would catch invalid values earlier with a more descriptive error.</p>
+  <p><strong>Impact:</strong> Minimal — depends on reserve pool validation. Users may get confusing error codes from the downstream contract.</p>
+  <p><strong>Recommendation:</strong> Add a local assertion for valid lock period range (e.g., <code>(&gt; lock-period u0)</code> and <code>(&lt;= lock-period u32)</code>) before delegating.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Extension status dependency creates silent failure mode</h3>
+  </div>
+  <p><strong>Location:</strong> <code>stake-tokens</code>, <code>claim-staking-reward</code></p>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> to call <code>burn-fixed</code> and <code>mint-fixed</code> on the token contracts. These calls succeed only if this contract is an authorized extension/minter for both <code>.token-alex</code> and <code>age000-governance-token</code>. If the contract loses extension status on either token (e.g., via a DAO governance action), all staking and claiming operations silently break.</p>
+  <p><strong>Impact:</strong> If extension status is revoked for either token, users cannot stake or claim. Staked funds would need to be recovered through the reserve pool directly.</p>
+  <p><strong>Recommendation:</strong> Document the extension dependency clearly. Consider adding a read-only function that checks extension status on both tokens so users/UIs can verify operability.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-01: Pre-Clarity 4 — uses as-contract without asset allowances</h3>
+  </div>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> (Clarity 2) which gives blanket authority over all contract-held assets. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-nft</code>, <code>with-stx</code>) that would restrict what the contract can do when acting as itself.</p>
+  <p><strong>Recommendation:</strong> If redeploying, migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code> allowances for <code>token-alex</code> and <code>age000-governance-token</code>.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-02: execute() is a one-shot migration proposal</h3>
+  </div>
+  <p><strong>Description:</strong> The <code>execute</code> function disables v1 staking and enables v2. This is a standard DAO proposal pattern but it means the contract doubles as both a proposal and an extension. Once executed, the function has no further purpose but remains callable (though re-execution is harmless — it re-sets the same state).</p>
+  <pre><code>(define-public (execute (sender principal))
+  (begin 
+    (try! (contract-call? .executor-dao set-extensions
+      (list { extension: .alex-staking, enabled: false })))
+    (try! (contract-call? .executor-dao set-extensions
+      (list { extension: .alex-staking-v2, enabled: true })))
+    (ok true)))</code></pre>
+  <p><strong>Recommendation:</strong> No action needed — this is standard ALEX DAO convention.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-03: Admin functions delegate to reserve pool with full DAO authority</h3>
+  </div>
+  <p><strong>Description:</strong> Functions like <code>set-reward-cycle-length</code>, <code>set-token-halving-cycle</code>, and <code>set-coinbase-amount</code> are DAO-gated and use <code>as-contract</code> to call the reserve pool. This means the DAO can modify fundamental staking parameters (cycle length, emission schedule) through this contract. These are powerful operations that affect all stakers.</p>
+  <p><strong>Recommendation:</strong> These are standard DAO governance controls. Users should be aware that staking parameters can change via governance votes. No code change needed.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Clean separation of concerns</strong>: The contract is a thin wrapper that delegates all complex logic to the reserve pool. Minimal surface area means minimal bug surface.</li>
+  <li><strong>DAO access control</strong>: All admin functions properly check <code>is-dao-or-extension</code> before executing.</li>
+  <li><strong>Amount validation</strong>: <code>stake-tokens</code> checks <code>(&gt; amount-token u0)</code> before proceeding.</li>
+  <li><strong>Atomic token swap</strong>: The burn-then-mint pattern in both <code>stake-tokens</code> and <code>claim-staking-reward</code> is atomic within a single transaction — if any step fails, the entire transaction reverts.</li>
+  <li><strong>Convenient batch operations</strong>: Read-only batch functions (<code>get-staked-many</code>, <code>get-staking-rewards-many</code>) support up to 1000 cycles per call.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>This is a well-structured thin wrapper contract with minimal attack surface. The most significant finding is the <strong>blocklist bypass</strong> (H-01) — the blocklist is only enforced at this wrapper layer and can be circumvented by interacting with the reserve pool directly. The remaining findings are ordering issues and defense-in-depth improvements. The contract's security ultimately depends on the underlying <code>alex-reserve-pool</code> and token contracts, which were not in scope for this audit.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a> · Independent security research</p>
+</footer>
+
+</body>
+</html>
