@@ -412,6 +412,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/arkadiko-stacker-v3-1.html">Arkadiko Stacker v3-1 — PoX Stacking Manager</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-stacker-v3-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">PoX stacking proxy for Arkadiko protocol. <strong>Critical: <code>return-stx</code> has no access control — anyone can drain unlocked STX back to reserve, griefing stacking operations.</strong> Hardcoded pox-3 makes contract functionally deprecated.</p>
+  <p class="date">February 24, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/arkadiko-oracle-v2-3.html">Arkadiko Oracle v2-3 — Multisig Price Oracle</a>
     <span class="confidence">🟢 HIGH</span>
   </div>
