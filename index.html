@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">34</div>
+    <div class="num">35</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">51</div>
+    <div class="num">52</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">332</div>
+    <div class="num">342</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/arkadiko-freddie-v1-1.html">Arkadiko Freddie v1-1 — Vault Manager</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-freddie-v1-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
+    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Core vault manager for Arkadiko stablecoin. <strong>High: missing owner check in <code>close-vault</code> allows anyone to force-close non-stacking vaults.</strong> Permissionless <code>redeem-tokens</code> lets anyone trigger fee distributions. Well-architected orchestration layer with comprehensive trait validation via DAO registry.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
