@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Zest Protocol rewards-v8 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Zest Protocol rewards-v8</h1>
+<p class="subtitle">Rewards distribution contract for stSTX and stSTXbtc liquid staking on Stacks</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.rewards-v8?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.rewards-v8</a></code></td></tr>
+  <tr><td>Protocol</td><td>Zest Protocol — liquid staking (stSTX, stSTXbtc) on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API</td></tr>
+  <tr><td>Lines of Code</td><td>~373</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses legacy <code>as-contract</code>)</td></tr>
+  <tr><td>Audit Date</td><td>February 24, 2026</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — self-contained rewards distributor; all findings verified against on-chain source</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red);">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633;">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow);">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue);">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted);">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract manages the collection and linear distribution of staking rewards for Zest Protocol's liquid staking tokens (stSTX for STX stacking rewards, stSTXbtc for sBTC stacking rewards). Rewards earned during PoX cycle X are distributed gradually throughout cycle X+1, released in equal portions across configurable intervals.</p>
+
+<p>The contract is well-structured with proper DAO access control on administrative functions. The <code>process-rewards</code> function validates all trait-based contract parameters against both stored addresses and DAO protocol membership. However, there are concerns around sBTC reward loss when token supplies reach zero, and the pre-Clarity 4 <code>as-contract</code> usage grants blanket authority to commission trait contracts.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Reward collection:</strong> <code>add-rewards</code> / <code>add-rewards-sbtc</code> accept rewards from callers, split them into commission and protocol portions, and pay pool-owner commissions immediately</li>
+  <li><strong>Linear vesting:</strong> <code>process-rewards</code> releases accumulated rewards proportionally based on elapsed intervals within the distribution cycle</li>
+  <li><strong>Dual token support:</strong> STX rewards go to a reserve contract; sBTC rewards are split between ststxbtc-tracking (v1) and ststxbtc-tracking-v2 based on relative token supply</li>
+  <li><strong>DAO governance:</strong> All admin functions (interval length, commission contracts, fund recovery) are gated by <code>.dao check-is-protocol</code></li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: sBTC rewards silently lost when both ststxbtc token supplies are zero</h3>
+  </div>
+  <p><strong>Location:</strong> <code>process-rewards</code> — sBTC distribution block</p>
+  <p><strong>Description:</strong> When <code>rewards-protocol-sbtc > 0</code>, the contract calculates distribution between v1 and v2 token holders based on supply:</p>
+  <pre><code>(let (
+  (ststxbtc-supply (unwrap-panic (contract-call? .ststxbtc-token get-total-supply)))
+  (ststxbtc-supply-v2 (unwrap-panic (contract-call? .ststxbtc-token-v2 get-total-supply)))
+  (total-supply (+ ststxbtc-supply ststxbtc-supply-v2))
+  (rewards-v1 (if (is-eq total-supply u0)
+    u0
+    (/ (* rewards-protocol-sbtc ststxbtc-supply) total-supply)
+  ))
+  (rewards-v2 (if (is-eq total-supply u0)
+    u0
+    (- rewards-protocol-sbtc rewards-v1)
+  ))
+)</code></pre>
+  <p>When <code>total-supply = 0</code>, both <code>rewards-v1</code> and <code>rewards-v2</code> are set to <code>u0</code>. Neither tracking contract receives any sBTC. However, the function still increments <code>processed-protocol-sbtc</code> by the full <code>rewards-protocol-sbtc</code> amount. The sBTC remains in the contract with no mechanism to distribute it to future holders.</p>
+  <p><strong>Impact:</strong> If all stSTXbtc holders exit (both v1 and v2 supply reach zero) before rewards for a cycle are processed, those sBTC rewards are effectively locked. The <code>get-sbtc</code> admin function provides an escape hatch (DAO can recover the funds), but automatic distribution is permanently lost for those rewards. This is a realistic scenario during token migration periods.</p>
+  <p><strong>Recommendation:</strong> Either revert when <code>total-supply = 0</code> to defer processing until holders exist, or route orphaned rewards to the reserve:</p>
+  <pre><code>(if (is-eq total-supply u0)
+  ;; No holders — send to reserve or revert
+  (try! (as-contract (contract-call? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token 
+    transfer rewards-protocol-sbtc tx-sender reserve-address none)))
+  (begin
+    ;; Normal v1/v2 split...
+  )
+)</code></pre>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: <code>as-contract</code> grants blanket authority to commission trait contracts</h3>
+  </div>
+  <p><strong>Location:</strong> <code>process-rewards</code> — commission calls</p>
+  <p><strong>Description:</strong> The contract calls commission contracts using <code>as-contract</code>:</p>
+  <pre><code>(try! (as-contract (contract-call? commission-ststx-contract add-commission 
+  staking-contract rewards-commission-stx)))</code></pre>
+  <p>In pre-Clarity 4, <code>as-contract</code> gives the callee full authority to act as the rewards contract — including transferring any STX or tokens held by the contract, not just the intended commission amount. While the commission contract must be both DAO-approved and match the stored address, a compromised or malicious commission contract could drain all funds.</p>
+  <p><strong>Impact:</strong> If a malicious commission contract is approved by the DAO (via governance attack or compromised multisig), it could drain the entire STX and sBTC balance of the rewards contract during a <code>process-rewards</code> call. The dual validation (stored address + DAO check) provides good defense-in-depth, but the pre-Clarity 4 <code>as-contract</code> makes the blast radius larger than necessary.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances:</p>
+  <pre><code>;; Only allow transferring the exact commission amount
+(try! (as-contract? 
+  (with-stx rewards-commission-stx)
+  (contract-call? commission-ststx-contract add-commission 
+    staking-contract rewards-commission-stx)))</code></pre>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Systematic rounding bias in sBTC distribution favors v2 token holders</h3>
+  </div>
+  <p><strong>Location:</strong> <code>process-rewards</code> — sBTC v1/v2 split</p>
+  <p><strong>Description:</strong> The v1/v2 reward split uses integer division for v1, then gives the remainder to v2:</p>
+  <pre><code>(rewards-v1 (/ (* rewards-protocol-sbtc ststxbtc-supply) total-supply))
+(rewards-v2 (- rewards-protocol-sbtc rewards-v1))</code></pre>
+  <p>Integer division truncates, so v1 always rounds down and v2 always gets the rounding dust. Over many cycles, v2 holders systematically receive slightly more than their proportional share.</p>
+  <p><strong>Impact:</strong> The per-cycle bias is at most 1 sat (the truncation remainder). Over hundreds of cycles, v2 holders accumulate at most a few hundred sats more than strictly proportional. This is economically negligible but represents a systematic unfairness.</p>
+  <p><strong>Recommendation:</strong> This is a known pattern in integer-math DeFi. Alternating which side gets the remainder (e.g., based on cycle parity) would eliminate the systematic bias, though the economic impact doesn't warrant the added complexity.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No minimum amount validation in <code>add-rewards</code> functions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-rewards</code> and <code>add-rewards-sbtc</code></p>
+  <p><strong>Description:</strong> Both reward addition functions accept any <code>stx-amount</code> / <code>sbtc-amount</code>, including zero. With small amounts, the commission calculation <code>(/ (* amount commission) DENOMINATOR_BPS)</code> can round to zero, meaning the full amount bypasses commission. A zero-amount call succeeds, emitting events and updating maps with +0 values.</p>
+  <p><strong>Impact:</strong> No direct financial loss (caller pays their own funds), but zero/dust-amount calls pollute event logs and waste block space. With very small amounts, commission rounding to zero means pool owners receive nothing while the protocol gets the full amount.</p>
+  <p><strong>Recommendation:</strong> Add a minimum amount check: <code>(asserts! (> stx-amount u0) (err ERR_INVALID_AMOUNT))</code>. Consider a higher minimum to ensure commission calculations are meaningful.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 — recommend migration to <code>as-contract?</code></h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> in multiple locations for STX transfers and sBTC transfers, as well as trait-based calls to commission and tracking contracts. Clarity 4 introduces <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>) that limit the scope of authority granted to callees.</p>
+  <p><strong>Recommendation:</strong> When deploying rewards-v9, target Clarity 4 and replace all <code>as-contract</code> calls with scoped <code>as-contract?</code>. This would mitigate M-02 at the language level.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Hardcoded sBTC token contract address</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-rewards-sbtc</code>, <code>get-sbtc</code></p>
+  <p><strong>Description:</strong> The sBTC token address is hardcoded as <code>'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token</code> throughout the contract. If sBTC migrates to a new contract (e.g., a v2 token), a new rewards contract version would need to be deployed.</p>
+  <p><strong>Recommendation:</strong> This is acceptable for the current version since sBTC is canonical. A future version could use a configurable token address (DAO-settable), but the additional complexity may not be warranted given that a rewards contract upgrade would likely be needed anyway for other reasons.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Solid access control:</strong> All admin functions properly gated behind <code>.dao check-is-protocol</code> using <code>contract-caller</code> (not <code>tx-sender</code>), preventing direct-call bypasses</li>
+  <li><strong>Defense-in-depth on trait validation:</strong> <code>process-rewards</code> validates trait contracts against both stored addresses AND DAO protocol membership — compromise of one is insufficient</li>
+  <li><strong>Linear vesting design:</strong> Gradual release across intervals prevents reward-sniping (deposit just before distribution, withdraw immediately after)</li>
+  <li><strong>Clean interval math:</strong> <code>set-rewards-interval-length</code> validates that the interval divides the cycle length evenly, preventing remainder-based edge cases</li>
+  <li><strong>Emergency fund recovery:</strong> <code>get-stx</code> and <code>get-sbtc</code> allow DAO to recover funds in case of bugs (mitigates M-01)</li>
+  <li><strong>Proper event emission:</strong> Both <code>add-rewards</code> and <code>process-rewards</code> emit detailed print events for off-chain monitoring</li>
+</ul>
+
+<h2>Access Control Summary</h2>
+<table>
+  <tr><th>Function</th><th>Access</th><th>Notes</th></tr>
+  <tr><td><code>add-rewards</code></td><td>Permissionless</td><td>Caller pays own funds — no restriction needed</td></tr>
+  <tr><td><code>add-rewards-sbtc</code></td><td>Permissionless</td><td>Caller pays own funds — no restriction needed</td></tr>
+  <tr><td><code>process-rewards</code></td><td>Permissionless (DAO-gated traits)</td><td>Anyone can trigger, but all contracts must be DAO-approved + match stored addresses</td></tr>
+  <tr><td><code>get-stx</code></td><td>DAO protocol only</td><td>Emergency fund recovery</td></tr>
+  <tr><td><code>get-sbtc</code></td><td>DAO protocol only</td><td>Emergency fund recovery</td></tr>
+  <tr><td><code>set-rewards-interval-length</code></td><td>DAO protocol only</td><td>Validates interval divides cycle length</td></tr>
+  <tr><td><code>set-ststx-commission-contract</code></td><td>DAO protocol only</td><td>Correctly guarded</td></tr>
+  <tr><td><code>set-ststxbtc-commission-contract</code></td><td>DAO protocol only</td><td>Correctly guarded</td></tr>
+  <tr><td><code>set-staking-contract-address</code></td><td>DAO protocol only</td><td>Correctly guarded</td></tr>
+</table>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — DeFi staking rewards (holds STX + sBTC)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — deployed on mainnet</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>2 — ~373 lines, multi-token distribution logic</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>3 — Zest is a prominent Stacks protocol</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 — first rewards/vesting contract in collection</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total Score</strong></td><td><strong>2.65 / 3.0</strong></td></tr>
+</table>
+<p>Clarity version penalty: -0.5 (pre-Clarity 4) → <strong>Adjusted: 2.15 / 3.0</strong> — well above 1.8 threshold.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a> · Independent audit — not affiliated with Zest Protocol</p>
+</footer>
+
+</body>
+</html>
