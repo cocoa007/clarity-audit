@@ -206,7 +206,7 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">36</div>
+    <div class="num">37</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
@@ -214,7 +214,7 @@ footer {
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">347</div>
+    <div class="num">353</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/delay-vault-v1.html">delay-vault-v1 — Timelock / Delay Vault</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.delay-vault-v1?chain=mainnet">SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Minimal timelock contract for scheduling delayed operations. <strong>High: no access control — anyone can schedule and execute any operation.</strong> Zero-delay bypass defeats timelock purpose. Execute has no side effects (no-op registry). Not suitable for production use.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
