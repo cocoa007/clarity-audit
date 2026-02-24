@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: market-factory-v18-bias — cocoa007</title>
+<style>
+:root{--bg:#0d1117;--fg:#c9d1d9;--card:#161b22;--border:#30363d;--accent:#58a6ff;--critical:#f85149;--high:#db6d28;--medium:#d29922;--low:#3fb950;--info:#8b949e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;padding:2rem;max-width:960px;margin:0 auto}
+h1{color:var(--accent);font-size:1.8rem;margin-bottom:.5rem}
+h2{color:var(--accent);font-size:1.3rem;margin:2rem 0 1rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
+h3{font-size:1.1rem;margin:1.2rem 0 .5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.meta{color:var(--info);font-size:.9rem;margin-bottom:1.5rem}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem;margin:1rem 0}
+.summary-box{text-align:center;padding:.8rem;border-radius:8px;background:var(--card);border:1px solid var(--border)}
+.summary-box .count{font-size:1.8rem;font-weight:700}
+.summary-box.critical .count{color:var(--critical)}
+.summary-box.high .count{color:var(--high)}
+.summary-box.medium .count{color:var(--medium)}
+.summary-box.low .count{color:var(--low)}
+.summary-box.info .count{color:var(--info)}
+.finding{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1rem 0}
+.finding-header{display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem}
+.severity{padding:.2rem .6rem;border-radius:4px;font-size:.8rem;font-weight:700;color:#fff}
+.severity.critical{background:var(--critical)}
+.severity.high{background:var(--high)}
+.severity.medium{background:var(--medium)}
+.severity.low{background:var(--low)}
+.severity.info{background:var(--info)}
+.finding-title{font-weight:600;font-size:1.05rem}
+.finding p,.finding ul{margin:.5rem 0}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;font-size:.85rem;margin:.8rem 0}
+code{font-family:'SF Mono',Consolas,monospace;font-size:.85rem}
+.label{color:var(--info);font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;margin:.8rem 0}
+th,td{padding:.5rem .8rem;border:1px solid var(--border);text-align:left;font-size:.9rem}
+th{background:var(--card)}
+</style>
+</head>
+<body>
+
+<h1>🔍 Security Audit: market-factory-v18-bias</h1>
+<div class="meta">
+  <strong>Contract:</strong> <a href="https://explorer.hiro.so/address/SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA.market-factory-v18-bias?chain=mainnet">SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA.market-factory-v18-bias</a><br>
+  <strong>Source:</strong> <a href="https://api.hiro.so/v2/contracts/source/SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA/market-factory-v18-bias">Hiro API (on-chain)</a><br>
+  <strong>Type:</strong> LMSR Prediction Market Factory with Bias/Virtual Liquidity<br>
+  <strong>Clarity Version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)<br>
+  <strong>Lines:</strong> ~900+ Clarity<br>
+  <strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007</a><br>
+  <strong>Date:</strong> February 24, 2026<br>
+  <strong>Confidence:</strong> High — single-contract system, all code paths reviewed
+</div>
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-box critical"><div class="count">1</div>Critical</div>
+  <div class="summary-box high"><div class="count">3</div>High</div>
+  <div class="summary-box medium"><div class="count">3</div>Medium</div>
+  <div class="summary-box low"><div class="count">3</div>Low</div>
+  <div class="summary-box info"><div class="count">3</div>Info</div>
+</div>
+
+<h2>Overview</h2>
+<p>This is a binary LMSR (Logarithmic Market Scoring Rule) prediction market factory deployed on Stacks mainnet. It supports market creation with initial liquidity, YES/NO share trading with fees, bias/virtual liquidity for initial pricing, and admin-controlled resolution. Math operates in STX units with uSTX (1e6) for transfers.</p>
+
+<p><strong>Architecture:</strong> Single contract manages all markets via map-indexed state. A single hardcoded ADMIN address controls market lifecycle (create → bias → trade → resolve → redeem → withdraw surplus). Fees split across four recipients (drip, brc20, team, LP) with configurable BPS rates and percentage splits.</p>
+
+<h3>Documented Limitations / Trust Assumptions</h3>
+<ul>
+  <li>Admin is fully trusted for market resolution — no oracle integration</li>
+  <li>Bias is pricing-only; redemption uses real shares at 1 share = 1 STX</li>
+  <li>User spending caps are required for trading (must be set before buy)</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity critical">Critical</span>
+    <span class="finding-title">C-01: Self-Service Spending Cap Bypass in Auto-Buy Functions</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>buy-yes-auto</code>, <code>buy-no-auto</code> — <code>bump-cap-if-needed</code> call</p>
+  <p class="label">Description</p>
+  <p>The <code>buy-yes-auto</code> and <code>buy-no-auto</code> functions accept a user-supplied <code>target-cap</code> parameter and call <code>bump-cap-if-needed</code>, which unconditionally increases the user's spending cap to any value they request. This means <strong>any user can set their own cap to <code>u340282366920938463463374607431768211455</code> (max uint128)</strong> and bypass the entire cap system.</p>
+  <p>The regular <code>buy-yes</code> / <code>buy-no</code> functions enforce the cap but don't allow setting it — however, a user simply calls <code>buy-yes-auto</code> once with a huge <code>target-cap</code>, then uses <code>buy-yes</code> freely afterward.</p>
+  <pre><code>;; User controls target-cap — can set to any value
+(define-public (buy-yes-auto (m uint) (amount uint) (target-cap uint) (max-cost uint))
+  (begin
+    ...
+    (bump-cap-if-needed m tx-sender target-cap)  ;; user sets own cap!
+    ...
+
+(define-private (bump-cap-if-needed (m uint) (who principal) (target-cap uint))
+  (let ((cur (default-to u0 (get cap (map-get? user-caps { m: m, user: who })))))
+    (if (> target-cap cur)
+        (begin (map-set user-caps { m: m, user: who } { cap: target-cap }) true)
+        true)))</code></pre>
+  <p class="label">Impact</p>
+  <p>The spending cap system is entirely cosmetic. Any user can bypass it. If the cap was intended as a risk management or regulatory control (e.g., limiting maximum exposure per user), it provides zero protection. This is particularly concerning because the task context mentions "aborted txs still set cap state" — the cap can be bumped even if the trade itself fails due to slippage or other checks, since <code>bump-cap-if-needed</code> is called before the trade validation.</p>
+  <p class="label">Recommendation</p>
+  <p>Remove user-controlled cap setting from auto-buy functions. Caps should only be settable by the admin:</p>
+  <pre><code>(define-public (set-user-cap (m uint) (who principal) (cap uint))
+  (begin
+    (try! (only-admin))
+    (map-set user-caps { m: m, user: who } { cap: cap })
+    (ok true)))</code></pre>
+  <p class="label">Exploit Test</p>
+  <pre><code>;; Exploit test for C-01: Self-service cap bypass
+(define-public (test-exploit-c01-cap-bypass)
+  (let (
+    ;; User has no cap set (default u0)
+    ;; Call buy-yes-auto with target-cap = max uint
+    ;; Cap is now unlimited — user can trade without restriction
+    (result (buy-yes-auto u1 u1 u340282366920938463463374607431768211455 u999999999999))
+  )
+    ;; Even if trade fails, cap was already bumped by bump-cap-if-needed
+    ;; User's cap is now effectively infinite
+    (asserts! (> (get-cap u1 tx-sender) u0) (err u999))
+    (ok true)))</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity high">High</span>
+    <span class="finding-title">H-01: Admin Can Resolve Markets Dishonestly — No Oracle or Dispute Mechanism</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>resolve</code> function</p>
+  <p class="label">Description</p>
+  <p>The <code>resolve</code> function allows the single ADMIN to unilaterally declare any market outcome as "YES" or "NO" with no on-chain verification, oracle feed, dispute period, or community override. The admin can resolve against the actual real-world outcome to profit from positions or harm specific users.</p>
+  <pre><code>(define-public (resolve (m uint) (result (string-ascii 3)))
+  (begin
+    (try! (only-admin))  ;; only admin, no oracle
+    (asserts! (is-eq (get-status-str m) "open") (err u102))
+    (asserts! (or (is-eq result "YES") (is-eq result "NO")) (err u103))
+    ;; No verification of actual outcome
+    (map-set m-outcome { m: m } { o: result })
+    (map-set m-status  { m: m } { s: "resolved" })
+    (ok true)))</code></pre>
+  <p class="label">Impact</p>
+  <p>Complete trust dependency on a single address. Admin can steal all pool funds by resolving in their favor. Combined with the ability to trade (admin is not excluded from trading), admin can buy shares on one side and resolve that side as winner.</p>
+  <p class="label">Recommendation</p>
+  <p>Implement at minimum: (1) a dispute/challenge period after resolution, (2) an oracle integration for verifiable outcomes, or (3) a multisig resolution requirement. Also consider excluding the ADMIN from holding shares.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity high">High</span>
+    <span class="finding-title">H-02: Pre-Clarity 4 <code>as-contract</code> Grants Blanket Asset Access</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>xfer-out</code> function, all <code>as-contract</code> calls</p>
+  <p class="label">Description</p>
+  <p>The contract uses <code>as-contract</code> (pre-Clarity 4) which gives blanket authority to transfer any asset the contract holds. With Clarity 4's <code>as-contract?</code> and explicit allowances (<code>with-stx</code>), the contract could restrict itself to only moving STX, preventing any future exploit path involving other token types.</p>
+  <pre><code>(define-private (xfer-out (amt uint) (to principal))
+  (if (or (is-eq amt u0) (is-eq to (self-principal)))
+      (ok true)
+      (as-contract (stx-transfer? amt (self-principal) to))))</code></pre>
+  <p class="label">Impact</p>
+  <p>If any FTs or NFTs are accidentally sent to the contract, they cannot be restricted from being moved. A future upgrade or interaction could exploit this broader authority.</p>
+  <p class="label">Recommendation</p>
+  <p>Migrate to Clarity 4 and use <code>(as-contract? (with-stx) ...)</code> to explicitly limit asset movement to STX only.</p>
+</div>
+
+<!-- H-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity high">High</span>
+    <span class="finding-title">H-03: Admin Can Change Fee Rates and Recipients Mid-Market</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>set-fees</code>, <code>set-fee-recipients</code>, <code>set-protocol-split</code></p>
+  <p class="label">Description</p>
+  <p>Until <code>lock-fees-config</code> is called, the admin can change fee BPS (up to 100%), fee split percentages, and all four fee recipient addresses at any time. This affects all open markets simultaneously. There is no timelock or notification mechanism. The <code>fees-locked</code> flag is irreversible once set, but there's no guarantee it will ever be set.</p>
+  <pre><code>(define-public (set-fees (protocol-bps uint) (lp-bps uint))
+  (begin
+    (try! (only-admin))
+    (try! (guard-not-locked))
+    ;; Can set up to 10000 bps (100%) each!
+    (asserts! (<= protocol-bps u10000) (err u740))
+    (asserts! (<= lp-bps       u10000) (err u741))
+    ...))</code></pre>
+  <p class="label">Impact</p>
+  <p>Admin could set protocol-fee-bps + lp-fee-bps to 20000 (200%), making every trade cost 3x the base amount. Or redirect all fee recipients to a personal wallet. Users currently trading have no protection against mid-flight fee changes.</p>
+  <p class="label">Recommendation</p>
+  <p>Cap combined fees to a reasonable maximum (e.g., 1000 bps = 10%). Add a timelock for fee changes. Consider per-market fee snapshots at creation time.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity medium">Medium</span>
+    <span class="finding-title">M-01: LMSR Math Overflow — <code>exp-fixed</code> Caps at 2^31-1 for Large Inputs</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>exp-fixed</code> function</p>
+  <p class="label">Description</p>
+  <p>For large positive inputs (when <code>k >= 20</code>), <code>exp-fixed</code> returns a hardcoded <code>2147483647</code> (2^31-1) instead of the correct exponential value. This affects cost calculations when share quantities are large relative to the liquidity parameter <code>b</code>. The LMSR cost function depends on accurate <code>exp(q/b)</code> values.</p>
+  <pre><code>(if (>= ku u20)
+    (if (< k 0) 0 (to-int u2147483647))  ;; hardcoded cap
+    ...)</code></pre>
+  <p class="label">Impact</p>
+  <p>For markets where <code>q/b > 20*ln(2) ≈ 13.86</code>, pricing becomes flat/inaccurate. With typical <code>b</code> values around initial-liquidity/ln(2), this means shares exceeding ~14x the initial liquidity (in STX) will hit the cap. Trades in this range will misprice, potentially allowing arbitrage.</p>
+  <p class="label">Recommendation</p>
+  <p>Document the safe operating range prominently. Add a guard that rejects trades pushing <code>q/b</code> beyond the accurate range (e.g., <code>q/b < 12</code>).</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity medium">Medium</span>
+    <span class="finding-title">M-02: <code>ln-general</code> Limited to 8 Normalization Steps</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>ln-general</code> via <code>ln-norm-step</code></p>
+  <p class="label">Description</p>
+  <p>The natural logarithm implementation uses 8 iterative halving/doubling steps to normalize the input to [0.5, 2.0] range before applying the atanh series. This limits accurate computation to inputs in approximately [2^-8, 2^8] × SCALE = [3906, 256000000]. Values outside this range will produce incorrect results because normalization is incomplete.</p>
+  <p class="label">Impact</p>
+  <p>Affects <code>cost-tilde</code>, <code>set-market-bias</code>, and <code>invert-buy-shares</code> when intermediate <code>exp</code> values exceed the normalized range. Could produce incorrect pricing or bias calculations for extreme market states.</p>
+  <p class="label">Recommendation</p>
+  <p>Increase normalization steps to 20+ to match the <code>exp-fixed</code> range, or add input validation to reject values outside the accurate domain.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity medium">Medium</span>
+    <span class="finding-title">M-03: STX/uSTX Truncation Systematically Favors Buyers</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>calculate-cost</code> → <code>do-buy</code> conversion path</p>
+  <p class="label">Description</p>
+  <p>The cost calculation operates in STX units (integers), and the result is converted to uSTX via <code>stx->ustx</code> (multiply by 1e6). However, <code>cost-tilde</code> returns an integer in STX, discarding sub-STX fractions. For small trades, this truncation means the actual cost in uSTX is systematically rounded down, giving buyers shares at a slight discount. The minimum cost floor is 1 STX (1,000,000 uSTX) regardless of actual LMSR price.</p>
+  <pre><code>(baseStx (if (> c0 u0) c0 u1))  ;; floor to 1 STX minimum
+(baseUstx (stx->ustx baseStx))   ;; loses sub-STX precision</code></pre>
+  <p class="label">Impact</p>
+  <p>For each trade, up to 999,999 uSTX (~1 STX) of cost can be lost. Over many small trades, this leaks value from the pool. The per-trade solvency check mitigates catastrophic drain but doesn't prevent gradual erosion.</p>
+  <p class="label">Recommendation</p>
+  <p>Perform cost calculation in uSTX units natively, or use ceiling division when converting STX→uSTX for buy costs.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity low">Low</span>
+    <span class="finding-title">L-01: Fee Recipients Set to Contract Address Silently Absorb Fees</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>xfer-out</code> function</p>
+  <p class="label">Description</p>
+  <p><code>xfer-out</code> returns <code>(ok true)</code> without transferring if the recipient equals the contract's own principal. If admin accidentally (or intentionally) sets a fee recipient to the contract address, fees are silently kept in the contract rather than distributed. These fees then become part of the pool balance, inflating it.</p>
+  <pre><code>(define-private (xfer-out (amt uint) (to principal))
+  (if (or (is-eq amt u0) (is-eq to (self-principal)))
+      (ok true)    ;; silently no-ops
+      (as-contract (stx-transfer? amt (self-principal) to))))</code></pre>
+  <p class="label">Impact</p>
+  <p>Low — requires admin misconfiguration. Fees would be retained in the contract pool rather than lost.</p>
+  <p class="label">Recommendation</p>
+  <p>Add a check in <code>set-fee-recipients</code> that rejects the contract's own address as a recipient.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity low">Low</span>
+    <span class="finding-title">L-02: No Event Emission for Trades, Resolution, or Fee Changes</span>
+  </div>
+  <p class="label">Location</p>
+  <p>All public functions</p>
+  <p class="label">Description</p>
+  <p>The contract emits no <code>print</code> events for any state changes. Off-chain indexers and UIs must rely on transaction inspection rather than structured event data. This makes monitoring, auditing, and dispute resolution harder.</p>
+  <p class="label">Impact</p>
+  <p>Operational visibility only. No direct security impact, but impedes incident detection.</p>
+  <p class="label">Recommendation</p>
+  <p>Add <code>(print { event: "buy", market: m, side: "yes", shares: amount, cost: total, user: tx-sender })</code> and similar for sells, resolution, and admin actions.</p>
+</div>
+
+<!-- L-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity low">Low</span>
+    <span class="finding-title">L-03: No Timelock on Admin Operations</span>
+  </div>
+  <p class="label">Location</p>
+  <p>All admin functions</p>
+  <p class="label">Description</p>
+  <p>All admin operations (pause, resolve, fee changes, withdrawal) take effect immediately with no delay or timelock. Users cannot react to adverse admin actions before they take effect.</p>
+  <p class="label">Impact</p>
+  <p>Reduces user protection against admin key compromise or malicious admin behavior. Users have no time to exit positions before adverse changes.</p>
+  <p class="label">Recommendation</p>
+  <p>Implement a timelock (e.g., 24-48 hours) for sensitive operations like resolution, fee changes, and pausing. Allow users to exit during the delay period.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">Info</span>
+    <span class="finding-title">I-01: Bias Lock Is One-Way — Cannot Adjust After Setting</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>set-market-bias</code></p>
+  <p class="label">Description</p>
+  <p>Once <code>set-market-bias</code> is called, <code>m-bias-locked</code> is set to true and can never be changed. The bias also requires zero supply (no trades yet). This is by design but means the admin must get the initial bias right on the first try.</p>
+  <p class="label">Impact</p>
+  <p>Operational constraint. An incorrectly set bias requires creating a new market.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">Info</span>
+    <span class="finding-title">I-02: No Market Expiry or Deadline Mechanism</span>
+  </div>
+  <p class="label">Location</p>
+  <p>Contract-wide</p>
+  <p class="label">Description</p>
+  <p>Markets have no expiry block height or timestamp. An unresolved market stays open indefinitely. There is no mechanism for users to force resolution or reclaim funds from a stale market (admin could simply abandon a market).</p>
+  <p class="label">Impact</p>
+  <p>Funds could be locked indefinitely if admin becomes unresponsive. Users can still sell shares on open markets, but at LMSR prices (not at 1:1 redemption value).</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="severity info">Info</span>
+    <span class="finding-title">I-03: Solvency Check Is Per-Trade, Not Invariant</span>
+  </div>
+  <p class="label">Location</p>
+  <p><code>do-buy</code> — ERR-TRADE-INSOLVENT check</p>
+  <p class="label">Description</p>
+  <p>The per-trade solvency check <code>pool >= max(yesSupply, noSupply) * UNIT</code> is correct for binary LMSR and is a good safety mechanism. However, due to the truncation issue in M-03, the pool can gradually erode below the theoretical LMSR solvency level between trades. The check prevents catastrophic insolvency but allows slow leakage.</p>
+  <p class="label">Impact</p>
+  <p>Informational — the guard is sound for its purpose. The slow leak from truncation is covered in M-03.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Per-trade solvency guard:</strong> The <code>ERR-TRADE-INSOLVENT</code> check prevents trades that would make the pool unable to cover worst-case redemption.</li>
+  <li><strong>Fee clamping on sells:</strong> Sell fees are clamped to never exceed the base proceeds (<code>minu</code>), preventing negative net proceeds.</li>
+  <li><strong>Resolve solvency check:</strong> <code>ERR-INSOLVENT-RESOLVE</code> prevents resolving a market if the pool can't cover all winning shares.</li>
+  <li><strong>One-transfer pattern:</strong> Buy functions use a single <code>xfer-in</code> for the total amount, avoiding reentrancy-like issues with multiple user transfers.</li>
+  <li><strong>Bias is pricing-only:</strong> Virtual liquidity affects quotes but not redemption — winners always get 1 STX per share regardless of bias.</li>
+  <li><strong>Surplus withdrawal gated:</strong> <code>withdraw-surplus</code> requires market resolved and all winning shares redeemed before admin can withdraw.</li>
+</ul>
+
+<h2>Priority Matrix Score</h2>
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3 (DeFi/prediction market)</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>3 (deployed mainnet)</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>3 (900+ lines, LMSR math)</td><td>6</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>2 (known project)</td><td>3</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>3 (LMSR with bias on Stacks)</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total</strong></td><td><strong>2.85 / 3.0</strong></td></tr>
+</table>
+<p>Clarity version penalty: -0.5 (pre-Clarity 4) → <strong>Final: 2.35</strong> ✅ Above 1.8 threshold</p>
+
+<h2>Methodology</h2>
+<p>Manual code review of the on-chain Clarity source fetched from Hiro API. All public/private functions analyzed for access control, math correctness, state consistency, and fund safety. Review focused on LMSR math accuracy, admin privilege scope, spending cap enforcement, fee mechanics, and solvency guarantees per the task specification.</p>
+
+<footer style="margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--info);font-size:.85rem">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007</a> · <a href="https://cocoa007.github.io/clarity-audit">Full audit portfolio</a>
+</footer>
+
+</body>
+</html>
