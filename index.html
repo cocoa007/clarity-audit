@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">33</div>
+    <div class="num">34</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">50</div>
+    <div class="num">51</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">326</div>
+    <div class="num">332</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/borrow-helper-v2-1-7.html">Zest Protocol borrow-helper-v2-1-7 — Lending Helper</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.borrow-helper-v2-1-7?chain=mainnet">SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N</a></span>
+    <span class="findings-compact"><span class="m">1M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Thin helper/router for Zest lending protocol. <strong>Medium: liquidation event emits debt reserve state as collateral reserve state (copy-paste bug) — misleads off-chain liquidation bots.</strong> Clean stateless design with no custody risk. Security delegates to <code>pool-borrow-v2-4</code>.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
