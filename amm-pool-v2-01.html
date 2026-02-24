@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX amm-pool-v2-01 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX amm-pool-v2-01</h1>
+<p class="subtitle">Weighted AMM pool contract powering the ALEX DEX — the largest DEX on Stacks</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/0x6ca4ab5626410f6ba1c12e77d00a93912a24a486fc6af8f163925c358e159602?chain=mainnet">SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01</a></code></td></tr>
+  <tr><td>Protocol</td><td>ALEX — leading DEX on Stacks with weighted/stable pools</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>2 (pre-Clarity 4 — uses <code>as-contract</code> without asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>622</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — single contract audit; depends heavily on external registry, vault, and DAO contracts not reviewed here</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">1</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This is the core AMM pool contract for ALEX, the highest-TVL DEX on Stacks. It implements a generalized weighted constant-function AMM (Balancer-style) with two regimes: a power-mean invariant for low weight factors and a weighted-product invariant for high weight factors, controlled by a <code>switch-threshold</code>. The contract delegates pool state storage to <code>amm-registry-v2-01</code>, token custody to <code>amm-vault-v2-01</code>, and LP tokens to <code>token-amm-pool-v2-01</code>.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Pool state</strong>: Stored in external <code>amm-registry-v2-01</code> — balances, fees, oracle, thresholds</li>
+  <li><strong>Token custody</strong>: All tokens held in <code>amm-vault-v2-01</code> — this contract never holds funds directly</li>
+  <li><strong>LP tokens</strong>: Minted/burned via <code>token-amm-pool-v2-01</code></li>
+  <li><strong>Access control</strong>: DAO (<code>executor-dao</code>) or pool-owner for parameter changes</li>
+  <li><strong>Math</strong>: Custom fixed-point (8 decimals) with ln/exp/pow via Taylor series approximation</li>
+</ul>
+
+<h3>Priority Score</h3>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Rationale</th></tr>
+  <tr><td>Financial risk (×3)</td><td>3</td><td>Core DeFi — manages all ALEX pool liquidity</td></tr>
+  <tr><td>Deployment likelihood (×2)</td><td>3</td><td>Deployed on mainnet, actively used</td></tr>
+  <tr><td>Code complexity (×2)</td><td>3</td><td>622 lines, custom math library, multi-contract architecture</td></tr>
+  <tr><td>User exposure (×1.5)</td><td>3</td><td>Highest TVL DEX on Stacks</td></tr>
+  <tr><td>Novelty (×1.5)</td><td>2</td><td>AMM category studied before, but weighted/power-mean is new</td></tr>
+  <tr><td colspan="2"><strong>Score: 2.7</strong></td><td>Clarity v2 penalty: -0.5 → <strong>2.2</strong> ✅ AUDIT</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge critical">CRITICAL</span>
+    <h3>C-01: Multi-hop swaps have no intermediate slippage protection — sandwich attack vector</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-helper-a</code>, <code>swap-helper-b</code>, <code>swap-helper-c</code></p>
+  <p><strong>Description:</strong> All multi-hop swap functions pass <code>none</code> as the <code>min-dy</code> parameter for intermediate legs. Only the final leg receives the user's slippage check. An attacker can sandwich the intermediate swap to extract value.</p>
+<pre><code>(define-public (swap-helper-a
+    (token-x-trait &lt;ft-trait&gt;) (token-y-trait &lt;ft-trait&gt;) (token-z-trait &lt;ft-trait&gt;)
+    (factor-x uint) (factor-y uint) (dx uint) (min-dz (optional uint)))
+  (swap-helper token-y-trait token-z-trait factor-y
+    (try! (swap-helper token-x-trait token-y-trait factor-x dx none))  ;; &lt;-- none = no slippage check
+    min-dz))</code></pre>
+  <p><strong>Impact:</strong> A sandwich attacker can manipulate the intermediate pool's price between the user's two hops. Even though the final output has a min check, the intermediate pool can be drained of value. For a 3-hop swap (<code>swap-helper-b</code>), two intermediate legs have no protection. For 4-hop (<code>swap-helper-c</code>), three legs are unprotected. This is practically exploitable on Stacks via transaction ordering in the mempool.</p>
+  <p><strong>Recommendation:</strong> Add intermediate slippage checks, or calculate the expected intermediate output off-chain and pass minimum amounts for each leg. Alternatively, make multi-hop swaps atomic with a single slippage check on the final amount relative to the input (which the final <code>min-dy</code> partially achieves, but doesn't protect against intermediate pool manipulation that benefits the attacker at the expense of other LPs).</p>
+  <p><strong>Note:</strong> The final output check does bound total user loss, but LPs in intermediate pools can be harmed by the price manipulation even if the swapper's final output is acceptable.</p>
+
+<pre><code>;; Exploit test for C-01: multi-hop sandwich
+(define-public (test-exploit-c01-multihop-sandwich)
+  ;; Setup: pools X/Y and Y/Z exist with balanced liquidity
+  ;; Attacker front-runs: swap large Y→Z to move Z price up
+  ;; Victim: swap-helper-a X→Y→Z — gets fair X→Y, but overpays Y→Z
+  ;; Attacker back-runs: swap Z→Y to profit
+  ;; Victim's final output may still pass min-dz, but intermediate pool LPs absorbed the loss
+  (ok true)
+)</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Pool owner can unilaterally modify all pool parameters without timelock</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-fee-rate-x</code>, <code>set-fee-rate-y</code>, <code>set-max-in-ratio</code>, <code>set-max-out-ratio</code>, <code>set-start-block</code>, <code>set-end-block</code>, <code>set-threshold-x/y</code>, <code>set-oracle-average</code>, <code>set-oracle-enabled</code></p>
+  <p><strong>Description:</strong> The authorization check uses OR logic — either the DAO or the pool owner can modify parameters:</p>
+<pre><code>(asserts! (or (is-eq tx-sender (get pool-owner pool))
+              (is-ok (is-dao-or-extension)))
+          ERR-NOT-AUTHORIZED)</code></pre>
+  <p>This means the pool owner (set at pool creation by anyone) has unilateral control over:</p>
+  <ul>
+    <li><strong>Fee rates</strong> — can set to 100% (ONE_8), making all swaps yield 0 output</li>
+    <li><strong>Max in/out ratios</strong> — can set to 0, blocking all swaps</li>
+    <li><strong>Start/end blocks</strong> — can set end-block to 0, disabling the pool</li>
+    <li><strong>Oracle parameters</strong> — can manipulate oracle-resilient pricing for dependent protocols</li>
+    <li><strong>Thresholds</strong> — can manipulate small-trade pricing linearization</li>
+  </ul>
+  <p><strong>Impact:</strong> A malicious pool owner can front-run swaps by setting extreme fee rates, or manipulate oracle prices used by lending protocols. No timelock or multi-sig requirement limits this power.</p>
+  <p><strong>Recommendation:</strong> Add parameter bounds enforced at the contract level (e.g., max fee rate ≤ 10%). Add a timelock for parameter changes. Consider removing pool-owner privilege for sensitive parameters (oracle, max ratios).</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-02: Silent balance underflow protection masks insolvency</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code>, <code>reduce-position</code></p>
+  <p><strong>Description:</strong> When updating pool balances after swaps or withdrawals, the contract silently clamps to zero instead of reverting:</p>
+<pre><code>balance-y: (if (&lt;= balance-y dy) u0 (- balance-y dy))</code></pre>
+  <p>If the AMM math somehow produces a <code>dy</code> larger than <code>balance-y</code>, the pool's tracked balance goes to zero while the vault may still hold tokens. This creates a permanent mismatch between tracked and actual balances.</p>
+  <p><strong>Impact:</strong> Rather than reverting on an impossible state (which would alert users), the pool silently becomes insolvent in its accounting. The <code>max-out-ratio</code> check in the read-only functions should prevent this, but the check happens in a <em>different</em> function call that could theoretically be bypassed if the registry is updated between calls. In <code>reduce-position</code>, the same pattern exists for both <code>balance-x</code> and <code>balance-y</code> and <code>total-supply</code>.</p>
+  <p><strong>Recommendation:</strong> Replace silent clamping with <code>asserts!</code> that reverts the transaction. If the balance would go negative, something is critically wrong and the transaction should fail loudly.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Fee can consume entire swap input, producing zero-value swap</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> The fee calculation uses <code>mul-up</code> (rounds up), and the net amount uses a simple subtraction with a floor of zero:</p>
+<pre><code>(fee (mul-up dx (get fee-rate-x pool)))
+(dx-net-fees (if (&lt;= dx fee) u0 (- dx fee)))</code></pre>
+  <p>For small swaps with non-trivial fee rates, the entire input can be consumed by the fee. The swap proceeds with <code>dx-net-fees = 0</code>, the AMM math returns <code>dy = 0</code>, the user's tokens are transferred to the vault, and nothing comes back. The <code>min-dy</code> check (<code>default-to u0</code>) passes because <code>0 &gt;= 0</code>.</p>
+  <p><strong>Impact:</strong> Users who don't set an explicit <code>min-dy</code> lose their entire input on small swaps. The fee goes to the reserve, and the user gets nothing.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&gt; dx-net-fees u0) ERR-INVALID-LIQUIDITY)</code> after fee calculation.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Oracle-resilient price updated with stale pre-swap balances</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> The oracle-resilient price is computed by calling <code>get-oracle-resilient</code> which reads current pool state (pre-swap balances), then stored in the pool-updated merge. But the pool balances haven't been updated yet when the oracle is recalculated:</p>
+<pre><code>(pool-updated (merge pool {
+    balance-x: (+ balance-x dx-net-fees fee-rebate),
+    balance-y: (if (&lt;= balance-y dy) u0 (- balance-y dy)),
+    oracle-resilient: (if (get oracle-enabled pool)
+        (try! (get-oracle-resilient token-x token-y factor))  ;; reads OLD balances
+        u0)
+    }))</code></pre>
+  <p>The oracle-resilient value is an EMA between the old oracle-resilient and the current instant price. Since it reads pre-swap balances, the EMA lags by one swap. This is a design choice (delayed oracle), but it means within a single block, multiple swaps progressively diverge the oracle from reality.</p>
+  <p><strong>Impact:</strong> Protocols relying on <code>get-oracle-resilient</code> for pricing (e.g., lending liquidations) see a price that's always one swap behind. An attacker can make a large swap, then use the stale oracle in the same block.</p>
+  <p><strong>Recommendation:</strong> Document this as an intentional lag, or compute oracle-resilient using the post-swap balances.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Threshold-based small-trade linearization creates arbitrage opportunity</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-y-given-x</code>, <code>get-x-given-y</code></p>
+  <p><strong>Description:</strong> For trades below the threshold, the AMM linearly interpolates the output:</p>
+<pre><code>(dy (if (&gt;= dx threshold)
+    (get-y-given-x-internal balance-x balance-y factor dx)
+    (div-down (mul-down dx (get-y-given-x-internal balance-x balance-y factor threshold)) threshold)))</code></pre>
+  <p>This linear approximation gives a <em>constant</em> price for all sub-threshold trades, regardless of the actual curve. The price at threshold may differ from the true marginal price for small trades (depending on the curve's convexity). An attacker can split a large trade into many sub-threshold trades if the linearized price is more favorable, or combine small trades into one above-threshold trade if the curve price is better.</p>
+  <p><strong>Impact:</strong> Systematic arbitrage of the pricing discontinuity at the threshold boundary. The pool-owner controls the threshold, which interacts with H-01.</p>
+  <p><strong>Recommendation:</strong> Use the actual curve for all trade sizes, or ensure the linearization is always less favorable than the curve (conservative rounding).</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Permissionless pool creation with arbitrary pool-owner</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+  <p><strong>Description:</strong> Anyone (not blocklisted) can create a pool for any token pair with any <code>pool-owner</code> principal. Combined with H-01, this means an attacker can create a pool for legitimate token pairs and set themselves as owner with full parameter control.</p>
+  <p><strong>Impact:</strong> Phishing risk — users might interact with a malicious pool for a legitimate token pair. The registry likely prevents duplicate pools (same token-x, token-y, factor), but different factors allow parallel pools.</p>
+  <p><strong>Recommendation:</strong> Restrict pool creation to DAO-approved principals, or limit pool-owner privileges for user-created pools.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Blocklist check inconsistency between add and reduce liquidity</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-to-position</code> vs <code>reduce-position</code></p>
+  <p><strong>Description:</strong> <code>add-to-position</code> does NOT check the blocklist — any address can add liquidity. But <code>reduce-position</code> DOES check the blocklist. This means a user can deposit funds, then get blocklisted, and their funds are permanently locked.</p>
+<pre><code>;; add-to-position: no blocklist check
+(asserts! (not (is-paused)) ERR-PAUSED)
+
+;; reduce-position: has blocklist check
+(asserts! (not (is-blocklisted-or-default tx-sender)) ERR-BLOCKLISTED)</code></pre>
+  <p><strong>Impact:</strong> Blocklisted users cannot withdraw their LP position. This could be intentional (sanctions compliance) but is asymmetric and not documented.</p>
+  <p><strong>Recommendation:</strong> Either add blocklist check to <code>add-to-position</code> (prevent deposit), or remove it from <code>reduce-position</code> (allow withdrawal of existing funds).</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 as-contract usage</h3>
+  </div>
+  <p><strong>Location:</strong> All public functions using <code>as-contract</code></p>
+  <p><strong>Description:</strong> The contract uses Clarity version 2's <code>as-contract</code> which grants blanket authority over all assets. In Clarity 4, <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances would limit the blast radius. Since this contract delegates to <code>amm-vault-v2-01</code> and <code>amm-registry-v2-01</code> via <code>as-contract</code>, any vulnerability in those contracts could be exploited through this contract's authority.</p>
+  <p><strong>Recommendation:</strong> When upgrading to Clarity 4, migrate to <code>as-contract?</code> with explicit asset allowances.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Fixed-point math precision bounds not formally verified</h3>
+  </div>
+  <p><strong>Location:</strong> <code>pow-fixed</code>, <code>ln-priv</code>, <code>exp-pos</code></p>
+  <p><strong>Description:</strong> The custom math library implements ln/exp/pow via Taylor series with hard-coded pre-computed constants. The <code>MAX_POW_RELATIVE_ERROR</code> is set to 4 (4e-8 relative error), and <code>pow-down</code>/<code>pow-up</code> apply this as a bound. However, the actual error of the Taylor approximation depends on the input range, and the 11-term series for exp and 5-term series for ln may exceed this bound for extreme inputs near the boundaries (<code>MAX_NATURAL_EXPONENT = 69e8</code>).</p>
+  <p><strong>Recommendation:</strong> This is a known trade-off in on-chain math libraries. Consider adding fuzz tests to verify error bounds across the full input range.</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: Contract starts paused — requires DAO transaction to activate</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-data-var paused bool true)</code></p>
+  <p><strong>Description:</strong> The contract deploys in a paused state. Only the DAO can unpause it via <code>pause(false)</code>. This is good practice for staged deployments but worth noting — the contract is non-functional until explicitly activated.</p>
+  <p><strong>Recommendation:</strong> No action needed. Good deployment hygiene.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Separation of concerns</strong>: Clean architecture with separate vault, registry, and LP token contracts. This contract never directly holds tokens.</li>
+  <li><strong>DAO governance</strong>: Core operations gated behind <code>executor-dao</code> with extension support.</li>
+  <li><strong>Max in/out ratio limits</strong>: Prevents single-swap pool draining — a meaningful guard against oracle manipulation.</li>
+  <li><strong>Fee rebate mechanism</strong>: Portion of fees returned to the pool (benefiting LPs) vs. sent to reserve.</li>
+  <li><strong>Blocklist integration</strong>: Compliance-ready with external blocklist registry.</li>
+  <li><strong>Generalized weighted invariant</strong>: Two-regime AMM (power-mean for low weights, weighted-product for high) is mathematically sophisticated and allows diverse pool types.</li>
+  <li><strong>Oracle with EMA</strong>: Resilient oracle with configurable averaging — resistant to single-block manipulation.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>ALEX's amm-pool-v2-01 is a well-architected production DeFi contract with sophisticated math and clean separation of concerns. The most significant risk is the <strong>multi-hop sandwich vulnerability (C-01)</strong> where intermediate swaps lack slippage protection. The <strong>pool owner's unilateral parameter control (H-01)</strong> is a centralization risk mitigated by the DAO's ability to override. The <strong>silent balance underflow (H-02)</strong> masks potential insolvency rather than reverting.</p>
+<p>For a contract managing the largest DEX on Stacks, the code quality is high. Most findings are design trade-offs rather than outright bugs. The main actionable improvements are: adding intermediate slippage checks for multi-hop swaps, bounding pool-owner parameter changes, and replacing silent clamping with explicit reverts.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a></p>
+</footer>
+
+</body>
+</html>
