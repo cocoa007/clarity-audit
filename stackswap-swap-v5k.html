@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: StackSwap stackswap-swap-v5k — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>StackSwap stackswap-swap-v5k</h1>
+<p class="subtitle">Constant-product AMM (x·y=k) swap contract — core DEX engine for the StackSwap protocol on Stacks mainnet</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-v5k?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-v5k</a></code></td></tr>
+  <tr><td>Protocol</td><td>StackSwap — DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>1 (pre-Clarity 4 — uses <code>as-contract</code> pattern indirectly via LP token)</td></tr>
+  <tr><td>Lines of Code</td><td>388</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — pair state lives in external liquidity token contracts not reviewed here; security depends on LP token + DAO + security list contracts</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This is the core AMM swap contract for the StackSwap DEX. It implements Uniswap V2-style constant-product market making with the following architecture:</p>
+<ul>
+  <li><strong>Pair creation</strong>: Creates token pairs with associated liquidity tokens, gated by DAO's "one-step-mint" contract</li>
+  <li><strong>Liquidity provision</strong>: Add/remove liquidity with proportional share minting/burning</li>
+  <li><strong>Swaps</strong>: Constant-product formula with 0.3% LP fee (997/1000) and 0.05% protocol fee (5/10000)</li>
+  <li><strong>Fee collection</strong>: Accumulated protocol fees collected by the designated fee-to-address</li>
+  <li><strong>Safe transfers</strong>: Balance-diff verification on all token transfers to prevent fee-on-transfer token exploits</li>
+</ul>
+
+<h3>Architecture</h3>
+<p>A distinctive design choice: <strong>all pair state lives in the liquidity token contract</strong>, not in this swap contract. The LP token stores balances, shares, fees, and pair metadata via <code>get-lp-data</code>/<code>set-lp-data</code>. This means the swap contract is largely stateless — it only maintains a pair registry (maps). Actual reserves are managed by the LP token, which also holds the pooled tokens and executes transfers via <code>transfer-token</code>.</p>
+
+<h3>Access Control</h3>
+<ul>
+  <li><strong>Pair creation</strong>: restricted to <code>stackswap-dao-v5k</code>'s "one-step-mint" contract</li>
+  <li><strong>Swaps &amp; liquidity</strong>: restricted to approved routers/users via <code>stackswap-security-list-v1a</code></li>
+  <li><strong>Fee collection</strong>: restricted to the pair's <code>fee-to-address</code></li>
+  <li><strong>Admin (fix-or-add-pair, set-fee-to-address)</strong>: restricted to DAO owner</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (DeFi AMM)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>2 (388 lines, multi-function AMM)</td><td>2</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>2 (StackSwap is a known Stacks DEX)</td><td>1.5</td><td>3</td></tr>
+  <tr><td>Novelty</td><td>2 (AMM category but different architecture from ALEX)</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.5 / 3.0</strong> (−0.5 Clarity version penalty → 2.0 ✅)</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Pair state stored in untrusted external liquidity token contract</h3>
+  </div>
+  <p><strong>Location:</strong> All functions — <code>get-lp-data</code>/<code>set-lp-data</code> pattern throughout</p>
+  <p><strong>Description:</strong> The swap contract delegates <strong>all pair state</strong> (balances, shares, fees) to the liquidity token contract passed as a trait parameter. While <code>create-pair</code> is DAO-gated, the <code>fix-or-add-pair</code> function (H-01 related, see M-03) allows the DAO owner to replace a pair's liquidity token at any time. More importantly, the swap contract implicitly trusts that the LP token's <code>get-lp-data</code> returns honest values and that <code>set-lp-data</code> stores them faithfully.</p>
+  <p>If a malicious or buggy liquidity token is registered (via <code>fix-or-add-pair</code> or a compromised DAO), it could:</p>
+  <ul>
+    <li>Return inflated <code>balance-y</code> to extract more tokens than exist in a swap</li>
+    <li>Return zero <code>shares-total</code> to re-trigger initial liquidity logic and dilute existing LPs</li>
+    <li>Ignore <code>set-lp-data</code> calls, making the contract think balances updated when they didn't</li>
+  </ul>
+  <p>The <code>safe-transfer</code> function mitigates some of this by verifying actual token balance changes, but it cannot catch inflated <code>get-lp-data</code> values used in the AMM formula.</p>
+  <pre><code>;; All pair state comes from the LP token — fully trusted
+(let ((pair (try! (contract-call? token-liquidity-trait get-lp-data)))
+      (balance-x (get balance-x pair))
+      (balance-y (get balance-y pair))
+      ;; dy computed using potentially dishonest balances
+      (dy (/ (* FEE_1 balance-y dx) (+ (* FEE_2 balance-x) (* FEE_1 dx)))))</code></pre>
+  <p><strong>Impact:</strong> A compromised or malicious LP token contract can manipulate swap outputs, drain pool reserves, or dilute liquidity providers. The trust boundary is effectively at the LP token level, not the swap contract.</p>
+  <p><strong>Recommendation:</strong> This is an architectural risk inherent to the design. Mitigations: (1) ensure LP token contracts are immutable or DAO-governed with timelock, (2) add an allowlist of approved LP token contracts checked at the swap level, (3) consider storing pair state in the swap contract itself rather than delegating to the LP token.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Strict slippage check rejects exact-match outputs</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> Both swap functions use strict less-than (<code>&lt;</code>) for slippage protection instead of less-than-or-equal (<code>&lt;=</code>). This means if the computed output exactly equals the user's minimum, the swap reverts.</p>
+  <pre><code>;; swap-x-for-y:
+(asserts! (< min-dy dy) ERR_TOO_MUCH_SLIPPAGE)
+
+;; swap-y-for-x:
+(asserts! (< min-dx dx) ERR_TOO_MUCH_SLIPPAGE)</code></pre>
+  <p><strong>Impact:</strong> Users who set their minimum output to the exact expected amount (common in UI-generated transactions) will have their swaps rejected. This causes unnecessary transaction failures, especially in low-liquidity pools where the output may exactly match expectations.</p>
+  <p><strong>Recommendation:</strong> Change to <code>&lt;=</code>: <code>(asserts! (&lt;= min-dy dy) ERR_TOO_MUCH_SLIPPAGE)</code>. This is the standard convention used by Uniswap and most AMMs.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: collect-fees requires both token fees to be non-zero</h3>
+  </div>
+  <p><strong>Location:</strong> <code>collect-fees</code></p>
+  <p><strong>Description:</strong> The fee collection function requires both <code>fee-balance-x &gt; 0</code> AND <code>fee-balance-y &gt; 0</code> to succeed. If trading is predominantly one-directional (e.g., everyone buying token-y with token-x), the fee-balance-y remains zero and fees cannot be collected at all — even though fee-balance-x may be substantial.</p>
+  <pre><code>(asserts! (> fee-x u0) ERR_NO_FEE_X)
+(asserts! (> fee-y u0) ERR_NO_FEE_Y)</code></pre>
+  <p><strong>Impact:</strong> Protocol fees can become locked indefinitely in one-directional markets. For tokens that trend strongly in one direction (e.g., a token declining to zero), accumulated fees on one side may never be collectable.</p>
+  <p><strong>Recommendation:</strong> Allow collection when either fee is non-zero: <code>(asserts! (or (&gt; fee-x u0) (&gt; fee-y u0)) ERR_NO_FEE)</code>. Use conditional transfers: only transfer fee-x if it's &gt; 0, same for fee-y.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: fix-or-add-pair allows DAO owner to replace LP token for existing pairs</h3>
+  </div>
+  <p><strong>Location:</strong> <code>fix-or-add-pair</code></p>
+  <p><strong>Description:</strong> The DAO owner can call <code>fix-or-add-pair</code> to replace the liquidity token contract for any existing pair. This changes which contract stores pair state and holds the pooled tokens. While the old LP token still holds the actual tokens, the swap contract would now read state from and route transfers through the new LP token — effectively orphaning the old pool's funds and state.</p>
+  <pre><code>;; Owner can replace LP token for any existing pair
+(define-public (fix-or-add-pair (token-x-trait ...) (token-y-trait ...) (token-liquidity-trait ...))
+  (let ((contract-owner-check (asserts! (is-eq contract-caller 
+         (contract-call? .stackswap-dao-v5k get-dao-owner)) ERR_NOT_OWNER))
+        ...)
+    (if x-to-y
+      ;; Replaces the LP token in the registry
+      (map-set pairs-data-map ... {liquidity-token: token-liquidity, pair-id: pair-id})
+      ...)))</code></pre>
+  <p><strong>Impact:</strong> DAO owner (single key) can redirect any pair to a malicious LP token, enabling the attacks described in H-01. This is a centralization risk — a single compromised key could affect all pairs.</p>
+  <p><strong>Recommendation:</strong> Add a timelock or multi-sig requirement for LP token replacement. Consider emitting an event when LP tokens are changed so monitoring tools can alert users. Alternatively, make LP token assignments immutable after creation.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No minimum liquidity on initial deposit</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-to-position</code></p>
+  <p><strong>Description:</strong> The first liquidity provider receives <code>sqrti(x * y)</code> shares with no minimum burned. In Uniswap V2, the first 1000 shares (MINIMUM_LIQUIDITY) are permanently locked to prevent the pool from being fully drained and to mitigate share price manipulation attacks.</p>
+  <pre><code>(new-shares
+  (if (is-eq (get shares-total pair) u0)
+    (sqrti (* x y))  ;; No minimum subtracted
+    (/ (* x (get shares-total pair)) balance-x)))</code></pre>
+  <p><strong>Impact:</strong> A first depositor can create a pool with dust amounts (e.g., 1 unit of each token), mint 1 LP share, then donate tokens directly to the LP contract to inflate the share price. Subsequent depositors would receive 0 shares due to integer division rounding, losing their deposits. This is the classic "first depositor" or "inflation" attack on AMMs.</p>
+  <p><strong>Recommendation:</strong> Burn a minimum amount of initial shares (e.g., 1000) by sending them to a dead address, similar to Uniswap V2's MINIMUM_LIQUIDITY constant.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: add-to-position silently overrides user's y amount</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-to-position</code></p>
+  <p><strong>Description:</strong> When a pool already has liquidity, the <code>y</code> parameter provided by the user is completely ignored. The actual y amount deposited is recalculated as <code>(/ (* x balance-y) balance-x)</code> to maintain the price ratio. While this is mathematically correct, it means the user has no way to specify a maximum y they're willing to deposit.</p>
+  <pre><code>(new-y
+  (if (is-eq (get shares-total pair) u0)
+    y  ;; Only used on first deposit
+    (/ (* x balance-y) balance-x)  ;; User's y parameter ignored
+  ))</code></pre>
+  <p><strong>Impact:</strong> Users cannot set a maximum y deposit. If the pool ratio changes between transaction submission and execution (e.g., due to a large swap), the user may deposit significantly more y tokens than intended. The router presumably handles this, but the core contract provides no protection.</p>
+  <p><strong>Recommendation:</strong> Add a check: <code>(asserts! (&lt;= new-y y) ERR_TOO_MUCH_SLIPPAGE)</code> to use the <code>y</code> parameter as a maximum, similar to Uniswap's <code>amountBDesired</code>/<code>amountBMin</code> pattern.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-01: Pre-Clarity 4 contract</h3>
+  </div>
+  <p><strong>Description:</strong> The contract uses Clarity 1 (pre-Clarity 4). While the swap contract itself doesn't use <code>as-contract</code> (token transfers are done via the LP token's <code>transfer-token</code>), migrating to Clarity 4 would allow the LP token contracts to use <code>as-contract?</code> with explicit asset allowances, significantly reducing the risk described in H-01.</p>
+  <p><strong>Recommendation:</strong> If redeploying, use Clarity 4 with <code>as-contract?</code> and explicit <code>with-ft</code> allowances in the LP token contracts.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-02: Double fee structure — LP fee + protocol fee</h3>
+  </div>
+  <p><strong>Description:</strong> The fee structure applies two separate fees:</p>
+  <ol>
+    <li><strong>LP fee (0.3%)</strong>: Built into the AMM formula via <code>FEE_1=997</code> / <code>FEE_2=1000</code>. This fee stays in the pool, benefiting LPs.</li>
+    <li><strong>Protocol fee (0.05%)</strong>: Calculated separately as <code>FEE_3=5</code> / <code>FEE_4=10000</code>. Deducted from the input token and accumulated in <code>fee-balance-x</code>/<code>fee-balance-y</code>.</li>
+  </ol>
+  <p>The protocol fee is deducted from the input <strong>after</strong> the AMM formula uses the full input for pricing. This means the pool's tracked <code>balance-x</code> increases by <code>(dx - fee)</code> but the formula computed <code>dy</code> using the full <code>dx</code>. Over many swaps, the tracked balances will slightly undercount the actual reserves, creating a small persistent surplus in the LP token contract. This is benign — it slightly benefits LPs — but means the internal accounting doesn't perfectly reflect reality.</p>
+  <p><strong>Recommendation:</strong> This is a known and acceptable pattern. The surplus acts as an additional safety margin. No action needed, but documenting the effective total fee as ~0.35% would help users.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-03: fix-or-add-pair does not clean up old LP token from pairs-token-map</h3>
+  </div>
+  <p><strong>Location:</strong> <code>fix-or-add-pair</code></p>
+  <p><strong>Description:</strong> When replacing an LP token for an existing pair, the old LP token's entry in <code>pairs-token-map</code> is not removed. This means the old LP token is still registered as a valid pair token even though it's no longer associated with any pair in the registry.</p>
+  <pre><code>;; Old LP token stays in pairs-token-map as `true`
+;; Only the new one is added
+(map-set pairs-token-map token-liquidity true)</code></pre>
+  <p><strong>Impact:</strong> Stale entries in <code>pairs-token-map</code>. Currently this map is only checked during <code>create-pair</code> to prevent reuse, so the impact is that the old LP token can never be used for a new pair. Minimal practical impact.</p>
+  <p><strong>Recommendation:</strong> Add <code>(map-delete pairs-token-map old-liquidity-token)</code> when replacing.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Robust safe-transfer mechanism</strong>: The <code>safe-transfer</code>, <code>safe-mint</code>, and <code>safe-burn</code> functions verify actual balance changes match expected amounts. This effectively protects against fee-on-transfer tokens, rebasing tokens, and other non-standard SIP-010 implementations — a defense many Clarity DEXes lack.</li>
+  <li><strong>Router-gated access control</strong>: All user-facing functions require the caller to be on the <code>stackswap-security-list</code>, preventing direct contract interaction by unauthorized parties and enabling the protocol to enforce additional safety checks at the router level.</li>
+  <li><strong>Clean pair uniqueness enforcement</strong>: <code>create-pair</code> checks both (x,y) and (y,x) orderings plus LP token uniqueness, preventing duplicate or conflicting pairs.</li>
+  <li><strong>Proper integer math</strong>: The AMM formula uses the standard Uniswap V2 constant-product calculation with correct fee multiplication ordering to avoid precision loss.</li>
+  <li><strong>Event emission</strong>: All state-changing functions emit print events for off-chain indexing.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>StackSwap's core AMM contract is a well-structured Uniswap V2-style implementation with notably good safe-transfer protections. The most significant architectural concern is the <strong>delegation of all pair state to external LP token contracts</strong> (H-01), which shifts the trust boundary outside this contract. Combined with the DAO owner's ability to <strong>replace LP tokens</strong> (M-03), this creates a centralization risk where a single compromised key could affect all pools. The <strong>strict slippage check</strong> (M-01) and <strong>blocked fee collection</strong> (M-02) are functional bugs that affect usability. The <strong>lack of minimum liquidity</strong> (L-01) enables the classic first-depositor inflation attack. Overall, the contract demonstrates good engineering practices (safe transfers, access control, event emission) but relies heavily on the security of its surrounding contracts.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a> · Independent security research</p>
+</footer>
+
+</body>
+</html>
