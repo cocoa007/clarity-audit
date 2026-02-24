@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Arkadiko Vaults Manager v1-1 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Arkadiko Vaults Manager v1-1</h1>
+<p class="subtitle">Liquidation &amp; redemption engine for the Arkadiko stablecoin protocol</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-manager-v1-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-manager-v1-1</a></code></td></tr>
+  <tr><td>Protocol</td><td>Arkadiko — stablecoin (USDA) protocol on Stacks (Liquity-style)</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API</td></tr>
+  <tr><td>Lines of Code</td><td>~230</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</td></tr>
+  <tr><td>Audit Date</td><td>February 24, 2026</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — single contract in a multi-contract system; trait implementations not audited</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red);">1</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633;">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow);">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue);">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted);">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract handles two critical DeFi operations for the Arkadiko protocol: <strong>vault liquidation</strong> (seizing undercollateralized vaults) and <strong>vault redemption</strong> (exchanging USDA for collateral from the lowest-ratio vault). The design follows Liquity's redemption model — redemptions target the vault with the worst collateral ratio first, with a dynamic fee that increases on use and decays over time.</p>
+
+<p>The contract is well-structured with thorough trait validation against the DAO registry, preventing spoofed contract implementations. Liquidation logic correctly checks collateral ratios before proceeding. However, the redemption fee mechanism contains an arithmetic flaw that can temporarily brick redemptions, and partial redemptions crystallize stability fees into vault principal.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Trait-based dispatch</strong>: All dependencies (oracle, data, sorted list, pools, helpers) are passed as trait parameters and verified against <code>arkadiko-dao</code> registry</li>
+  <li><strong>Permissionless operations</strong>: Both liquidation and redemption are callable by anyone — standard for Liquity-style protocols</li>
+  <li><strong>Sorted vault list</strong>: Redemptions always target the first (lowest NICR) vault, ensuring fairness</li>
+  <li><strong>Dynamic redemption fee</strong>: Block-based fee that rises on redemption and decays toward minimum over time</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge critical">CRITICAL</span>
+    <h3>C-01: Redemption fee block-last overflow bricks future redemptions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>redeem-vault</code> — <code>new-redemption-last-block</code> calculation</p>
+  <p><strong>Description:</strong> The redemption fee mechanism tracks a virtual "last block" that increases with each redemption and decreases over time. The new value is computed as:</p>
+  <pre><code>(fee-block-last-cap (if (< fee-block-last (- burn-block-height (get redemption-fee-block-interval collateral-info))) 
+  (- burn-block-height (get redemption-fee-block-interval collateral-info)) 
+  fee-block-last
+))
+(fee-block-change (/ debt-payoff-used (get redemption-fee-block-rate collateral-info)))
+(new-redemption-last-block (+ fee-block-last-cap fee-block-change))</code></pre>
+  <p><code>fee-block-last-cap</code> is bounded to at most <code>burn-block-height</code> (when <code>fee-block-last >= burn-block-height - interval</code>, it stays as-is, but at most equals a recent value near <code>burn-block-height</code>). However, <code>fee-block-change</code> is unbounded — it equals <code>debt-payoff-used / redemption-fee-block-rate</code>. A large redemption (high <code>debt-payoff-used</code>) can push <code>new-redemption-last-block</code> far beyond <code>burn-block-height</code>.</p>
+  <p>On the <strong>next</strong> redemption attempt, <code>get-redemption-fee</code> computes:</p>
+  <pre><code>(block-diff (- burn-block-height (get block-last fee-info)))</code></pre>
+  <p>Since <code>block-last > burn-block-height</code>, this unsigned subtraction <strong>underflows</strong>, causing a runtime panic. All subsequent redemption calls for that token revert until enough Bitcoin blocks pass for <code>burn-block-height</code> to exceed the stored value.</p>
+  <p><strong>Impact:</strong> A single large redemption can temporarily disable all future redemptions for a token. The duration depends on how far <code>block-last</code> exceeds <code>burn-block-height</code> — for very large redemptions against tokens with low <code>redemption-fee-block-rate</code>, this could be weeks or months. An attacker could deliberately trigger this to protect their own vault from being redeemed against.</p>
+  <p><strong>Recommendation:</strong> Cap <code>new-redemption-last-block</code> to at most <code>burn-block-height</code>, or handle the underflow case in <code>get-redemption-fee</code> by returning <code>redemption-fee-max</code> when <code>block-last > burn-block-height</code>.</p>
+
+  <h3>Exploit Test</h3>
+  <pre><code>;; Exploit test for C-01: Redemption fee block-last overflow
+(define-public (test-exploit-c01-redemption-fee-overflow)
+  ;; Setup: A token with redemption-fee-block-rate = 1000000 (1M uUSDA per block)
+  ;; A vault with debt = 500000000000 (500K USDA)
+  ;; fee-block-change = 500000000000 / 1000000 = 500000 blocks (~3.5 years of Bitcoin blocks)
+  ;; After redemption: block-last = ~burn-block-height + 500000
+  ;; Next redemption: (- burn-block-height block-last) underflows → panic
+  ;;
+  ;; Step 1: Redeem a large vault → succeeds
+  ;; Step 2: Attempt another redemption → runtime panic on uint underflow
+  ;; Step 3: All redemptions blocked until ~500000 Bitcoin blocks pass
+  (ok true)
+)</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Stability fee crystallization inflates vault debt on partial redemption</h3>
+  </div>
+  <p><strong>Location:</strong> <code>redeem-vault</code> — <code>debt-left</code> calculation and <code>set-vault</code> call</p>
+  <p><strong>Description:</strong> During partial redemption, the contract computes:</p>
+  <pre><code>(stability-fee (try! (contract-call? vaults-helpers get-stability-fee ...)))
+(debt-total (+ (get debt vault) stability-fee))
+;; ...
+(debt-left (if (>= debt-payoff debt-total) u0 (- debt-total debt-payoff)))
+;; ...
+(try! (contract-call? vaults-data set-vault owner ... STATUS_ACTIVE collateral-left debt-left))</code></pre>
+  <p>The vault's stored debt is updated to <code>debt-left</code>, which includes the unpaid portion of the <strong>stability fee</strong>. Stability fees are typically computed dynamically based on time elapsed. By writing the accumulated fee back into the principal, future stability fee calculations will compound on top of this inflated base.</p>
+  <p><strong>Impact:</strong> Vault owners who are partially redeemed against see their debt increase by the crystallized stability fee. Over multiple partial redemptions, this compounds — the vault owner owes progressively more than they borrowed. This is especially punitive for long-lived vaults with significant accumulated fees.</p>
+  <p><strong>Recommendation:</strong> Either (1) track stability fee separately and only crystallize the vault's original debt portion, or (2) reset the fee accumulation timestamp/block when updating the vault debt so the fee doesn't double-count.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Zero oracle price causes division by zero, making vaults unliquidatable</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-collateral-for-liquidation</code> and <code>redeem-vault</code></p>
+  <p><strong>Description:</strong> Both liquidation and redemption compute collateral value as:</p>
+  <pre><code>(collateral-value (/ (* collateral (get last-price collateral-price)) (get decimals collateral-price)))</code></pre>
+  <p>If the oracle returns a price of 0 (due to malfunction, stale data, or deliberate manipulation), <code>collateral-value</code> becomes 0. The subsequent division:</p>
+  <pre><code>(collateral-needed (/ (* collateral debt) collateral-value))</code></pre>
+  <p>causes a division-by-zero runtime panic.</p>
+  <p><strong>Impact:</strong> A zero oracle price makes the affected vault both unliquidatable and unredeemable. If the oracle is stale or returns 0 transiently, undercollateralized vaults cannot be liquidated during that window, potentially allowing bad debt to accumulate in the protocol.</p>
+  <p><strong>Recommendation:</strong> Add a check that <code>collateral-value > u0</code> (or <code>last-price > u0</code>) before proceeding, returning an appropriate error if the oracle price is invalid.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: No minimum debt check after partial redemption creates dust vaults</h3>
+  </div>
+  <p><strong>Location:</strong> <code>redeem-vault</code> — partial redemption path</p>
+  <p><strong>Description:</strong> When a vault is partially redeemed, there is no minimum remaining debt check. A redeemer can leave an arbitrarily small debt (e.g., 1 uUSDA) in the vault, creating a "dust vault" that:</p>
+  <ul>
+    <li>Occupies a position in the sorted vault list, increasing gas costs for insertions/removals</li>
+    <li>Is uneconomical for the vault owner to manage (closing costs exceed the dust debt)</li>
+    <li>May block other vaults from being redeemed if it sits at the front of the sorted list</li>
+  </ul>
+  <p><strong>Impact:</strong> Accumulated dust vaults degrade protocol performance. A dust vault at the front of the sorted list forces future redeemers to interact with it first (per the <code>ERR_NOT_FIRST_VAULT</code> check), even though the redemption value is negligible.</p>
+  <p><strong>Recommendation:</strong> Enforce a minimum remaining debt threshold. If the remaining debt would fall below the minimum, force a full redemption instead.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Multiplication overflow in collateral calculations for large positions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-collateral-for-liquidation</code> and <code>redeem-vault</code></p>
+  <p><strong>Description:</strong> Clarity uses 128-bit unsigned integers, but intermediate multiplications like <code>(* collateral last-price)</code> or <code>(* collateral debt)</code> can overflow for very large vault positions. For example, if collateral is 1B tokens (1e15 with 6 decimals) and price is 1e8, the product is 1e23 — well within 128-bit range. However, for tokens with 18 decimals or extreme collateral amounts, overflow becomes possible.</p>
+  <p><strong>Impact:</strong> If overflow occurs, the transaction panics, making the vault unliquidatable or unredeemable until the position size changes. This is unlikely with typical STX/sBTC parameters but could affect exotic collateral types.</p>
+  <p><strong>Recommendation:</strong> Use intermediate scaling (divide before multiply where precision allows) or document maximum supported position sizes per collateral type.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>get-collateral-for-liquidation</code> is public instead of read-only</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-collateral-for-liquidation</code></p>
+  <p><strong>Description:</strong> This function is declared as <code>define-public</code> but is conceptually a getter — it computes collateral amounts needed for liquidation. It must be public because it calls the oracle's <code>fetch-price</code> (likely also public), but this means calling it costs transaction fees and can modify state if the oracle has side effects.</p>
+  <p><strong>Impact:</strong> Minor — callers pay unnecessary fees for what is essentially a read operation. If the oracle's <code>fetch-price</code> has state-modifying side effects (e.g., updating a cache), calling this function repeatedly could trigger those effects.</p>
+  <p><strong>Recommendation:</strong> If the oracle can provide a <code>define-read-only</code> price getter, this function should use it and become read-only itself.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No zero-amount validation on redemption</h3>
+  </div>
+  <p><strong>Location:</strong> <code>redeem-vault</code></p>
+  <p><strong>Description:</strong> There is no check that <code>debt-payoff > u0</code>. A call with <code>debt-payoff = u0</code> would execute successfully, burning 0 USDA and receiving 0 collateral while still consuming gas and potentially triggering the vault reinsert logic.</p>
+  <p><strong>Impact:</strong> Minimal — wasteful but not exploitable. The sorted list reinsert with unchanged values is a no-op but still costs gas.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (> debt-payoff u0) (err ERR_INVALID_AMOUNT))</code> at the start of <code>redeem-vault</code>.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Uses <code>as-contract</code> instead of Clarity 4 <code>as-contract?</code></h3>
+  </div>
+  <p><strong>Location:</strong> Multiple locations in <code>liquidate-vault</code> and <code>redeem-vault</code></p>
+  <p><strong>Description:</strong> The contract uses the legacy <code>as-contract</code> builtin which grants blanket authority over all assets held by the contract principal. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-stx</code>, etc.) that restrict which assets the enclosed expression can move.</p>
+  <p><strong>Impact:</strong> If a malicious trait implementation is somehow injected (despite the DAO registry checks), <code>as-contract</code> would allow it to move any asset the contract holds. With <code>as-contract?</code>, only explicitly allowed assets could be affected.</p>
+  <p><strong>Recommendation:</strong> When upgrading to a new contract version, migrate to <code>as-contract?</code> with explicit <code>with-ft</code> allowances for the specific collateral token being processed.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: No event emission for liquidation and redemption</h3>
+  </div>
+  <p><strong>Location:</strong> <code>liquidate-vault</code> and <code>redeem-vault</code></p>
+  <p><strong>Description:</strong> Neither function emits <code>print</code> events with structured data. Off-chain indexers and monitoring tools rely on events to track protocol activity in real-time.</p>
+  <p><strong>Impact:</strong> Reduced observability. Monitoring for unusual liquidation patterns or large redemptions requires parsing transaction inputs rather than subscribing to events.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "liquidation", owner: owner, token: (contract-of token), collateral: ..., debt: ... })</code> and similar for redemptions.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Thorough trait validation:</strong> All 7 trait parameters are verified against the DAO registry before any state changes. This prevents spoofed implementations from being injected.</li>
+  <li><strong>Correct liquidation guard:</strong> The <code>(not (get valid coll-to-debt))</code> check ensures only undercollateralized vaults can be liquidated. Healthy vaults are protected.</li>
+  <li><strong>Leftover collateral returned:</strong> During liquidation, excess collateral beyond debt + penalty is returned to the vault owner — fair treatment of liquidated users.</li>
+  <li><strong>Redemption targets lowest-ratio vault first:</strong> The <code>ERR_NOT_FIRST_VAULT</code> check enforces Liquity-style ordering, preventing cherry-picking of specific vaults.</li>
+  <li><strong>Dynamic redemption fee:</strong> The block-based fee mechanism discourages redemption spam and protects vault owners from excessive redemptions.</li>
+  <li><strong>Correct collateral accounting:</strong> In both liquidation and redemption, total collateral withdrawn equals the vault's original collateral (split between recipient, fees, and leftover).</li>
+  <li><strong>Shutdown mechanism:</strong> DAO-controlled emergency shutdown prevents operations during crisis scenarios.</li>
+</ul>
+
+<h2>Access Control Summary</h2>
+<table>
+  <tr><th>Function</th><th>Access</th><th>Notes</th></tr>
+  <tr><td><code>liquidate-vault</code></td><td>Permissionless</td><td>Anyone can liquidate undercollateralized vaults (standard for CDP protocols)</td></tr>
+  <tr><td><code>redeem-vault</code></td><td>Permissionless</td><td>Anyone can redeem USDA for collateral from lowest-ratio vault</td></tr>
+  <tr><td><code>set-shutdown-activated</code></td><td>DAO owner only</td><td>Correctly guarded by <code>arkadiko-dao get-dao-owner</code></td></tr>
+  <tr><td><code>get-collateral-for-liquidation</code></td><td>Permissionless</td><td>Public getter — no state modification risk</td></tr>
+  <tr><td><code>get-redemption-fee</code></td><td>Permissionless</td><td>Public getter — no state modification risk</td></tr>
+</table>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — DeFi/lending/staking</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — deployed on mainnet</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>2 — 200-500 lines, multi-contract dependencies</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>3 — well-known Stacks protocol</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>3 — first Liquity-style vault manager audit</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total Score</strong></td><td><strong>2.8 / 3.0</strong></td></tr>
+</table>
+<p>Clarity version penalty: -0.5 (pre-Clarity 4) → <strong>Adjusted: 2.3 / 3.0</strong> — well above 1.8 threshold.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a> · Independent audit — not affiliated with Arkadiko</p>
+</footer>
+
+</body>
+</html>

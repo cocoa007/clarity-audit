@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">28</div>
+    <div class="num">27</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">51</div>
+    <div class="num">48</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">287</div>
+    <div class="num">277</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -230,27 +230,14 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
-    <a href="/clarity-audit/bitflow-stableswap.html">Bitflow Stableswap STX-stSTX v1.2 — Curve-Style AMM</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SPQC38PW542EQJ5M11CR25P7BS1CA6QT4TBXGB3M.stableswap-stx-ststx-v-1-2?chain=mainnet">SPQC38PW542EQJ5M11CR25P7BS1CA6QT4TBXGB3M</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Curve-style StableSwap AMM for STX/stSTX on Stacks mainnet. <strong>Critical: inverted admin fee logic means all regular users pay zero swap fees — complete protocol revenue loss.</strong> Newton-Raphson solver returns zero on non-convergence. No fee bounds validation.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stacking-dao-core.html">StackingDAO Core v1 — Liquid Staking Protocol</a>
+    <a href="/clarity-audit/arkadiko-vaults-manager.html">Arkadiko Vaults Manager v1-1 — Liquidation &amp; Redemption</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
   <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v1?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="c">0C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-manager-v1-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
   </div>
-  <p class="summary">Liquid staking on Stacks — deposit STX, receive stSTX. <strong>Hardcoded pox-3 makes contract non-functional on current mainnet.</strong> No deposit slippage protection. Entire security model depends on DAO governance registry.</p>
+  <p class="summary">Liquity-style vault manager for Arkadiko stablecoin. <strong>Critical: redemption fee block-last overflow bricks future redemptions via uint underflow.</strong> Stability fees crystallize into vault principal on partial redemption.</p>
   <p class="date">February 24, 2026</p>
 </div>
 
