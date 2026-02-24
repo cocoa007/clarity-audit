@@ -206,19 +206,19 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">27</div>
+    <div class="num">28</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">50</div>
+    <div class="num">51</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">276</div>
+    <div class="num">287</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">49</div>
+    <div class="num">50</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/bitflow-stableswap.html">Bitflow Stableswap STX-stSTX v1.2 — Curve-Style AMM</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SPQC38PW542EQJ5M11CR25P7BS1CA6QT4TBXGB3M.stableswap-stx-ststx-v-1-2?chain=mainnet">SPQC38PW542EQJ5M11CR25P7BS1CA6QT4TBXGB3M</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Curve-style StableSwap AMM for STX/stSTX on Stacks mainnet. <strong>Critical: inverted admin fee logic means all regular users pay zero swap fees — complete protocol revenue loss.</strong> Newton-Raphson solver returns zero on non-convergence. No fee bounds validation.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
