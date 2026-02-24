@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">38</div>
+    <div class="num">39</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">53</div>
+    <div class="num">54</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">358</div>
+    <div class="num">365</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,19 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/v0-3-market.html">v0-3-market — Lending/Borrowing Market Controller</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/0x433a0e9f3c0646cbdec6b51de28d6bd82fbb09bdbbf6481e455d735978918fe6?chain=mainnet">SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7</a></span>
+    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Central controller for Zest Protocol lending market (6 vaults, Pyth/DIA oracles, graduated liquidation). <strong>No critical or high findings.</strong> Exemplary Clarity 4 usage with <code>as-contract?</code> explicit asset allowances. Simplified liquidation curve exponent and edge-case bad debt socialization trigger. One of the best-engineered Clarity contracts audited.</p>
+  <p class="date">February 24, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">

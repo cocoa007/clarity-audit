@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zest v0-3-market — Audit | cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono','Fira Code','Cascadia Code',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:1.8rem;margin-bottom:0.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem}
+h2{font-size:1.3rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:0.5rem}
+p,li{margin-bottom:0.75rem}
+ul,ol{padding-left:1.5rem}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;margin:1rem 0;font-family:var(--font-mono);font-size:0.82rem}
+code{font-family:var(--font-mono);font-size:0.88em;background:var(--surface);padding:2px 6px;border-radius:3px}
+pre code{background:none;padding:0}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;font-size:0.9rem}
+.meta-grid dt{color:var(--text-muted);font-weight:600}.meta-grid dd{margin:0}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0}
+.finding-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem}
+.finding-header h3{margin:0}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700}
+.badge.critical{background:var(--red);color:#fff}
+.badge.high{background:#da3633;color:#fff}
+.badge.medium{background:var(--yellow);color:#000}
+.badge.low{background:var(--blue);color:#000}
+.badge.info{background:var(--text-muted);color:#000}
+.nav{display:flex;gap:1.5rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.nav a{color:var(--text-muted);font-size:0.9rem}.nav a:hover{color:var(--accent)}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;margin:1rem 0}
+.summary-cell{text-align:center;padding:0.5rem;border-radius:6px;font-weight:700;font-size:0.9rem}
+.summary-cell.c{background:#f8514933;color:var(--red)}.summary-cell.h{background:#da363333;color:#da3633}
+.summary-cell.m{background:#d2992233;color:var(--yellow)}.summary-cell.l{background:#58a6ff33;color:var(--blue)}
+.summary-cell.i{background:#8b949e33;color:var(--text-muted)}
+.summary-label{font-size:0.7rem;font-weight:400;display:block}
+.finding-field{margin-bottom:0.5rem}.finding-field strong{color:var(--text-muted);font-size:0.85rem}
+footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.88rem}
+th,td{padding:0.4rem 0.6rem;border:1px solid var(--border);text-align:left}
+th{background:var(--surface);color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Zest Protocol v0-3-market</h1>
+<p class="subtitle">Lending/Borrowing Market Controller — Independent Security Audit</p>
+
+<dl class="meta-grid">
+  <dt>Contract</dt>
+  <dd><code>SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-3-market</code></dd>
+  <dt>Source</dt>
+  <dd><a href="https://explorer.hiro.so/txid/0x433a0e9f3c0646cbdec6b51de28d6bd82fbb09bdbbf6481e455d735978918fe6?chain=mainnet">On-chain (Hiro Explorer)</a></dd>
+  <dt>Clarity Version</dt>
+  <dd>Clarity 4 — uses <code>as-contract?</code>, <code>current-contract</code>, <code>stacks-block-time</code></dd>
+  <dt>Lines of Code</dt>
+  <dd>~1,635</dd>
+  <dt>Audit Date</dt>
+  <dd>February 24, 2026</dd>
+  <dt>Auditor</dt>
+  <dd><a href="https://github.com/cocoa007">cocoa007</a></dd>
+  <dt>Confidence</dt>
+  <dd>🟡 MEDIUM — multi-contract system; can't verify market-vault or vault internals</dd>
+  <dt>Priority Score</dt>
+  <dd>2.7 / 3.0 (Financial=3, Deploy=3, Complexity=3, Exposure=2, Novelty=2)</dd>
+</dl>
+
+<h2>Findings Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-cell c">0<span class="summary-label">Critical</span></div>
+  <div class="summary-cell h">0<span class="summary-label">High</span></div>
+  <div class="summary-cell m">2<span class="summary-label">Medium</span></div>
+  <div class="summary-cell l">2<span class="summary-label">Low</span></div>
+  <div class="summary-cell i">3<span class="summary-label">Info</span></div>
+</div>
+
+<h2>Overview</h2>
+
+<p><code>v0-3-market</code> is the central controller for Zest Protocol's lending/borrowing market on Stacks mainnet. It orchestrates six underlying vault contracts (STX, sBTC, stSTX, USDC, USDH, stSTXbtc), manages oracle price feeds (Pyth and DIA), and implements a sophisticated graduated liquidation mechanism with configurable curve exponents and grace periods.</p>
+
+<p><strong>Architecture highlights:</strong></p>
+<ul>
+  <li><strong>Clarity 4</strong> — Exemplary use of <code>as-contract?</code> with explicit <code>with-stx</code> / <code>with-ft</code> allowances in <code>supply-collateral-add</code>, strictly limiting what assets the contract can move under its own authority. This is the gold standard for Clarity asset safety.</li>
+  <li><strong>Egroup-based risk management</strong> — Collateral/debt combinations map to eligibility groups with per-group LTV thresholds, borrow disable masks, and liquidation parameters.</li>
+  <li><strong>Index caching</strong> — Per-block index caching avoids redundant vault accrual calls, keyed on <code>stacks-block-time</code> + asset ID.</li>
+  <li><strong>Same-block liquidation protection</strong> — <code>last-borrow-block</code> check prevents flash-loan-based borrow-then-liquidate attacks.</li>
+  <li><strong>Graduated liquidation</strong> — Liquidation percentage scales between partial and full LTV thresholds with configurable curve exponent and penalty bounds.</li>
+  <li><strong>Composite operations</strong> — <code>supply-collateral-add</code> and <code>collateral-remove-redeem</code> provide atomic deposit→collateralize and decollateralize→redeem flows.</li>
+</ul>
+
+<p><strong>Overall assessment:</strong> This is one of the most well-engineered Clarity contracts I've audited. The code demonstrates deep understanding of DeFi lending mechanics, proper Clarity 4 idioms, and careful attention to edge cases (disabled collateral pricing, bad debt socialization, oracle staleness). No critical or high severity findings. The medium findings relate to edge-case behavior in the graduated liquidation math and bad debt socialization trigger conditions.</p>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>M-01: Simplified Liquidation Curve Exponent</h3>
+    <span class="badge medium">MEDIUM</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>calc-liq-factor-exp</code> (line ~710)</div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>The graduated liquidation system supports a configurable curve exponent to control how aggressively liquidation percentage scales. However, the implementation only handles three cases:</p>
+    <ul>
+      <li><code>exp == BPS</code> (1.0) → linear (correct)</li>
+      <li><code>exp > BPS</code> (>1.0) → integer power with scaling (correct for integer exponents)</li>
+      <li><code>exp < BPS</code> (<1.0) → always uses <code>sqrti</code> (0.5 power), regardless of actual exponent</li>
+    </ul>
+    <p>If the DAO configures a curve exponent of, say, 0.25 (2500 BPS) or 0.75 (7500 BPS), the actual behavior is always √x (0.5 power). This means:</p>
+    <ul>
+      <li>Exponent 0.25 → liquidation is <em>more aggressive</em> than intended (√x > x^0.25 for x < 1)</li>
+      <li>Exponent 0.75 → liquidation is <em>less aggressive</em> than intended (√x < x^0.75 for x < 1)</li>
+    </ul>
+  </div>
+  <pre><code>(define-private (calc-liq-factor-exp (factor uint) (exp uint))
+  (if (is-eq exp BPS) 
+    factor
+    (if (> exp BPS) 
+        (/ (pow factor (/ exp BPS)) (pow BPS (- (/ exp BPS) u1)))
+        (sqrti (* factor BPS))))) ;; assume factor^0.5 — ALWAYS 0.5 regardless of exp</code></pre>
+  <div class="finding-field"><strong>Impact:</strong> Misconfigured liquidation aggressiveness for sub-linear exponents. If DAO only uses exponents of 0.5 or ≥1.0, no impact. Actual risk depends on DAO parameter governance.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Document the supported exponent values (0.5, 1.0, or integer multiples of BPS). Alternatively, implement a piecewise approximation for common fractional exponents (0.25, 0.75) using nested square roots.</div>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>M-02: Bad Debt Socialization May Not Trigger for Multi-Collateral Positions</h3>
+    <span class="badge medium">MEDIUM</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>liquidate</code> — bad debt socialization check (line ~1520)</div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>Bad debt socialization only triggers when the borrower's position has exactly one collateral type remaining AND that collateral is fully seized:</p>
+    <pre><code>(no-collateral-left (and
+  (is-eq (len (get collateral pos-full)) u1)
+  (is-eq coll-removed u0)))</code></pre>
+    <p>For multi-collateral positions where collateral is depleted across multiple liquidation calls targeting different collateral types, the trigger depends on whether <code>v0-market-vault</code> removes zero-balance entries from the collateral list:</p>
+    <ul>
+      <li><strong>If zero entries are removed:</strong> Works correctly — each liquidation that fully seizes a collateral type reduces the list length, and the final seizure triggers socialization.</li>
+      <li><strong>If zero entries are kept:</strong> <code>len</code> never reaches 1 for originally multi-collateral positions, and bad debt is never socialized — it remains as phantom debt in the system.</li>
+    </ul>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> If <code>v0-market-vault</code> retains zero-balance collateral entries, bad debt from multi-collateral positions accumulates without socialization. This creates a growing gap between actual vault assets and tracked debt, eventually causing depositor losses on withdrawal.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Either (a) verify that <code>v0-market-vault.collateral-remove</code> removes entries when balance hits zero, or (b) change the check to sum all collateral amounts rather than checking list length: <code>(is-eq total-coll-remaining u0)</code>.</div>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>L-01: <code>liquidate-multi</code> Does Not Support Inline Price Feeds</h3>
+    <span class="badge low">LOW</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>call-liquidate</code> / <code>liquidate-multi</code> (line ~755)</div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>The batch liquidation helper <code>liquidate-multi</code> hardcodes <code>none</code> for the <code>price-feeds</code> parameter. Liquidators must update Pyth price feeds in a separate transaction before calling <code>liquidate-multi</code>. If the price feed update and batch liquidation land in different blocks, the prices may become stale, causing the batch to fail.</p>
+    <pre><code>(define-private (call-liquidate (position { ... }))
+  (liquidate ...
+             none   ;; collateral-receiver defaults to liquidator
+             none)) ;; price-feeds not supported in batch</code></pre>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> Batch liquidations may fail if oracle prices become stale between the price update transaction and the batch call. Individual <code>liquidate()</code> with inline feeds is unaffected.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Accept an optional price-feeds parameter at the <code>liquidate-multi</code> level and pass it to the first <code>call-liquidate</code> invocation (subsequent calls in the same block can use cached prices).</div>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>L-02: No Deadline Protection on Lending Operations</h3>
+    <span class="badge low">LOW</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>borrow</code>, <code>repay</code>, <code>collateral-add</code>, <code>collateral-remove</code></div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>None of the lending operations accept a deadline parameter. If a transaction is delayed in the mempool, it may execute at a significantly different interest index than when the user signed it. For <code>borrow</code>, a delayed transaction results in more scaled debt than expected. For <code>repay</code>, a delayed transaction may not fully repay the intended amount due to accrued interest.</p>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> Low — Stacks mempool delays are typically short, and the interest rate impact per block is minimal. Users can set <code>min-out</code> / <code>min-shares</code> on deposit/redeem operations for slippage protection, but no equivalent exists for borrow/repay index drift.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Consider adding an optional <code>max-block-time</code> parameter to <code>borrow</code> and <code>repay</code> for users who want transaction freshness guarantees.</div>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-01: Unused Parameters in <code>vault-system-repay</code></h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>vault-system-repay</code> (line ~169)</div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>The <code>vault-system-repay</code> private function accepts <code>ft</code> (<code>&lt;ft-trait&gt;</code>) and <code>ft-address</code> (<code>principal</code>) parameters but never uses them — vault routing is purely based on <code>aid</code>. These parameters are vestigial and add confusion without functional impact.</p>
+    <pre><code>(define-private (vault-system-repay (aid uint) (amount uint) (ft &lt;ft-trait&gt;) (ft-address principal))
+  (if (is-eq aid STX) (contract-call? .v0-vault-stx system-repay amount)
+  ;; ... ft and ft-address never referenced</code></pre>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> None — dead code. The vault contracts know their own token type.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Remove unused parameters for code clarity, or document why they're retained (e.g., future extensibility).</div>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-02: <code>contract-caller == tx-sender</code> Restriction Limits Composability</h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>collateral-add</code>, <code>borrow</code>, <code>repay</code>, <code>liquidate</code></div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>Multiple functions assert <code>(is-eq contract-caller tx-sender)</code>, which prevents smart contract wallets, routers, or automation contracts from calling the market on behalf of users. This is an intentional security measure that eliminates an entire class of proxy attacks, but it means:</p>
+    <ul>
+      <li>No smart contract wallet integration</li>
+      <li>No third-party automation (e.g., auto-repay bots via contract)</li>
+      <li>No protocol-level composability (other contracts can't build on top)</li>
+    </ul>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> Informational — security/composability tradeoff. The protocol provides composite operations (<code>supply-collateral-add</code>, <code>collateral-remove-redeem</code>, <code>liquidate-redeem</code>) that reduce the need for external routers.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Document this restriction. Consider a future allowlist for approved proxy contracts if composability demand arises.</div>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-03: Exemplary Clarity 4 Asset Safety</h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>supply-collateral-add</code> (line ~1190)</div>
+  <div class="finding-field"><strong>Description:</strong>
+    <p>The <code>supply-collateral-add</code> function demonstrates best-practice Clarity 4 usage with <code>as-contract?</code> and explicit asset allowances:</p>
+    <pre><code>;; For wSTX: explicitly allows only STX movement
+(as-contract? ((with-stx amount))
+  (try! (vault-deposit asset-id amount min-shares account)))
+
+;; For other tokens: explicitly allows only the specific FT
+(as-contract? ((with-ft ft-address "*" amount))
+  (try! (vault-deposit asset-id amount min-shares account)))</code></pre>
+    <p>This ensures the contract can only move the exact token type and amount needed, even when operating under its own authority. This is strictly safer than pre-Clarity 4 <code>as-contract</code> which grants blanket asset access.</p>
+  </div>
+  <div class="finding-field"><strong>Impact:</strong> Positive — significantly reduces the blast radius if any vault contract or trait implementation were malicious.</div>
+</div>
+
+<h2>Positive Observations</h2>
+
+<ul>
+  <li><strong>Same-block liquidation guard:</strong> <code>last-borrow-block</code> check prevents oracle-frontrunning flash loan attacks — a finding commonly missed in other lending protocols.</li>
+  <li><strong>Graduated liquidation:</strong> The 4-step liquidation factor calculation (linear → exponent → penalty bounds → debt cap) is more sophisticated than most Stacks lending protocols, which use binary full-liquidation.</li>
+  <li><strong>Disabled collateral handling:</strong> <code>collateral-remove</code> correctly handles disabled collateral assets by resolving their price on-demand rather than failing. Users can always exit disabled collateral positions.</li>
+  <li><strong>Oracle confidence filtering:</strong> Pyth price confidence interval is checked against a configurable max ratio, rejecting unreliable prices.</li>
+  <li><strong>Capacity preservation check:</strong> <code>collateral-add</code> with new collateral types validates that future borrowing capacity doesn't decrease when the egroup changes — prevents users from accidentally bricking their positions.</li>
+  <li><strong>Comprehensive event logging:</strong> Every operation emits detailed print events with before/after state, enabling robust off-chain monitoring and indexing.</li>
+  <li><strong>Index cache design:</strong> Block-scoped caching prevents redundant vault accrual calls while maintaining correctness — each block gets fresh values.</li>
+</ul>
+
+<h2>Architecture</h2>
+
+<pre><code>                    ┌──────────────────┐
+                    │   v0-3-market     │  ← This contract
+                    │  (Controller)     │
+                    └────────┬─────────┘
+                             │
+          ┌──────────┬───────┼───────┬──────────┬──────────┐
+          ▼          ▼       ▼       ▼          ▼          ▼
+     v0-vault-   v0-vault- v0-vault- v0-vault- v0-vault- v0-vault-
+       stx        sbtc     ststx     usdc      usdh     ststxbtc
+          │          │       │       │          │          │
+          ▼          ▼       ▼       ▼          ▼          ▼
+        wSTX       sBTC    stSTX    USDC      USDH    stSTXbtc
+
+   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+   │ v0-assets│  │v0-egroup │  │v0-market-│  │  Oracles  │
+   │(registry)│  │  (risk)  │  │  vault   │  │Pyth / DIA │
+   └──────────┘  └──────────┘  └──────────┘  └──────────┘</code></pre>
+
+<h2>Risk Assessment</h2>
+
+<table>
+  <tr><th>Category</th><th>Assessment</th></tr>
+  <tr><td>Funds at risk</td><td><strong>Yes</strong> — manages deposits, borrows, and liquidations across 6 asset vaults</td></tr>
+  <tr><td>Oracle dependency</td><td>Pyth (primary) + DIA (secondary) with confidence + staleness checks</td></tr>
+  <tr><td>Admin privileges</td><td>DAO executor can pause liquidations, set grace periods, configure oracle confidence</td></tr>
+  <tr><td>Composability</td><td>Limited — <code>contract-caller == tx-sender</code> blocks proxy contracts</td></tr>
+  <tr><td>Clarity version</td><td>Clarity 4 ✓ — uses <code>as-contract?</code> with explicit asset allowances</td></tr>
+  <tr><td>Multi-contract risk</td><td>Depends on 6 vault contracts + asset registry + egroup resolver + market-vault</td></tr>
+</table>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a> · Built with real contract reads, not vibes</p>
+</footer>
+
+</body>
+</html>
