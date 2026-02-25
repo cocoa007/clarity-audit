@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX Power Token (APower) — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX Power Token (APower)</h1>
+<p class="subtitle">Non-transferable auto-compounding power token for the ALEX DeFi protocol — SIP-010 compliant with permanently disabled transfers</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.token-apower?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.token-apower</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://alexlab.co">ALEX</a> — leading DeFi platform on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Clarity 1 (pre-Clarity 4 — no <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Block Height</td><td>45,455 (early mainnet deployment)</td></tr>
+  <tr><td>Lines of Code</td><td>218</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Auditor</td><td>cocoa007.btc</td></tr>
+  <tr><td>Confidence</td><td>&#128994; HIGH — simple token contract, fully reviewed, all findings verified against on-chain source</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>APower is a non-transferable SIP-010 fungible token used in the ALEX protocol ecosystem. It implements the standard SIP-010 trait but <strong>permanently disables transfers</strong> — the <code>transfer</code> function always returns an error. Tokens can only be minted and burned by the contract owner or approved contracts.</p>
+
+<p>The contract also provides a fixed-point math layer (8-decimal precision) with convenience wrappers like <code>mint-fixed</code>, <code>burn-fixed</code>, and <code>mint-fixed-many</code> for batch operations.</p>
+
+<p>At deployment, ownership is transferred to <code>.executor-dao</code> and <code>.alex-reserve-pool</code> is added as an approved contract, indicating this token is managed by ALEX's DAO governance.</p>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>Non-transferable by design — the <code>transfer</code> function is intentionally disabled</li>
+  <li>Mint/burn restricted to owner and approved contracts — centralized control by design for protocol-managed accounting</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">Medium</span>
+    <h3>M-01: Mutable Decimals Corrupts Fixed-Point Math and Existing Balances</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-decimals</code>, <code>pow-decimals</code>, <code>fixed-to-decimals</code>, <code>decimals-to-fixed</code></p>
+  <p><strong>Description:</strong> The <code>token-decimals</code> variable can be changed by the owner at any time. Since the fixed-point conversion functions (<code>fixed-to-decimals</code>, <code>decimals-to-fixed</code>) dynamically read this variable, changing decimals after tokens have been minted causes all existing balances to be reinterpreted incorrectly.</p>
+  <pre><code>(define-public (set-decimals (new-decimals uint))
+  (begin
+    (try! (check-is-owner))
+    (ok (var-set token-decimals new-decimals))
+  )
+)
+
+(define-private (pow-decimals)
+  (pow u10 (unwrap-panic (get-decimals)))  ;; uses mutable var!
+)</code></pre>
+  <p><strong>Impact:</strong> If decimals changes from 8 to 6, a user with 100 APower (stored as 10,000,000,000 raw units) would appear to have 10,000 APower through the fixed-point view. The <code>mint-fixed</code> and <code>burn-fixed</code> wrappers would also mint/burn incorrect raw amounts. Any protocol integrating with the fixed-point functions would break silently.</p>
+  <p><strong>Recommendation:</strong> Make <code>token-decimals</code> a constant instead of a variable, or add a guard that only allows setting decimals before any tokens are minted (when total supply is 0).</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">Medium</span>
+    <h3>M-02: Burn Without Sender Consent</h3>
+  </div>
+  <p><strong>Location:</strong> <code>burn</code> function</p>
+  <p><strong>Description:</strong> The <code>burn</code> function allows any approved contract or owner to burn tokens from <strong>any</strong> sender address without requiring the sender's authorization. There is no check that <code>sender == tx-sender</code> or that the sender has approved the burn.</p>
+  <pre><code>(define-public (burn (amount uint) (sender principal))
+  (begin
+    (asserts! (or (is-ok (check-is-approved)) (is-ok (check-is-owner))) ERR-NOT-AUTHORIZED)
+    (ft-burn? apower amount sender)  ;; burns from arbitrary sender
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Any approved contract (currently <code>.alex-reserve-pool</code>) or the DAO owner can burn any user's APower balance without their consent. While this may be intentional for a protocol-managed token, it means users must fully trust all approved contracts. A compromised or malicious approved contract could wipe all user balances.</p>
+  <p><strong>Recommendation:</strong> If unconditional burn is intended, document this trust assumption clearly. Otherwise, add <code>(asserts! (is-eq sender tx-sender) ERR-NOT-AUTHORIZED)</code> or require sender to be an approved contract as well. Note: Clarity's post-conditions can protect against unexpected burns at the transaction level.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">Low</span>
+    <h3>L-01: Transfer Permanently Disabled But SIP-010 Trait Implemented</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer</code> function</p>
+  <p><strong>Description:</strong> The <code>transfer</code> function always returns <code>ERR-TRANSFER-FAILED</code> regardless of parameters. The function doesn't even check its arguments — it ignores amount, sender, recipient, and memo entirely.</p>
+  <pre><code>(define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
+  ERR-TRANSFER-FAILED
+)</code></pre>
+  <p><strong>Impact:</strong> Any integration (DEX, wallet, or protocol) that attempts SIP-010 transfers will silently fail. While non-transferability is the design intent, implementing the full SIP-010 trait creates a false expectation of transferability. The <code>transfer-fixed</code> wrapper also always fails.</p>
+  <p><strong>Recommendation:</strong> This is by design. Consider adding a comment in the source documenting the intentional non-transferability. Integrators should check for this pattern.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">Low</span>
+    <h3>L-02: tx-sender Auth Enables Transitive Privilege</h3>
+  </div>
+  <p><strong>Location:</strong> <code>check-is-approved</code>, <code>check-is-owner</code></p>
+  <p><strong>Description:</strong> Authorization checks use <code>tx-sender</code> instead of <code>contract-caller</code>. In Clarity, <code>tx-sender</code> is the original transaction signer and does not change through contract-to-contract calls. This means if an approved contract (A) calls another contract (B), and B calls <code>token-apower.mint</code>, the <code>tx-sender</code> check will see A (if A is the tx originator) — potentially allowing unintended transitive access.</p>
+  <pre><code>(define-private (check-is-approved)
+  (ok (asserts! (default-to false (map-get? approved-contracts tx-sender)) ERR-NOT-AUTHORIZED))
+)</code></pre>
+  <p><strong>Impact:</strong> Low in practice since APower is non-transferable and protocol-managed. But if an approved contract has a public function that can be called by anyone, and that function triggers a chain leading to APower mint/burn, the <code>tx-sender</code> will be the approved contract's deployer principal — which may not be in the approved-contracts map. The real risk is if the contract-owner principal is used as <code>tx-sender</code> in a multi-step call.</p>
+  <p><strong>Recommendation:</strong> Consider using <code>contract-caller</code> for the approved-contracts check to limit authorization to direct callers only. This is standard practice for Clarity access control.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">Info</span>
+    <h3>I-01: No Maximum Supply Cap</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-fungible-token apower)</code></p>
+  <p><strong>Description:</strong> The token is defined without a maximum supply parameter. Clarity's <code>define-fungible-token</code> accepts an optional max supply — omitting it means supply is unlimited.</p>
+  <p><strong>Impact:</strong> The owner or any approved contract can mint unlimited tokens. For a protocol-managed auto-compounding token, this may be intentional, but it means there is no on-chain supply ceiling enforced at the language level.</p>
+  <p><strong>Recommendation:</strong> If a maximum supply is intended, add it to the token definition. Otherwise, this is acceptable for a protocol-managed token where supply is controlled by governance.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">Info</span>
+    <h3>I-02: Redundant Authorization in Batch Mint</h3>
+  </div>
+  <p><strong>Location:</strong> <code>mint-fixed-many</code></p>
+  <p><strong>Description:</strong> The <code>mint-fixed-many</code> function performs an authorization check, then calls <code>mint-fixed-many-iter</code> → <code>mint-fixed</code> → <code>mint</code>, which performs the same authorization check again for each item in the list.</p>
+  <pre><code>(define-public (mint-fixed-many (recipients (list 200 {amount: uint, recipient: principal})))
+  (begin
+    (asserts! (or (is-ok (check-is-approved)) (is-ok (check-is-owner))) ERR-NOT-AUTHORIZED)
+    (ok (map mint-fixed-many-iter recipients))  ;; each iter calls mint → re-checks auth
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Wastes runtime costs by checking authorization 201 times (1 + 200 iterations) instead of once. No security impact — it's just inefficient.</p>
+  <p><strong>Recommendation:</strong> Create an internal <code>mint-unchecked</code> private function for use by <code>mint-fixed-many-iter</code> after the outer auth check. This saves gas on batch operations.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+
+<p>The contract follows a common ALEX pattern:</p>
+<ul>
+  <li><strong>Ownable trait</strong> with transferable ownership (initially set to <code>.executor-dao</code>)</li>
+  <li><strong>Approved contracts map</strong> for extensible access control</li>
+  <li><strong>Dual interface</strong>: raw token amounts and fixed-point (8-decimal) wrappers</li>
+  <li><strong>Non-transferable token</strong> pattern for protocol-internal accounting</li>
+</ul>
+
+<p>The fixed-point layer uses <code>ONE_8 = 10^8</code> as the base unit. The conversion functions multiply/divide between raw and fixed representations. This is sound as long as decimals remains at 8 (the default), aligning 1:1 with the fixed-point base — but fragile if decimals is ever changed (see M-01).</p>
+
+<h2>Conclusion</h2>
+
+<p>APower is a straightforward non-transferable token with a clean implementation. The main concerns are the mutable decimals (M-01) which could break fixed-point math, and the unchecked burn target (M-02) which requires trust in all approved contracts. Neither is critical given the token's non-transferable nature and DAO governance, but both represent avoidable risk.</p>
+
+<p>The contract has been deployed since early mainnet (block 45,455) and is managed by ALEX's executor-dao. Its simplicity is a strength — there are no complex interactions or reentrancy vectors.</p>
+
+<p><strong>Overall risk: Low-Medium.</strong> The trust model is centralized (DAO + approved contracts), which is appropriate for a protocol-internal accounting token.</p>
+
+<footer>
+  <p>Audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> &#x2022; <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>Independent security audit. This report does not constitute financial advice.</p>
+</footer>
+
+</body>
+</html>
