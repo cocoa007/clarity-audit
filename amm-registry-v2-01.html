@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX amm-registry-v2-01 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX amm-registry-v2-01</h1>
+<p class="subtitle">Pool registry and configuration contract for the ALEX DEX — stores pool metadata, fee rates, oracle settings, and blocklist</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-registry-v2-01?chain=mainnet">SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-registry-v2-01</a></code></td></tr>
+  <tr><td>Protocol</td><td>ALEX — leading DEX on Stacks with weighted/stable pools</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (publish height 152429)</td></tr>
+  <tr><td>Lines of Code</td><td>~220</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — single registry contract, all functions straightforward; no external calls except DAO auth check</td></tr>
+  <tr><td>Date</td><td>February 25, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  <code>amm-registry-v2-01</code> is the pool configuration registry for the ALEX DEX. It does not hold or transfer any tokens — it stores pool metadata (balances, fee rates, oracle settings, thresholds) in maps and provides getter/setter functions. All state-mutating functions are gated behind the ALEX DAO (<code>executor-dao</code>), meaning only approved governance proposals or extensions can modify pool configuration.
+</p>
+<p>
+  This is a companion contract to <a href="/clarity-audit/amm-pool-v2-01.html">amm-pool-v2-01</a>, which handles the actual swap logic and token transfers. The registry stores the pool state that the pool contract reads and updates.
+</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Pool creation</strong>: <code>create-pool</code> registers a new token pair with a factor, initializing all parameters to zero/max. Duplicate pairs (in either direction) are rejected.</li>
+  <li><strong>Pool updates</strong>: Individual setters for each parameter (fee rates, oracle, thresholds, ratios, start/end blocks) plus a blanket <code>update-pool</code> that overwrites the entire pool data struct.</li>
+  <li><strong>Blocklist</strong>: A principal→bool map managed via <code>set-blocklist-many</code>. The <code>is-blocklisted-or-default</code> read-only function is exposed for other contracts to query.</li>
+  <li><strong>Global settings</strong>: <code>switch-threshold</code> and <code>max-ratio-limit</code> are protocol-wide parameters.</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li>The DAO (<code>.executor-dao</code>) is the sole authority — all mutations require DAO or extension authorization</li>
+  <li>Pool balances in this registry are <em>accounting records</em>, not actual token balances — the pool contract is responsible for keeping them in sync with real token holdings</li>
+  <li>The <code>update-pool</code> function has no guardrails, giving the DAO full override power — this is by design for governance flexibility</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: <code>update-pool</code> allows pool-id mismatch between maps</h3>
+  </div>
+  <p><strong>Location:</strong> <code>update-pool</code> function</p>
+  <p><strong>Description:</strong> The <code>update-pool</code> function accepts a full pool-data struct (including <code>pool-id</code>) and writes it directly to <code>pools-data-map</code>. However, it does not validate that the <code>pool-id</code> in the supplied struct matches the <code>pool-id</code> originally assigned when the pool was created. This means the DAO could (accidentally or intentionally) set a pool-id in <code>pools-data-map</code> that doesn't match the reverse lookup in <code>pools-id-map</code>.</p>
+  <pre><code>(define-public (update-pool (token-x principal) (token-y principal) (factor uint)
+    (pool-data {
+        pool-id: uint,      ;; &lt;-- no validation against pools-id-map
+        total-supply: uint,
+        balance-x: uint,
+        balance-y: uint,
+        ...}))
+    (begin
+        (try! (is-dao-or-extension))
+        (ok (map-set pools-data-map { token-x: token-x, token-y: token-y, factor: factor } pool-data))))</code></pre>
+  <p><strong>Impact:</strong> <code>get-pool-details-by-id</code> would return the original key, but reading the pool data via that key would show a different <code>pool-id</code>. Any off-chain or on-chain logic that cross-references pool-id across both maps could break or return incorrect data. Since the pool contract (<code>amm-pool-v2-01</code>) uses this registry for pool state, inconsistent pool-ids could confuse integrators.</p>
+  <p><strong>Recommendation:</strong> Either remove <code>pool-id</code> from the <code>update-pool</code> input struct (derive it from the existing map entry), or add an assertion:</p>
+  <pre><code>(asserts! (is-eq (get pool-id pool-data) (get pool-id existing-pool)) ERR-INVALID-POOL)</code></pre>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: No upper bound validation on fee rates</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-fee-rate-x</code>, <code>set-fee-rate-y</code></p>
+  <p><strong>Description:</strong> Fee rate setters accept any <code>uint</code> value with no maximum bound. Unlike <code>set-oracle-average</code> (which validates <code>&lt; ONE_8</code>) and <code>set-max-in-ratio</code>/<code>set-max-out-ratio</code> (which validate against <code>max-ratio-limit</code>), fee rates can be set to values exceeding 100% (<code>ONE_8 = u100000000</code>).</p>
+  <pre><code>(define-public (set-fee-rate-x (token-x principal) (token-y principal) (factor uint) (fee-rate-x uint))
+    (let (
+            (pool (try! (get-pool-details token-x token-y factor))))
+        (try! (is-dao-or-extension))
+        ;; No bounds check on fee-rate-x
+        (ok (map-set pools-data-map ... (merge pool { fee-rate-x: fee-rate-x })))))</code></pre>
+  <p><strong>Impact:</strong> A malicious or buggy DAO proposal could set fee rates above 100%, which — depending on how the pool contract interprets them — could cause swaps to fail, drain more fees than the swap amount, or create arithmetic overflow/underflow conditions.</p>
+  <p><strong>Recommendation:</strong> Add validation: <code>(asserts! (&lt;= fee-rate-x ONE_8) ERR-PERCENT-GREATER-THAN-ONE)</code>. The error constant <code>ERR-PERCENT-GREATER-THAN-ONE</code> already exists in the contract but is never used.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No ordering validation on start-block and end-block</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-start-block</code>, <code>set-end-block</code></p>
+  <p><strong>Description:</strong> The start and end block setters operate independently with no cross-validation. It's possible to set <code>start-block &gt; end-block</code>, creating an invalid time window where the pool can never be active (or is always active, depending on how the pool contract interprets the range).</p>
+  <p><strong>Impact:</strong> Low — requires a DAO proposal to trigger, and the pool contract may have its own validation. But the registry should enforce basic invariants at the source.</p>
+  <p><strong>Recommendation:</strong> Add cross-validation: when setting start-block, assert <code>new-start-block &lt;= end-block</code>; when setting end-block, assert <code>new-end-block &gt;= start-block</code>.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No upper bound on fee-rebate</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-fee-rebate</code></p>
+  <p><strong>Description:</strong> Similar to M-02, <code>fee-rebate</code> has no bounds check. A rebate exceeding 100% could cause the pool contract to pay out more in rebates than collected in fees.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&lt;= fee-rebate ONE_8) ERR-PERCENT-GREATER-THAN-ONE)</code>.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 contract</h3>
+  </div>
+  <p><strong>Description:</strong> This contract was deployed before Clarity 4 (epoch 3.3). While it doesn't use <code>as-contract</code> (no token operations), it cannot benefit from Clarity 4 safety features like <code>as-contract?</code> with explicit asset allowances or <code>contract-hash?</code> for on-chain code verification.</p>
+  <p><strong>Recommendation:</strong> If the registry is ever redeployed, use Clarity 4 to benefit from the latest safety builtins.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Unused error constant <code>ERR-PERCENT-GREATER-THAN-ONE</code></h3>
+  </div>
+  <p><strong>Description:</strong> The error constant <code>ERR-PERCENT-GREATER-THAN-ONE (err u5000)</code> is defined but never referenced in any validation. It appears intended for fee rate bounds checking that was never implemented.</p>
+  <p><strong>Recommendation:</strong> Use this constant in fee rate and rebate validation (see M-02, L-02).</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: Pools cannot be deleted or deactivated</h3>
+  </div>
+  <p><strong>Description:</strong> Once created, a pool entry cannot be removed from the registry. The only way to effectively disable a pool is to set <code>start-block</code> and <code>end-block</code> to values that prevent trading. This is a common pattern in Clarity contracts (maps don't support deletion), but worth noting for operational awareness.</p>
+  <p><strong>Recommendation:</strong> Consider adding an explicit <code>active: bool</code> field to pool data for cleaner pool lifecycle management, or document the start/end block approach as the canonical deactivation mechanism.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Consistent DAO gating:</strong> Every public state-mutating function checks <code>is-dao-or-extension</code> — no privileged operations are exposed to arbitrary callers.</li>
+  <li><strong>Duplicate pool prevention:</strong> <code>create-pool</code> checks both (token-x, token-y) and (token-y, token-x) orderings, preventing duplicate pools with swapped pairs.</li>
+  <li><strong>Bounded oracle and ratio settings:</strong> <code>set-oracle-average</code> enforces <code>&lt; ONE_8</code>, and ratio setters enforce <code>&lt;= max-ratio-limit</code>.</li>
+  <li><strong>Clean separation of concerns:</strong> The registry stores state; the pool contract handles logic and token movement. This makes the registry easy to reason about in isolation.</li>
+  <li><strong>Blocklist with batch operations:</strong> <code>set-blocklist-many</code> efficiently handles up to 1000 entries per call.</li>
+</ul>
+
+<h2>Related Audits</h2>
+<ul>
+  <li><a href="/clarity-audit/amm-pool-v2-01.html">ALEX amm-pool-v2-01</a> — the pool contract that reads/writes this registry</li>
+  <li><a href="/clarity-audit/swap-helper-v1-03.html">ALEX swap-helper-v1-03</a> — the routing contract that queries pools from this registry</li>
+</ul>
+
+<footer>
+  <p>cocoa007 ☕ · Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full portfolio</a></p>
+</footer>
+
+</body>
+</html>
