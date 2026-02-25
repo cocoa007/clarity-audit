@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Charisma Rulebook v0 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Charisma Rulebook v0</h1>
+<p class="subtitle">Central security and orchestration hub for the Charisma protocol — manages all token operations (XP, energy, governance) through verified interactions, multi-owner authorization, and dynamic status effects</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-rulebook-v0?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-rulebook-v0</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://charisma.rocks">Charisma</a> — gamified DeFi on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (no <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Block Height</td><td>256,537</td></tr>
+  <tr><td>Lines of Code</td><td>275</td></tr>
+  <tr><td>SHA-256</td><td><code>b6f694d1a30e61e3bc7474ddda7cf0a0802a4391082d768cd724251383913a02</code></td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — external dependencies (<code>.status-effects-v0</code>, <code>.experience</code>, <code>.energy</code>, governance token) not reviewed; security heavily depends on status effects contract</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Charisma Rulebook v0 is the central gateway for all token operations in the Charisma protocol. It acts as a permissioned proxy: only whitelisted "verified interaction" contracts can call token operations (reward, punish, energize, exhaust, transfer, mint, burn, lock, unlock). Each operation is subject to configurable maximum limits and passes through a "status effects" modifier that can dynamically adjust amounts and targets before execution.</p>
+
+<p>The contract manages three token types:</p>
+<ul>
+  <li><strong>Experience (XP)</strong> — minted via <code>reward</code>, burned via <code>punish</code></li>
+  <li><strong>Energy</strong> — minted via <code>energize</code>, burned via <code>exhaust</code></li>
+  <li><strong>DMG (Governance Token)</strong> — transferred, minted, burned, locked, unlocked via respective functions</li>
+</ul>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>The contract documentation describes a "multi-owner system" with "owner consensus for critical changes" — however, no consensus mechanism exists in the code (see M-01)</li>
+  <li>DMG mint cap defaults to 0, effectively disabling minting until an owner raises it</li>
+  <li>The <code>pay-to-play</code> function burns energy and mints XP, requiring the rulebook itself to be a verified interaction</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Status Effects Contract Has Unrestricted Power to Manipulate All Operations</h3>
+  </div>
+  <p><strong>Location:</strong> <code>modify-*</code> private functions (lines 235–252)</p>
+  <p><strong>Description:</strong> Every token operation passes through the <code>.status-effects-v0</code> contract before authorization checks. The status effects contract can modify both the <code>amount</code> AND the <code>target</code> (recipient) of any operation. This means a compromised or malicious status effects contract could:</p>
+  <ul>
+    <li>Inflate amounts up to the configured maximums (e.g., 1000 XP per call)</li>
+    <li>Redirect minted tokens, transfers, and burns to arbitrary addresses</li>
+    <li>Selectively target specific users for punishment/exhaustion</li>
+  </ul>
+  <p>The entire protocol's token security hinges on the correctness and integrity of this single external contract.</p>
+  <pre><code>;; Status effects can return ANY amount/target within limits
+(define-private (modify-reward (ctx {amount: uint, target: principal, caller: principal})) 
+  (contract-call? .status-effects-v0 modify-reward ctx))
+
+;; In reward(), the modified values are used directly:
+(define-public (reward (amount uint) (target principal))
+  (let ((modified (modify-reward {amount: amount, target: target, caller: contract-caller})))
+    (asserts! (is-verified contract-caller) ERR_UNVERIFIED)
+    (asserts! (<= (get amount modified) (var-get max-reward)) ERR_EXCEEDS_LIMIT)
+    ;; modified target could be anyone
+    (contract-call? .experience mint (get amount modified) (get target modified))))</code></pre>
+  <p><strong>Impact:</strong> If <code>.status-effects-v0</code> is compromised, an attacker could drain or manipulate all three token types up to the per-operation limits. Since the status effects contract is hardcoded (not upgradeable within this contract), the risk is bounded but the trust surface is large.</p>
+  <p><strong>Recommendation:</strong> Consider adding bounds-checking on the modified target (e.g., assert target hasn't changed, or only allow target changes for specific operations). Document the trust assumption on <code>.status-effects-v0</code> explicitly. In a Clarity 4 migration, use <code>as-contract?</code> with explicit asset allowances to limit the blast radius.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: No Multi-Sig — Single Owner Has Full Control Despite Documentation Claims</h3>
+  </div>
+  <p><strong>Location:</strong> Admin functions (lines 99–164)</p>
+  <p><strong>Description:</strong> The contract documentation states "Owner consensus for critical changes" and "Protection against single point of failure." In reality, any single contract owner can unilaterally:</p>
+  <ul>
+    <li>Add or remove other owners</li>
+    <li>Add or remove verified interactions</li>
+    <li>Change all operation limits (including raising <code>max-mint</code> from 0)</li>
+    <li>Change the pay-to-play amount</li>
+  </ul>
+  <p>There is no threshold, timelock, or multi-sig mechanism.</p>
+  <pre><code>;; Any single owner can add new owners
+(define-public (add-contract-owner (new-owner principal))
+  (begin
+    (asserts! (is-contract-owner) ERR_UNAUTHORIZED)
+    (ok (map-set contract-owners new-owner true))))
+
+;; Any single owner can raise mint cap from 0 to unlimited
+(define-public (set-max-mint (new-max uint))
+  (begin
+    (asserts! (is-contract-owner) ERR_UNAUTHORIZED)
+    (ok (var-set max-mint new-max))))</code></pre>
+  <p><strong>Impact:</strong> A single compromised owner key can take full control: add a malicious verified interaction, raise all limits to max, and drain tokens. The documented "multi-owner" system provides no additional security over a single admin.</p>
+  <p><strong>Recommendation:</strong> Implement a multi-sig pattern requiring N-of-M owner approvals for critical operations (adding owners, changing limits, adding verified interactions). At minimum, add a timelock for limit changes.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Status Effects Execute Before Authorization — Unverified Callers Trigger External Calls</h3>
+  </div>
+  <p><strong>Location:</strong> All token operation functions (lines 172–232)</p>
+  <p><strong>Description:</strong> In every token operation, the <code>modify-*</code> call to <code>.status-effects-v0</code> executes in the <code>let</code> binding <em>before</em> the <code>is-verified</code> assertion. This means any caller — verified or not — triggers the external status effects contract call. If the status effects contract has side effects (state changes, events), unverified callers can trigger them.</p>
+  <pre><code>(define-public (reward (amount uint) (target principal))
+  ;; modify-reward executes FIRST (before auth check)
+  (let ((modified (modify-reward {amount: amount, target: target, caller: contract-caller})))
+    ;; Auth check happens AFTER the external call
+    (asserts! (is-verified contract-caller) ERR_UNVERIFIED)
+    ...))</code></pre>
+  <p><strong>Impact:</strong> Unverified contracts can trigger status effect logic. While the overall token operation will abort (Clarity rolls back on error), if the status effects contract performs any read-only tracking or emits events that survive abort, this could be exploited. In practice, since Clarity aborts all state changes on <code>asserts!</code> failure, the direct risk is limited to wasted compute.</p>
+  <p><strong>Recommendation:</strong> Move the <code>is-verified</code> check before the <code>let</code> binding to avoid unnecessary external calls and follow the checks-effects-interactions pattern.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Inconsistent Principal Check in remove-contract-owner</h3>
+  </div>
+  <p><strong>Location:</strong> <code>remove-contract-owner</code> (line 104)</p>
+  <p><strong>Description:</strong> The function uses <code>contract-caller</code> for the ownership check but <code>tx-sender</code> for the self-removal guard:</p>
+  <pre><code>(define-public (remove-contract-owner (owner principal))
+  (begin
+    (asserts! (and (is-contract-owner)                        ;; checks contract-caller
+                   (not (is-eq tx-sender owner)))             ;; checks tx-sender
+              ERR_UNAUTHORIZED)
+    (ok (map-delete contract-owners owner))))</code></pre>
+  <p>If an owner is a contract (likely in this architecture), <code>tx-sender</code> will be the original user, not the contract-owner. The self-removal protection would never trigger for contract owners calling directly. Conversely, a user whose address matches the <code>owner</code> parameter would be blocked even if they're calling through a different authorized contract.</p>
+  <p><strong>Impact:</strong> The self-removal guard may not work as intended for contract-based owners. Low severity since the multi-owner map has no minimum count anyway.</p>
+  <p><strong>Recommendation:</strong> Use <code>contract-caller</code> consistently: <code>(not (is-eq contract-caller owner))</code>.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No Minimum Owner Count — All Owners Can Be Removed</h3>
+  </div>
+  <p><strong>Location:</strong> <code>remove-contract-owner</code> (line 104)</p>
+  <p><strong>Description:</strong> There is no check to ensure at least one owner remains. Owner A can remove owner B, then there are zero remaining protections against accidentally (or intentionally) leaving the contract ownerless — at which point no admin functions can ever be called again.</p>
+  <p>The self-removal guard prevents removing yourself, but owner A can remove owner B and vice versa, potentially leaving zero owners through coordination or a race condition.</p>
+  <p><strong>Impact:</strong> If all owners are removed, the contract becomes permanently ungovernable. Limits and verified interactions are frozen forever.</p>
+  <p><strong>Recommendation:</strong> Track owner count and assert <code>(> owner-count u1)</code> before deletion.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: No Zero-Amount Validation on Token Operations</h3>
+  </div>
+  <p><strong>Location:</strong> All token operation functions</p>
+  <p><strong>Description:</strong> Operations don't validate that the amount is greater than zero. Status effects could set an amount to 0, resulting in no-op token calls that still pass all checks. While not directly exploitable, zero-amount operations waste gas and could be used to trigger side effects in downstream contracts without meaningful token movement.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (> amount u0) ERR_INVALID_AMOUNT)</code> either before or after status effect modification.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Pre-Clarity 4 — Consider Migration for Stronger Asset Safety</h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> This contract was deployed pre-Clarity 4. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-nft</code>, <code>with-stx</code>), which enforce at the language level which assets a contract can move. While this rulebook contract doesn't use <code>as-contract</code> directly (it delegates to token contracts), a v1 migration could leverage <code>restrict-assets?</code> to add language-level bounds on what operations are possible, reducing the trust surface on status effects and verified interactions.</p>
+  <p><strong>Recommendation:</strong> When deploying a v1, use Clarity 4's asset restriction primitives to limit the contract's token movement capabilities at the language level.</p>
+</div>
+
+<h2>Architecture Analysis</h2>
+
+<h3>Strengths</h3>
+<ul>
+  <li><strong>Verified interaction whitelist:</strong> Only explicitly approved contracts can trigger token operations — good defense-in-depth</li>
+  <li><strong>Per-operation caps:</strong> Hard limits on every operation type prevent unbounded token minting/burning even if a verified interaction is compromised</li>
+  <li><strong>DMG mint defaults to 0:</strong> Conservative default prevents governance token inflation unless explicitly enabled</li>
+  <li><strong>Consistent use of <code>contract-caller</code></strong> for auth checks (except L-01) — resistant to relay/proxy attacks</li>
+  <li><strong>Status effects pattern:</strong> Enables dynamic GameFi mechanics without modifying core token contracts</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li><code>.status-effects-v0</code> must be non-malicious — it can manipulate amounts and targets for all operations</li>
+  <li><code>.experience</code> and <code>.energy</code> token contracts must correctly implement mint/burn</li>
+  <li><code>SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dme000-governance-token</code> must correctly implement dmg-* functions</li>
+  <li>At least one owner must remain honest and have secure key management</li>
+  <li><code>.initialize-energy</code> (called in pay-to-play) must be safe to call repeatedly</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — transfers/mints/burns governance tokens</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — deployed on mainnet</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>2 — 275 lines, multi-contract integration</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>3 — Charisma is a well-known Stacks protocol</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 — GameFi rulebook/orchestration pattern</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total (pre-penalty)</strong></td><td><strong>2.65 / 3.0</strong></td></tr>
+  <tr><td colspan="3">Clarity version penalty (pre-Clarity 4)</td><td>−0.5</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.15 / 3.0 ✅ AUDIT</strong></td></tr>
+</table>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This is an independent security review, not a formal audit engagement. Always verify findings against the on-chain source.</p>
+</footer>
+
+</body>
+</html>
