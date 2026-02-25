@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: StackSwap liquidity-token-v5k — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>StackSwap liquidity-token-v5k</h1>
+<p class="subtitle">Factory-deployed LP token template for StackSwap AMM pairs — implements SIP-010 with mint/burn/LP-state management</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-v5kpj0x4qap?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-v5k*</a></code></td></tr>
+  <tr><td>Protocol</td><td>StackSwap — DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>) — identical template across all <code>liquidity-token-v5k*</code> instances</td></tr>
+  <tr><td>Clarity Version</td><td>1 (pre-Clarity 4 — uses <code>as-contract</code>, not <code>as-contract?</code>)</td></tr>
+  <tr><td>Lines of Code</td><td>~170</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — access control depends on external DAO contract (<code>stackswap-dao-v5k</code>) not fully reviewed here</td></tr>
+  <tr><td>Date</td><td>February 25, 2026</td></tr>
+  <tr><td>Related Audit</td><td><a href="/clarity-audit/stackswap-swap-v5k.html">StackSwap stackswap-swap-v5k (swap router)</a></td></tr>
+</table>
+
+<p><strong>Note:</strong> The requested contract identifier <code>SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-v5k04mmev0d</code> does not exist on-chain. StackSwap deploys hundreds of identical LP token contracts (one per trading pair) with random suffixes. This audit covers the shared template code, verified against the deployed instance <code>liquidity-token-v5kpj0x4qap</code>.</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>Each StackSwap trading pair gets its own LP token contract deployed from this template. The contract serves dual roles:</p>
+<ol>
+  <li><strong>SIP-010 fungible token</strong> — standard LP token that users receive when providing liquidity</li>
+  <li><strong>Pair state store</strong> — holds pool balances, fee balances, and token references (delegated from the swap router)</li>
+</ol>
+
+<p>All privileged operations (mint, burn, transfer-token, set-lp-data, initialize) are gated behind a DAO lookup: <code>(contract-call? .stackswap-dao-v5k get-qualified-name-by-name "swap")</code>. This means the swap contract's identity is resolved dynamically at call time via the DAO registry rather than hardcoded.</p>
+
+<h3>Architecture</h3>
+<p>The LP token is the data layer for each pair — it stores <code>balance-x</code>, <code>balance-y</code>, <code>shares-total</code>, and fee balances as contract variables. The swap router (<code>stackswap-swap-v5k</code>) calls <code>set-lp-data</code> to update these after every swap/add/remove operation. This is an unusual pattern — most AMMs store pair state in the router itself.</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: <code>transfer-token</code> allows arbitrary token drain via trait parameter</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer-token</code> function</p>
+  <p><strong>Description:</strong> The <code>transfer-token</code> function accepts any SIP-010 token as a trait parameter and transfers it from the LP contract's own balance to an arbitrary recipient. While access is restricted to the authorized swap contract, there is <strong>no validation</strong> that the token being transferred matches the pair's <code>token-x</code> or <code>token-y</code>.</p>
+<pre><code>(define-public (transfer-token (amount uint) (token &lt;sip-010-token&gt;) (to principal))
+  (begin
+    (asserts! (is-eq contract-caller (unwrap-panic (contract-call? .stackswap-dao-v5k
+      get-qualified-name-by-name "swap"))) (err ERR_DAO_ACCESS))
+    (unwrap! (as-contract (contract-call? token transfer amount tx-sender to none))
+      (err ERR_TOKEN_TRANSFER))
+    (ok true)
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> If any tokens besides token-x/token-y are accidentally sent to the LP contract (e.g., via airdrop or mistaken transfer), the swap contract can drain them. More critically, if the DAO registry is ever compromised to point "swap" at a malicious contract, <em>any</em> SIP-010 token held by the LP contract can be extracted — the lack of token validation widens the blast radius.</p>
+  <p><strong>Additionally:</strong> The <code>as-contract</code> block (pre-Clarity 4) gives blanket asset authority. In Clarity 4, <code>as-contract?</code> with <code>with-ft</code> could restrict transfers to only the pair's specific tokens.</p>
+  <p><strong>Recommendation:</strong> Add validation that <code>(contract-of token)</code> matches either <code>(var-get token-x)</code> or <code>(var-get token-y)</code>. On Clarity 4, migrate to <code>as-contract?</code> with explicit <code>with-ft</code> allowances.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: DAO single-point-of-failure with <code>unwrap-panic</code></h3>
+  </div>
+  <p><strong>Location:</strong> All privileged functions (mint, burn, transfer-token, initialize, initialize-swap, set-lp-data, set-fee-to-address)</p>
+  <p><strong>Description:</strong> Every privileged function calls <code>(unwrap-panic (contract-call? .stackswap-dao-v5k get-qualified-name-by-name "swap"))</code>. If the DAO contract is ever upgraded, becomes unreachable, or the "swap" key is removed from its registry, <strong>all</strong> these functions permanently revert with a panic — no error code, no recovery.</p>
+<pre><code>;; This pattern appears 7 times:
+(asserts! (is-eq contract-caller
+  (unwrap-panic (contract-call? .stackswap-dao-v5k get-qualified-name-by-name "swap")))
+  (err ERR_DAO_ACCESS))</code></pre>
+  <p><strong>Impact:</strong> If the DAO lookup fails for any reason, the LP token becomes permanently frozen — no minting, burning, or state updates possible. Existing token holders can still transfer LP tokens but cannot redeem them for underlying assets.</p>
+  <p><strong>Recommendation:</strong> Use <code>unwrap!</code> with a meaningful error code instead of <code>unwrap-panic</code>, allowing callers to handle the failure gracefully. Consider a fallback admin principal for emergency recovery.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Pair state stored in LP token creates tight coupling and consistency risk</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-lp-data</code>, <code>get-lp-data</code>, and all balance/share variables</p>
+  <p><strong>Description:</strong> The LP token stores pool state (<code>balance-x</code>, <code>balance-y</code>, <code>shares-total</code>, fee balances) that is conceptually owned by the swap router. The swap router updates this state via <code>set-lp-data</code> after operations. This means:</p>
+  <ul>
+    <li>Pool state can drift from actual token balances if <code>set-lp-data</code> and actual token transfers are not atomic</li>
+    <li>The LP token has a much larger attack surface than a standard SIP-010 token</li>
+    <li>Any bug in the swap router's state calculation propagates to the LP token's reported state</li>
+  </ul>
+  <p><strong>Impact:</strong> If the swap contract has a bug in its balance accounting (see <a href="/clarity-audit/stackswap-swap-v5k.html">swap audit</a>), the LP token faithfully stores incorrect state. Users querying <code>get-lp-data</code> get misleading information about pool reserves.</p>
+  <p><strong>Recommendation:</strong> This is an architectural concern rather than an exploitable bug. The pattern is intentional for StackSwap's design but increases systemic risk. Ideally, pool state would live in the router or be verified against actual token balances.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>NULL_PRINCIPAL</code> set to deployer, not a true null</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-constant NULL_PRINCIPAL tx-sender)</code></p>
+  <p><strong>Description:</strong> <code>NULL_PRINCIPAL</code> is used as the initial value for <code>token-x</code> and <code>token-y</code> before initialization. However, it's set to <code>tx-sender</code> (the deployer), not an actual burn address or unspendable principal. If initialization is delayed, <code>get-tokens</code> returns the deployer's address as both token principals.</p>
+  <p><strong>Impact:</strong> Low — any external system reading <code>get-tokens</code> before <code>initialize-swap</code> gets misleading data. The <code>is-initialized</code> and <code>is-in-swap</code> guards prevent actual operations on uninitialized pairs.</p>
+  <p><strong>Recommendation:</strong> Use a well-known burn address or add a read-only function that checks initialization status.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: No max supply on fungible token</h3>
+  </div>
+  <p><strong>Location:</strong> <code>(define-fungible-token liquidity-token)</code></p>
+  <p><strong>Description:</strong> The fungible token is defined without a max supply parameter. Minting is unlimited (subject to DAO access control). This is standard for LP tokens — supply is determined by liquidity deposits — but worth noting that supply has no protocol-level cap.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Pre-Clarity 4 — uses <code>as-contract</code> without asset restrictions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer-token</code> function</p>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> (Clarity 1) which grants blanket authority over all assets the contract holds. Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances would limit the blast radius. Since this contract was deployed before Clarity 4, this is informational.</p>
+  <p><strong>Recommendation:</strong> Future versions should migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances in <code>transfer-token</code>.</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: Verbose debug <code>print</code> statements in production</h3>
+  </div>
+  <p><strong>Location:</strong> <code>mint</code>, <code>burn</code>, <code>initialize</code>, <code>initialize-swap</code></p>
+  <p><strong>Description:</strong> Multiple <code>print</code> statements emit debug logs in production (e.g., <code>(print "token-liquidity.mint")</code>, <code>(print (some contract-caller))</code>). While these don't affect security, they increase transaction event noise and gas cost slightly.</p>
+</div>
+
+<h2>Positive Patterns</h2>
+<ul>
+  <li><strong>Proper SIP-010 transfer guard:</strong> <code>(asserts! (is-eq from tx-sender) ...)</code> prevents unauthorized transfers</li>
+  <li><strong>One-time initialization:</strong> Both <code>initialize</code> and <code>initialize-swap</code> use boolean flags to prevent re-initialization</li>
+  <li><strong>LP token validation in set-lp-data:</strong> Checks <code>(is-eq (as-contract tx-sender) (get liquidity-token data))</code> to ensure state updates target the correct LP contract</li>
+  <li><strong>Token pair validation in set-lp-data:</strong> Verifies <code>token-x-input</code> and <code>token-y-input</code> match stored pair tokens</li>
+  <li><strong>DAO-mediated access control:</strong> Dynamic lookup allows the protocol to upgrade the swap contract without redeploying all LP tokens</li>
+</ul>
+
+<h2>Summary</h2>
+
+<p>The StackSwap LP token template is a reasonably well-structured contract that combines SIP-010 token functionality with AMM pair state management. The main concern is <strong>H-01</strong>: the <code>transfer-token</code> function doesn't validate the token parameter against the pair's actual tokens, widening the blast radius if the DAO registry is compromised. The <code>unwrap-panic</code> pattern (M-01) creates brittleness — a DAO misconfiguration could permanently freeze all LP operations across every pair.</p>
+
+<p>The architecture of storing pair state in LP tokens (M-02) is an intentional design choice that enables upgradeability but increases coupling. This audit should be read alongside the <a href="/clarity-audit/stackswap-swap-v5k.html">StackSwap swap router audit</a> for the full picture.</p>
+
+<footer>
+  <p>cocoa007 ☕ · Independent Clarity auditor · <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a></p>
+</footer>
+
+</body>
+</html>
