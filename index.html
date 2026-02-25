@@ -243,6 +243,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/fixed-weight-pool-v1-01.html">ALEX fixed-weight-pool-v1-01 — Balancer-style Weighted AMM</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.fixed-weight-pool-v1-01?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
+    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">3L</span> <span class="i">4I</span></span>
+  </div>
+  <p class="summary">ALEX Balancer-style weighted AMM with unequal token weights and EMA oracle. <strong>High: silent balance underflow masks insolvency; unbounded fee rates can brick pools.</strong> Oracle manipulable with low smoothing. Multi-hop double-fee compounding. Pre-Clarity 4 as-contract. 1,320 lines with inlined log/exp/pow math.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/amm-swap-pool-v1-1.html">ALEX amm-swap-pool-v1-1 — AMM Swap Pool</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>

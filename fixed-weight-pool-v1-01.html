@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX Fixed Weight Pool v1-01 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX Fixed Weight Pool v1-01</h1>
+<p class="subtitle">Balancer-style weighted AMM pool — supports unequal token weights, TWAP oracle, multi-hop routing via wSTX, and LP token management</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.fixed-weight-pool-v1-01?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.fixed-weight-pool-v1-01</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://alexlab.co">ALEX</a> — leading DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</td></tr>
+  <tr><td>Lines of Code</td><td>1,320</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — complex math library inlined, multi-contract system (vault, weighted-equation, reserve-pool)</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">3</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">4</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  <code>fixed-weight-pool-v1-01</code> is ALEX's original Balancer-style AMM. Unlike equal-weight (50/50) pools, this contract allows arbitrary weight ratios (e.g. 80/20), enabling pools where one token dominates price exposure. The contract:
+</p>
+<ul>
+  <li>Creates weighted pools with configurable token weight ratios</li>
+  <li>Routes all non-wSTX swaps through wSTX as an intermediate hop</li>
+  <li>Includes an exponential moving average (EMA) TWAP oracle</li>
+  <li>Delegates math to <code>weighted-equation-v1-01</code> and custody to <code>alex-vault</code></li>
+  <li>Embeds a full Balancer-style fixed-point math library (log/exp/pow) inline</li>
+</ul>
+
+<h2>Architecture</h2>
+<p>Key dependencies:</p>
+<ul>
+  <li><code>.alex-vault</code> — token custody (holds all pool assets)</li>
+  <li><code>.alex-reserve-pool</code> — fee collection</li>
+  <li><code>.weighted-equation-v1-01</code> — Balancer weighted math (get-y-given-x, etc.)</li>
+  <li><code>.token-wstx</code> — wrapped STX used as routing intermediary</li>
+  <li>Pool tokens are external SIP-010 contracts with <code>mint-fixed</code>/<code>burn-fixed</code> interfaces</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Balance underflow protection masks insolvency</h3>
+  </div>
+  <p><strong>Location:</strong> <code>reduce-position</code>, <code>swap-wstx-for-y</code>, <code>swap-y-for-wstx</code></p>
+  <p><strong>Description:</strong> Throughout the contract, balance updates use a pattern that silently floors to zero instead of reverting on underflow:</p>
+<pre><code>balance-x: (if (&lt;= balance-x dx) u0 (- balance-x dx)),
+balance-y: (if (&lt;= balance-y dy) u0 (- balance-y dy))</code></pre>
+  <p><strong>Impact:</strong> If the pool's internal accounting ever drifts from actual vault holdings (due to rounding, external vault interactions, or bugs in weighted-equation), the pool will silently become insolvent — setting balances to zero rather than reverting. This masks the accounting error and allows subsequent LPs or swappers to absorb the loss. A pool with balance-x = 0 and balance-y = 0 but nonzero total-supply would strand all LP tokens.</p>
+  <p><strong>Recommendation:</strong> Replace the underflow guard with a hard assertion: <code>(asserts! (&gt; balance-x dx) ERR-INSUFFICIENT-BALANCE)</code>. If the pool truly doesn't have enough tokens, the transaction should revert, not silently corrupt state.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-02: Fee-to-address can set arbitrary fee rates with no upper bound</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-fee-rate-x</code>, <code>set-fee-rate-y</code></p>
+<pre><code>(define-public (set-fee-rate-x (token-x principal) ... (fee-rate-x uint))
+    (let ((pool ...))
+        (asserts! (or (is-eq tx-sender (get fee-to-address pool))
+                      (is-ok (check-is-owner))) ERR-NOT-AUTHORIZED)
+        (map-set pools-data-map ... (merge pool { fee-rate-x: fee-rate-x }))
+        (ok true)))</code></pre>
+  <p><strong>Impact:</strong> The <code>fee-to-address</code> (multisig/DAO) can set fee rates to any value including 100% (<code>ONE_8</code>) or higher. A fee rate of <code>ONE_8</code> means <code>dx-net-fees</code> becomes zero (or the fee exceeds the input), effectively bricking the pool for swappers. There's also no cap on <code>fee-rebate</code> — it could exceed 100%, causing the pool to retain more fees than collected.</p>
+  <p><strong>Recommendation:</strong> Add upper-bound validation: <code>(asserts! (&lt; fee-rate-x MAX-FEE-RATE) ERR-FEE-TOO-HIGH)</code> where <code>MAX-FEE-RATE</code> is a reasonable cap (e.g., 10% = <code>u10000000</code>). Similarly cap <code>fee-rebate</code> to <code>&lt;= ONE_8</code>.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Oracle resilient price can be manipulated via large swaps</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-wstx-for-y</code>, <code>swap-y-for-wstx</code> — oracle update</p>
+<pre><code>oracle-resilient: (if (get oracle-enabled pool)
+    (try! (get-oracle-resilient .token-wstx token-y weight-x weight-y))
+    u0)</code></pre>
+  <p><strong>Description:</strong> The oracle-resilient price is an EMA that blends the instant spot price (post-swap) with the previous resilient price. However, <code>get-oracle-resilient</code> is called <em>after</em> the pool balances have been updated in the current swap's pool-updated merge. Since the map is set after the oracle read, the oracle actually reads the <em>pre-swap</em> balances (the map hasn't been updated yet). This is actually safer than it appears — but the oracle-average weighting still means a single large swap shifts the resilient price by <code>(1 - oracle-average)</code> fraction of the price impact. With a low <code>oracle-average</code> (e.g., 0.05), a single swap moves the resilient price by 95% of the spot move.</p>
+  <p><strong>Impact:</strong> If other contracts rely on <code>get-oracle-resilient</code> for lending or liquidation decisions, a flash-loan-style large swap can significantly shift the oracle in a single transaction. Stacks doesn't have flash loans natively, but multi-call transactions can approximate this.</p>
+  <p><strong>Recommendation:</strong> Consider enforcing a minimum <code>oracle-average</code> (e.g., ≥ 50%) to limit single-block manipulation. Alternatively, use a block-height-gated TWAP that only updates once per block.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Swap invariant check allows full pool drainage in edge cases</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-wstx-for-y</code> (line ~485), <code>swap-y-for-wstx</code> (line ~530)</p>
+<pre><code>;; swap-wstx-for-y:
+(asserts! (&lt; (div-down dy dx-net-fees)
+             (div-down (mul-down balance-y weight-x)
+                       (mul-down balance-x weight-y)))
+          ERR-INVALID-LIQUIDITY)
+
+;; swap-y-for-wstx:
+(asserts! (&gt; (div-down dy-net-fees dx)
+             (div-down (mul-down balance-y weight-x)
+                       (mul-down balance-x weight-y)))
+          ERR-INVALID-LIQUIDITY)</code></pre>
+  <p><strong>Description:</strong> These checks verify the effective swap price is "better" than the marginal price, which should always hold for constant-product math. However, they don't limit the <em>size</em> of the swap relative to pool liquidity. A swap that drains 99% of one side is allowed as long as the price check passes. Combined with the balance-floor-to-zero pattern (H-01), this could leave a pool in a degenerate state.</p>
+  <p><strong>Impact:</strong> Very large swaps relative to pool size cause extreme slippage and can leave the pool nearly empty on one side, making subsequent swaps extremely expensive. This is standard AMM behavior but combined with H-01 creates additional risk.</p>
+  <p><strong>Recommendation:</strong> Consider adding a maximum swap size relative to pool balance (e.g., no single swap can drain more than 50% of either token balance).</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Pool token trait not validated at pool creation</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+  <p><strong>Description:</strong> The <code>create-pool</code> function stores the pool token principal but only validates token matching in <code>add-to-position</code> and <code>reduce-position</code>. If the contract owner creates a pool with a malicious pool token that has unrestricted <code>mint-fixed</code>, anyone with that token contract's mint authority could mint LP tokens without depositing, then call <code>reduce-position</code> to drain pool funds.</p>
+  <p><strong>Impact:</strong> Since pool creation is owner-restricted, this is a trust assumption on the owner. However, if ownership transfers to a DAO or multisig, the risk surface expands.</p>
+  <p><strong>Recommendation:</strong> Document this trust assumption clearly. Consider adding a validation that the pool token's owner/minter is set to the fixed-weight-pool contract itself at creation time.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>reduce-position</code> uses <code>unwrap-panic</code> for balance query</h3>
+  </div>
+  <p><strong>Location:</strong> <code>reduce-position</code></p>
+<pre><code>(total-shares (unwrap-panic (contract-call? pool-token-trait get-balance-fixed tx-sender)))</code></pre>
+  <p><strong>Description:</strong> If the pool token contract's <code>get-balance-fixed</code> returns an error (e.g., the trait implementation is buggy or the contract is upgraded), this will abort the entire transaction with a runtime panic rather than returning a graceful error.</p>
+  <p><strong>Recommendation:</strong> Use <code>(unwrap! ... ERR-TRANSFER-FAILED)</code> for graceful error propagation.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Fee calculation can zero out swap input</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-wstx-for-y</code>, <code>swap-y-for-wstx</code></p>
+<pre><code>(fee (mul-up dx (get fee-rate-x pool)))
+(dx-net-fees (if (&lt;= dx fee) u0 (- dx fee)))</code></pre>
+  <p><strong>Description:</strong> If fee ≥ dx (possible with high fee rates or small swaps due to <code>mul-up</code> rounding), <code>dx-net-fees</code> becomes zero. A zero input to the weighted equation would produce zero output, and the user loses their entire input as fees.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&gt; dx-net-fees u0) ERR-INVALID-LIQUIDITY)</code> after the fee calculation.</p>
+</div>
+
+<!-- L-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-03: No re-entrancy concern but <code>as-contract</code> gives blanket asset access</h3>
+  </div>
+  <p><strong>Location:</strong> Multiple — all <code>as-contract</code> calls</p>
+  <p><strong>Description:</strong> The contract uses pre-Clarity 4 <code>as-contract</code> which gives unrestricted asset access within the expression scope. While Clarity's execution model prevents re-entrancy (no callbacks during contract-call?), the blanket access means any future code changes or upgrades within the <code>as-contract</code> block could accidentally authorize unintended asset transfers.</p>
+  <p><strong>Recommendation:</strong> When migrating to Clarity 4, replace <code>as-contract</code> with <code>as-contract?</code> using explicit <code>with-ft</code>/<code>with-stx</code> allowances for each token being transferred.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Inlined math library duplicates code across ALEX contracts</h3>
+  </div>
+  <p><strong>Description:</strong> The entire Balancer-style log/exp/pow math library (~320 lines) is inlined in this contract. The same code appears in <code>amm-swap-pool-v1-1</code> and likely other ALEX pool contracts. This increases deployment cost and makes bug fixes require redeploying every pool contract.</p>
+  <p><strong>Recommendation:</strong> The math is already delegated for some functions via <code>weighted-equation-v1-01</code>. Consider moving all math to a shared library contract.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Multi-hop routing adds hidden fee compounding</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> When neither token is wSTX, swaps route through two pools (token-x → wSTX → token-y). Each hop applies its own fee. Users may not realize they're paying fees twice. The intermediate swap in <code>swap-x-for-y</code> passes <code>none</code> for min-dy, meaning the intermediate hop has no slippage protection.</p>
+  <p><strong>Recommendation:</strong> Document the double-fee behavior. Consider adding end-to-end slippage protection that covers both hops (the outer <code>min-dy</code> partially addresses this but only on the final output).</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: Pool count hard-capped at 500</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+<pre><code>(var-set pools-list (unwrap! (as-max-len? (append (var-get pools-list) pool-id) u500) ERR-TOO-MANY-POOLS))</code></pre>
+  <p><strong>Description:</strong> The pools-list is limited to 500 entries. Once reached, no new pools can be created. This is a deployment constraint, not a bug, but worth noting for long-term scalability.</p>
+</div>
+
+<!-- I-04 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-04: Owner set to executor-dao at deployment</h3>
+  </div>
+  <p><strong>Location:</strong> Last line of contract</p>
+<pre><code>(set-contract-owner .executor-dao)</code></pre>
+  <p><strong>Description:</strong> The contract owner is initialized to <code>.executor-dao</code> at deploy time. This is the correct pattern — governance via DAO rather than an EOA. The <code>set-contract-owner</code> function allows ownership transfer, which is appropriate for DAO upgrades.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Duplicate pool prevention:</strong> <code>create-pool</code> checks both token orderings, preventing the same pair from being created twice with swapped positions.</li>
+  <li><strong>Pool token validation:</strong> <code>add-to-position</code> and <code>reduce-position</code> verify the passed pool token trait matches the stored pool token principal (CR-01 comment suggests this was a patched issue).</li>
+  <li><strong>Slippage protection:</strong> Both <code>min-dy</code>/<code>min-dx</code> on swaps and <code>max-dy</code> on liquidity adds protect users from sandwich attacks.</li>
+  <li><strong>DAO ownership:</strong> Contract is governed by <code>executor-dao</code>, not an EOA.</li>
+  <li><strong>Fee rebate mechanism:</strong> Portion of fees returned to LPs via balance increase, aligning incentives.</li>
+  <li><strong>Well-documented:</strong> NatSpec-style comments on all public functions.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>
+  The ALEX Fixed Weight Pool is a mature, deployed contract implementing Balancer-style weighted AMM mechanics. The core swap and liquidity logic is sound, delegating complex math to a dedicated equation contract. The main concerns are operational: unbounded fee rates (H-02) could brick pools if governance is compromised, and the silent underflow protection (H-01) could mask insolvency rather than failing safely. The oracle implementation (M-01) is a standard EMA design but could be manipulated with low smoothing factors. As a pre-Clarity 4 contract, it uses blanket <code>as-contract</code> — migration to <code>as-contract?</code> with explicit allowances would improve safety.
+</p>
+<p>
+  Overall, this is a well-structured DeFi contract with appropriate access controls and slippage protections. The findings are primarily defense-in-depth improvements rather than exploitable vulnerabilities in the current deployment context.
+</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ☕ — <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This is an independent security review, not a formal audit. No warranty is provided. Always verify findings against the source code.</p>
+</footer>
+
+</body>
+</html>
