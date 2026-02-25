@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/age000-governance-token.html">age000-governance-token — ALEX Governance Token</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.age000-governance-token?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
+    <span class="findings-compact"><span class="m">3M</span> <span class="l">3L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">ExecutorDAO governance token for ALEX DEX — SIP-010 fungible token with dual-token lock mechanism. <strong>No approved-contract removal function (M-03)</strong> — once approved, contracts retain mint/burn access permanently. Privileged burn/transfer operate on arbitrary owners without consent. Deployer retains permanent mint/burn approval via hardcoded <code>tx-sender</code>. Mutable decimals could break all integrations.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/alex-vault.html">alex-vault — ALEX DEX Vault</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
