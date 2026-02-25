@@ -568,6 +568,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/ststx-token.html">stSTX Token (StackingDAO) — Liquid Staking Token</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
+    <span class="findings-compact"><span class="m">1M</span> <span class="l">1L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">SIP-010 liquid staking token for StackingDAO. DAO-gated mint/burn with clean architecture. <strong>Medium: inconsistent auth — <code>set-token-uri</code> checks <code>tx-sender</code> while mint/burn check <code>contract-caller</code>.</strong> Protocol contracts can burn from any address. Pre-Clarity 4.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/stacking-dao-core-v3.html">StackingDAO Core v3 — Liquid Stacking (v3 upgrade)</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
