@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/amm-swap-pool-v1-1.html">ALEX amm-swap-pool-v1-1 — AMM Swap Pool</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Core ALEX DEX AMM — hybrid constant-product/constant-sum curve with oracle. <strong>High: multi-hop swaps (3-4 hops) have zero slippage protection.</strong> Fee rates unbounded; saturating balance subtraction can desync pool state from vault. Pre-Clarity 4 as-contract.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/age000-governance-token.html">age000-governance-token — ALEX Governance Token</a>
     <span class="confidence">🟢 HIGH</span>
   </div>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ALEX AMM Swap Pool v1-1 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ALEX AMM Swap Pool v1-1</h1>
+<p class="subtitle">Core AMM pool contract for the ALEX DEX — weighted constant-product/constant-sum hybrid with oracle integration, multi-hop routing, and LP token management</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://alexlab.co">ALEX</a> — leading DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</td></tr>
+  <tr><td>Lines of Code</td><td>1,071</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — complex math library, multi-contract system (vault, LP tokens)</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">4</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>This is the core AMM swap pool contract for the ALEX DEX, the largest decentralized exchange on Stacks. The contract implements a <strong>hybrid constant-product / constant-sum</strong> bonding curve parameterized by a <code>factor</code> weight, supporting:</p>
+
+<ul>
+  <li>Weighted pool creation with configurable token pairs</li>
+  <li>Liquidity provision and withdrawal with LP token minting/burning</li>
+  <li>Single and multi-hop swaps (up to 5 hops via helper functions)</li>
+  <li>EWMA (exponentially weighted moving average) oracle for resilient pricing</li>
+  <li>Configurable fee rates, max-in/out ratios, and trading thresholds</li>
+  <li>Pause functionality and pool time-windowing via start/end blocks</li>
+</ul>
+
+<p>The contract delegates actual token custody to <code>.alex-vault-v1-1</code> and LP token accounting to <code>.token-amm-swap-pool-v1-1</code>. It includes a full fixed-point math library (~400 lines) implementing <code>exp</code>, <code>ln</code>, <code>pow</code> for the weighted curve calculations.</p>
+
+<h2>Architecture</h2>
+
+<p>Pools are identified by a <code>(token-x, token-y, factor)</code> triple. The <code>factor</code> parameter controls the bonding curve shape:</p>
+<ul>
+  <li>When <code>factor &gt;= switch-threshold</code> (default 0.8): uses a linear-product hybrid formula</li>
+  <li>When <code>factor &lt; switch-threshold</code>: uses power-law curve <code>x^(1-t) + y^(1-t) = k</code></li>
+</ul>
+
+<p>This dual-mode approach allows pools to range from constant-sum-like (low slippage, concentrated) to constant-product-like behavior depending on the weight parameter.</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Multi-Hop Swaps Have No Intermediate Slippage Protection</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-helper-a</code>, <code>swap-helper-b</code>, <code>swap-helper-c</code></p>
+  <p><strong>Description:</strong> The multi-hop swap helper functions pass <code>none</code> for the <code>min-dy</code> / <code>min-dx</code> parameter on all intermediate hops. Only the final hop in <code>swap-helper-a</code> respects the user's slippage parameter. The higher-order helpers (<code>swap-helper-b</code>, <code>swap-helper-c</code>) don't even pass the user's <code>min-dw</code> / <code>min-dv</code> to the final hop.</p>
+  <pre><code>;; swap-helper-b: user's min-dw is IGNORED
+(define-public (swap-helper-b 
+    (token-x-trait &lt;ft-trait&gt;) (token-y-trait &lt;ft-trait&gt;) 
+    (token-z-trait &lt;ft-trait&gt;) (token-w-trait &lt;ft-trait&gt;) 
+    (factor-x uint) (factor-y uint) (factor-z uint)
+    (dx uint) (min-dw (optional uint)))
+    (swap-helper token-z-trait token-w-trait factor-z 
+        (try! (swap-helper-a token-x-trait token-y-trait 
+               token-z-trait factor-x factor-y dx none)) 
+        none)  ;; &lt;-- min-dw never used!
+)</code></pre>
+  <p><strong>Impact:</strong> Users executing 3-hop or 4-hop swaps via <code>swap-helper-b</code> or <code>swap-helper-c</code> have <strong>zero slippage protection</strong>. A sandwich attacker can extract maximum value from these trades. Even <code>swap-helper-a</code> (2-hop) lacks protection on the first hop, allowing partial sandwich extraction.</p>
+  <p><strong>Recommendation:</strong> Pass the user's minimum output parameter to the final <code>swap-helper</code> call. Consider also computing intermediate minimum amounts based on expected rates to protect each hop individually.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Fee Can Consume Entire Swap Amount</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> When the fee rate is set high enough that <code>fee &gt;= dx</code>, the net amount becomes zero via saturating subtraction:</p>
+  <pre><code>(fee (mul-up dx (get fee-rate-x pool)))
+(dx-net-fees (if (&lt;= dx fee) u0 (- dx fee)))</code></pre>
+  <p>The swap proceeds with <code>dx-net-fees = 0</code>, which passes the <code>(asserts! (&gt; dx u0))</code> check (since <code>dx</code> is the gross amount). The user sends tokens but receives nothing. The fee accounting also breaks: <code>(- fee fee-rebate)</code> sends the full fee to reserves while the pool balance increases by zero.</p>
+  <p><strong>Impact:</strong> If the pool owner or contract owner sets an extremely high fee rate (≥ 100%), users lose their entire swap input to fees. While this requires malicious admin action, the contract doesn't bound fee rates.</p>
+  <p><strong>Recommendation:</strong> Add a maximum fee rate constant (e.g., 10%) enforced in <code>set-fee-rate-x</code> and <code>set-fee-rate-y</code>. Alternatively, assert <code>(&gt; dx-net-fees u0)</code> after fee deduction.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Saturating Balance Subtraction Can Desync Pool State from Vault</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code>, <code>reduce-position</code></p>
+  <p><strong>Description:</strong> Balance updates use saturating subtraction patterns like:</p>
+  <pre><code>balance-y: (if (&lt;= balance-y dy) u0 (- balance-y dy))</code></pre>
+  <p>If due to rounding or edge conditions <code>dy &gt; balance-y</code>, the pool's recorded balance goes to zero while the vault still holds the real tokens. This creates a permanent desync — the pool's internal accounting no longer reflects actual vault holdings.</p>
+  <p><strong>Impact:</strong> Desynced accounting means pool pricing becomes incorrect. Remaining LPs may not be able to withdraw their full share. In the worst case, tokens become permanently locked in the vault with no pool balance to claim them against.</p>
+  <p><strong>Recommendation:</strong> Replace saturating subtraction with strict subtraction that reverts the transaction if the balance would underflow. This ensures accounting always stays consistent with actual transfers.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Oracle Price Manipulation via Large Trades</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code>, <code>get-oracle-resilient</code></p>
+  <p><strong>Description:</strong> The oracle updates <code>oracle-resilient</code> on every swap using an EWMA formula:</p>
+  <pre><code>oracle-resilient: (+ (mul-down (- ONE_8 oracle-average) instant-price) 
+                     (mul-down oracle-average oracle-resilient))</code></pre>
+  <p>The issue is that <code>oracle-resilient</code> is updated <strong>before</strong> the pool balances are modified in the map-set, but the <code>get-oracle-instant</code> call reads from the <strong>pre-swap</strong> pool state. This means the oracle always lags by one trade. More critically, a large trade can significantly shift the instant price, and repeated trades in the same block can compound the oracle shift.</p>
+  <p><strong>Impact:</strong> An attacker with sufficient capital can manipulate the oracle price by executing a series of large swaps in a single block. Any external contract relying on <code>get-oracle-resilient</code> for pricing decisions (liquidations, collateral valuation) could be exploited.</p>
+  <p><strong>Recommendation:</strong> Consider updating the oracle based on the <strong>pre-trade</strong> balances explicitly, or use a time-weighted mechanism that limits per-block oracle movement. Document the oracle's security properties so downstream consumers understand the manipulation bounds.</p>
+</div>
+
+<!-- M-04 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-04: Pre-Clarity 4 <code>as-contract</code> — Blanket Asset Access</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-to-position</code>, <code>reduce-position</code>, <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> (pre-Clarity 4) for all vault interactions and LP token operations. This grants blanket access to all assets the contract holds or can access during those calls.</p>
+  <pre><code>(as-contract (try! (contract-call? .alex-vault-v1-1 transfer-ft token-y-trait dy sender)))
+(as-contract (try! (contract-call? .token-amm-swap-pool-v1-1 mint-fixed ...)))</code></pre>
+  <p><strong>Impact:</strong> If any of the called contracts (vault, LP token) have vulnerabilities or if a malicious token trait is passed, the <code>as-contract</code> scope gives broader access than necessary. Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances would limit the blast radius.</p>
+  <p><strong>Recommendation:</strong> When migrating to Clarity 4, replace <code>as-contract</code> with <code>as-contract?</code> using explicit asset allowances (e.g., <code>(with-ft .token-amm-swap-pool-v1-1)</code>).</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No Fee Rate Bounds Validation</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-fee-rate-x</code>, <code>set-fee-rate-y</code></p>
+  <p><strong>Description:</strong> Fee rates can be set to any <code>uint</code> value, including values exceeding <code>ONE_8</code> (100%). The pool owner or contract owner can set arbitrarily high fees without any upper bound check.</p>
+  <p><strong>Impact:</strong> A compromised or malicious pool owner/admin could set fees to extract all value from swaps. This is partially mitigated by the fact that users can check fee rates before trading, and post-conditions can limit token outflow.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&lt;= fee-rate-x MAX-FEE-RATE) ERR-...)</code> with a reasonable maximum (e.g., <code>u10000000</code> = 10%).</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Pool Created with Zero Max-In/Out Ratios Blocks All Trading</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+  <p><strong>Description:</strong> New pools are created with <code>max-in-ratio: u0</code> and <code>max-out-ratio: u0</code>, as well as <code>start-block: u340282366920938463463374607431768211455</code> (uint max). The swap functions assert <code>(&lt; dx (mul-down balance-x max-in-ratio))</code>, which with <code>max-in-ratio = 0</code> means <code>dx &lt; 0</code> — always false.</p>
+  <p><strong>Impact:</strong> Newly created pools cannot process any swaps until the pool owner or contract owner explicitly sets ratios and adjusts the start/end blocks. This is likely intentional (pool setup phase), but it's a silent failure — the pool appears created but is non-functional.</p>
+  <p><strong>Recommendation:</strong> Document this setup requirement clearly. Consider requiring non-zero ratios in <code>create-pool</code> or adding a separate <code>activate-pool</code> function.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Centralized Admin Powers</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-contract-owner</code>, <code>pause</code>, <code>set-switch-threshold</code></p>
+  <p><strong>Description:</strong> The contract owner (deployer) has broad unilateral powers: pause all trading, change the global switch threshold (affecting all pools' bonding curve behavior), transfer ownership, set fee rebates, and change pool owners. There is no timelock, multisig, or governance mechanism.</p>
+  <p><strong>Impact:</strong> Standard centralization risk. The owner can effectively halt the entire DEX or change economic parameters instantly. Users must trust the ALEX team's key management practices.</p>
+  <p><strong>Recommendation:</strong> Consider governance-controlled ownership, timelocked parameter changes, or at minimum a multisig for the owner role.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Permissionless Pool Creation with Arbitrary Token Traits</h3>
+  </div>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+  <p><strong>Description:</strong> Anyone can create a pool with any two tokens implementing the SIP-010 trait. There's no allowlist for token contracts. Combined with the trait-based <code>as-contract</code> calls, a malicious token contract could potentially execute unexpected logic during <code>transfer-fixed</code> calls within the swap/liquidity functions.</p>
+  <p><strong>Impact:</strong> Low practical risk since Clarity doesn't have reentrancy, but malicious tokens could revert transfers selectively, manipulate return values, or emit misleading events. Pool creation spam is also possible.</p>
+  <p><strong>Recommendation:</strong> Consider a token allowlist for production pools, or flag unverified pools in the UI layer.</p>
+</div>
+
+<h2>Positive Observations</h2>
+
+<ul>
+  <li><strong>Robust math library:</strong> The fixed-point <code>exp</code>/<code>ln</code>/<code>pow</code> implementation uses established algorithms with proper rounding direction (<code>mul-up</code>/<code>mul-down</code>, <code>pow-up</code>/<code>pow-down</code>) for conservative bounds</li>
+  <li><strong>Max-in/out ratio limits:</strong> Each pool enforces maximum single-swap size relative to pool depth, limiting whale manipulation</li>
+  <li><strong>Dual-mode bonding curve:</strong> The threshold-based switch between linear-product and power-law formulas is elegant and handles edge cases</li>
+  <li><strong>Oracle design:</strong> EWMA approach provides manipulation resistance compared to spot price alone</li>
+  <li><strong>Vault separation:</strong> Token custody is delegated to a separate vault contract, limiting this contract's direct asset exposure</li>
+  <li><strong>Pause mechanism:</strong> Emergency pause available for incident response</li>
+</ul>
+
+<h2>Score Rationale</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Rationale</th></tr>
+  <tr><td>Financial Risk</td><td>3</td><td>Core DEX contract holding significant TVL via vault</td></tr>
+  <tr><td>Deployment</td><td>3</td><td>Deployed on mainnet, actively used</td></tr>
+  <tr><td>Complexity</td><td>3</td><td>1,071 lines, advanced math, multi-contract interaction</td></tr>
+  <tr><td>User Exposure</td><td>3</td><td>ALEX is the largest DEX on Stacks</td></tr>
+  <tr><td>Novelty</td><td>1</td><td>AMM pattern well-studied, but hybrid curve is unique</td></tr>
+  <tr><td colspan="2"><strong>Final Score</strong></td><td><strong>2.7</strong> (threshold: 1.8) — pre-Clarity 4 penalty: <strong>2.2</strong></td></tr>
+</table>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ☕ — <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is provided as-is for informational purposes. It does not constitute financial advice or a guarantee of contract security.</p>
+</footer>
+
+</body>
+</html>
