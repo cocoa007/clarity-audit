@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit #29: StackMart Tips (SMT) — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Audit #29: StackMart Tips (SMT)</h1>
+<p class="subtitle">SIP-010 fungible token with allowances, staking, governance, blacklist, pause, and fee mechanisms</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP34MN3DMM07BNAWYJSHTS4B08T8JRVK8AT810X1B.stackmart-tips?chain=mainnet">SP34MN3DMM07BNAWYJSHTS4B08T8JRVK8AT810X1B.stackmart-tips</a></code></td></tr>
+  <tr><td>Token</td><td>StackMart Tips (SMT) — 1B supply, 6 decimals</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Not specified (pre-Clarity 4)</td></tr>
+  <tr><td>Lines of Code</td><td>~350</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — single contract, all code reviewed, findings verified against source</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">2</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>StackMart Tips (SMT) is a SIP-010 fungible token deployed on Stacks mainnet. It goes far beyond a basic token — it bundles allowance/approve mechanics (ERC-20 style), staking with reward tracking, on-chain governance proposals, a blacklist/pause system, transfer fees, and emergency withdrawal. The contract suffers from a <strong>fundamental architectural flaw</strong>: it maintains two independent balance systems (a <code>token-balances</code> map and Clarity's native <code>define-fungible-token</code>) that are never synchronized, rendering most token operations broken or inconsistent.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Dual balance tracking</strong>: Manual <code>token-balances</code> map + native <code>define-fungible-token smt-token</code></li>
+  <li><strong>Allowance system</strong>: ERC-20 style approve/transfer-from with increase/decrease/revoke</li>
+  <li><strong>Staking</strong>: Soft staking — tracks staked amounts in a map but tokens remain transferable</li>
+  <li><strong>Governance</strong>: Proposal creation, voting weighted by token balance</li>
+  <li><strong>Admin controls</strong>: Pause, blacklist, fee rate, emergency mode — all owner-only</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (token + staking + fees)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>2 (~350 lines, multiple subsystems)</td><td>2</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>1 (unknown project)</td><td>1.5</td><td>1.5</td></tr>
+  <tr><td>Novelty</td><td>2 (all-in-one token pattern)</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.35 / 3.0</strong> (−0.5 Clarity version penalty → 1.85 ✅)</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge critical">CRITICAL</span>
+    <h3>C-01: Dual balance system — initial supply exists only in map, not in fungible token</h3>
+  </div>
+  <p><strong>Location:</strong> Contract initialization + <code>transfer</code></p>
+  <p><strong>Description:</strong> The contract initializes the owner's balance in the <code>token-balances</code> map but never calls <code>ft-mint?</code> to create actual fungible token balances. The <code>transfer</code> function checks the map balance but then calls <code>ft-transfer?</code>, which operates on the ft balance (which is zero). This means the entire initial supply of 1 billion tokens is <strong>permanently untransferable</strong>.</p>
+  <pre><code>;; Sets map balance — but ft balance remains 0
+(map-set token-balances contract-owner total-supply)
+
+;; Defines ft with max supply — but mints nothing
+(define-fungible-token smt-token total-supply)
+
+;; transfer checks map balance (passes) then calls ft-transfer (FAILS — 0 ft balance)
+(define-public (transfer (amount uint) (from principal) (to principal) ...)
+  (let ((from-balance (default-to u0 (map-get? token-balances from))))
+    (asserts! (&gt;= from-balance amount) err-insufficient-balance)
+    (try! (ft-transfer? smt-token amount from to))  ;; &lt;— always fails for initial supply
+    ...</code></pre>
+  <p><strong>Impact:</strong> The initial 1B token allocation to the deployer is locked. <code>transfer</code> will always revert because the ft balance is zero. Only tokens created via <code>mint</code> (which calls <code>ft-mint?</code>) can be transferred — but those minted tokens won't appear in <code>get-balance</code> (which reads the map).</p>
+  <p><strong>Recommendation:</strong> Remove the manual <code>token-balances</code> map entirely. Use only <code>define-fungible-token</code> with <code>ft-mint?</code> for the initial allocation, and <code>ft-get-balance</code> for balance queries.</p>
+  <pre><code>;; Exploit test for C-01
+(define-public (test-exploit-c01-transfer-fails)
+  ;; contract-owner has 1B in map but 0 in ft
+  ;; transfer will pass the map check but fail on ft-transfer?
+  (let ((result (transfer u1000000 contract-owner 'SP000000000000000000002Q6VF78 none)))
+    ;; result is (err ...) because ft balance is 0
+    (asserts! (is-err result) (err u999))
+    (ok true)))</code></pre>
+</div>
+
+<!-- C-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge critical">CRITICAL</span>
+    <h3>C-02: Balance map never updated by mint/burn/ft-transfer — get-balance returns stale data</h3>
+  </div>
+  <p><strong>Location:</strong> <code>mint</code>, <code>burn</code>, <code>transfer</code>, <code>get-balance</code></p>
+  <p><strong>Description:</strong> The <code>get-balance</code> read-only function reads from <code>token-balances</code> map, but <code>mint</code> uses <code>ft-mint?</code>, <code>burn</code> uses <code>ft-burn?</code>, and <code>transfer</code> uses <code>ft-transfer?</code> — none of which update the map. After any mint/burn/transfer, <code>get-balance</code> returns incorrect values. This breaks SIP-010 compliance and any downstream contract or UI relying on balance queries.</p>
+  <pre><code>;; get-balance reads the MAP (never updated after init)
+(define-read-only (get-balance (who principal))
+  (ok (default-to u0 (map-get? token-balances who))))
+
+;; mint updates FT only — map is stale
+(define-public (mint (amount uint) (recipient principal))
+  (begin
+    (try! (ft-mint? smt-token amount recipient))  ;; ft balance updated
+    ;; token-balances map NOT updated
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> All balance queries return wrong values. Governance voting uses <code>get-balance</code>, so vote weights are wrong. Staking checks use <code>get-balance</code>, so staking limits are wrong. Any integration relying on SIP-010 <code>get-balance</code> will malfunction.</p>
+  <p><strong>Recommendation:</strong> Replace <code>get-balance</code> with <code>ft-get-balance</code> and remove the manual map entirely:</p>
+  <pre><code>(define-read-only (get-balance (who principal))
+  (ok (ft-get-balance smt-token who)))</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Pause mechanism is dead code — never checked in any operation</h3>
+  </div>
+  <p><strong>Location:</strong> <code>contract-paused</code>, <code>pause-contract</code>, <code>unpause-contract</code></p>
+  <p><strong>Description:</strong> The contract defines a <code>contract-paused</code> variable with pause/unpause functions, but no function (transfer, mint, burn, stake, etc.) ever checks <code>is-paused</code>. The pause mechanism has zero effect on contract behavior.</p>
+  <pre><code>(define-data-var contract-paused bool false)
+
+;; Owner can set this... but nothing reads it
+(define-public (pause-contract)
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (var-set contract-paused true)
+    (ok true)))
+
+;; transfer does NOT check is-paused
+(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34))))
+  (begin
+    (asserts! (or (is-eq from tx-sender) (is-eq from contract-caller)) err-not-token-owner)
+    ;; NO pause check here
+    ...</code></pre>
+  <p><strong>Impact:</strong> The owner cannot pause the contract in case of an exploit or emergency. The pause/unpause functions give a false sense of security.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (not (var-get contract-paused)) (err u104))</code> as the first check in <code>transfer</code>, <code>mint</code>, <code>burn</code>, <code>transfer-from</code>, <code>stake-tokens</code>, and <code>unstake-tokens</code>.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-02: Blacklist mechanism is dead code — never enforced</h3>
+  </div>
+  <p><strong>Location:</strong> <code>blacklisted-addresses</code>, <code>blacklist-address</code>, <code>unblacklist-address</code></p>
+  <p><strong>Description:</strong> Same pattern as the pause: the blacklist map exists and the owner can add/remove addresses, but no function checks <code>is-blacklisted</code> before executing. Blacklisted addresses can transfer, mint, burn, stake, vote, and use all functions normally.</p>
+  <p><strong>Impact:</strong> Blacklisting has no effect. If this feature is meant for regulatory compliance (e.g., sanctioned addresses), it provides zero protection.</p>
+  <p><strong>Recommendation:</strong> Add blacklist checks to <code>transfer</code>, <code>transfer-from</code>, and other user-facing functions for both sender and recipient.</p>
+</div>
+
+<!-- H-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-03: Transfer fee mechanism defined but never applied</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer-fee-rate</code>, <code>fee-recipient</code>, <code>calculate-fee</code>, <code>transfer</code></p>
+  <p><strong>Description:</strong> The contract defines a fee rate (default 1%), fee recipient, <code>calculate-fee</code> function, and <code>set-transfer-fee-rate</code> admin function — but <code>transfer</code> never deducts or sends fees. The entire fee system is dead code.</p>
+  <pre><code>;; Fee infrastructure exists...
+(define-data-var transfer-fee-rate uint u100) ;; 1%
+(define-read-only (calculate-fee (amount uint))
+  (/ (* amount (var-get transfer-fee-rate)) u10000))
+
+;; ...but transfer ignores it entirely
+(define-public (transfer (amount uint) (from principal) (to principal) ...)
+  ;; No fee deduction anywhere</code></pre>
+  <p><strong>Impact:</strong> No fees are collected despite the contract advertising fee functionality. If an admin changes the fee rate expecting it to take effect, nothing happens.</p>
+  <p><strong>Recommendation:</strong> Either implement fee deduction in <code>transfer</code> (deduct fee from amount, send fee to <code>fee-recipient</code>) or remove the dead fee code.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Staking does not lock tokens — staked tokens remain fully transferable</h3>
+  </div>
+  <p><strong>Location:</strong> <code>stake-tokens</code>, <code>unstake-tokens</code></p>
+  <p><strong>Description:</strong> The staking mechanism only updates a <code>staked-balances</code> map — it never moves, locks, or escrows the tokens. A user can stake their entire balance, then immediately transfer all their tokens to another address. The staked balance map becomes a phantom entry with no economic backing.</p>
+  <pre><code>(define-public (stake-tokens (amount uint))
+  (let ((current-balance (unwrap! (get-balance tx-sender) err-insufficient-balance))
+        (current-staked (default-to u0 (map-get? staked-balances tx-sender))))
+    ;; Only updates a map — tokens never move
+    (map-set staked-balances tx-sender (+ current-staked amount))
+    (var-set total-staked (+ (var-get total-staked) amount))
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> Staking provides no economic security. The <code>total-staked</code> counter can be inflated arbitrarily. Any rewards based on staked amounts would be exploitable.</p>
+  <p><strong>Recommendation:</strong> Transfer staked tokens to the contract (escrow) or implement a lock mechanism that prevents transfer of staked amounts.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Governance votes use current balance — double voting via transfer</h3>
+  </div>
+  <p><strong>Location:</strong> <code>vote-on-proposal</code></p>
+  <p><strong>Description:</strong> Vote weight is determined by the voter's current <code>get-balance</code> at the time of voting, with no snapshot mechanism. A token holder can vote with address A, transfer tokens to address B, and vote again — effectively doubling their voting power.</p>
+  <pre><code>(define-public (vote-on-proposal (proposal-id uint) (vote-for bool))
+  (let ((voter-balance (unwrap! (get-balance tx-sender) err-insufficient-balance)))
+    ;; Uses CURRENT balance — no snapshot
+    (if vote-for
+      (map-set proposals proposal-id (merge proposal {votes-for: (+ (get votes-for proposal) voter-balance)}))
+      ...</code></pre>
+  <p><strong>Impact:</strong> Any token holder can multiply their voting power by splitting tokens across multiple addresses and voting from each. Governance outcomes can be manipulated.</p>
+  <p><strong>Recommendation:</strong> Implement balance snapshots at proposal creation block height, or use a token-locking mechanism during the voting period.</p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-03: Approve race condition (classic ERC-20 allowance issue)</h3>
+  </div>
+  <p><strong>Location:</strong> <code>approve</code></p>
+  <p><strong>Description:</strong> The <code>approve</code> function directly sets the allowance to a new value. If an owner changes an allowance from N to M, the spender can front-run the transaction: spend N tokens, then have the new allowance of M — effectively spending N+M total.</p>
+  <pre><code>(define-public (approve (spender principal) (amount uint))
+  (begin
+    ;; Directly overwrites — no check of current allowance
+    (map-set token-allowances {owner: tx-sender, spender: spender} amount)
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> Spenders can extract more tokens than intended when allowances are changed.</p>
+  <p><strong>Recommendation:</strong> Recommend users use <code>increase-allowance</code>/<code>decrease-allowance</code> instead of <code>approve</code>, or require setting to zero before changing to a non-zero value.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: approve allows setting allowance for zero-amount (inconsistent validation)</h3>
+  </div>
+  <p><strong>Location:</strong> <code>approve</code></p>
+  <p><strong>Description:</strong> The <code>approve</code> function requires <code>(&gt; amount u0)</code>, but to revoke an allowance (set to zero), users must use the separate <code>revoke-allowance</code> function. This is inconsistent — <code>increase-allowance</code> and <code>decrease-allowance</code> also reject zero amounts. Meanwhile, <code>approve</code> with amount 0 would be the standard way to reset an allowance in ERC-20 patterns.</p>
+  <p><strong>Impact:</strong> Minor UX friction. Users expecting ERC-20 semantics (<code>approve(spender, 0)</code>) will get an error.</p>
+  <p><strong>Recommendation:</strong> Allow <code>approve</code> to accept <code>u0</code> to clear allowances, or document the <code>revoke-allowance</code> pattern clearly.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Emergency withdraw is just a transfer from the owner — no special capability</h3>
+  </div>
+  <p><strong>Location:</strong> <code>emergency-withdraw</code></p>
+  <p><strong>Description:</strong> The emergency withdraw function calls <code>(transfer amount tx-sender recipient none)</code> — it can only transfer tokens the owner already holds. It provides no capability to recover tokens from other addresses or the contract. Given that <code>transfer</code> already works for the owner, this function adds nothing beyond the emergency-mode gate.</p>
+  <pre><code>(define-public (emergency-withdraw (amount uint) (recipient principal))
+  (begin
+    (asserts! (var-get emergency-mode) err-emergency-only)
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    ;; Just a normal transfer from owner
+    (try! (transfer amount tx-sender recipient none))
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> The emergency mechanism provides false assurance — it cannot rescue stuck tokens or handle actual emergencies.</p>
+  <p><strong>Recommendation:</strong> If emergency recovery is desired, implement the ability to transfer tokens from the contract's own balance or implement a migration mechanism.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-01: Pre-Clarity 4 — no asset allowance restrictions available</h3>
+  </div>
+  <p><strong>Description:</strong> The contract does not specify a Clarity version and predates Clarity 4. While this contract doesn't use <code>as-contract</code>, future upgrades involving contract-held assets should use Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances.</p>
+  <p><strong>Recommendation:</strong> If redeploying, target Clarity 4 for improved safety builtins.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-02: Significant SIP-010 deviations — non-standard extensions</h3>
+  </div>
+  <p><strong>Description:</strong> While the contract implements the <code>sip-010-trait</code>, it adds extensive non-standard functionality: allowances, staking, governance, blacklisting, pause, fees, batch transfers, and emergency mode. These extensions are not part of the SIP-010 standard and may confuse integrators. The <code>transfer</code> function also authorizes based on <code>contract-caller</code> in addition to <code>tx-sender</code>, which is SIP-010 compliant but worth noting.</p>
+  <p><strong>Recommendation:</strong> Consider separating staking and governance into dedicated contracts for cleaner SIP-010 compliance.</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-03: Owner has extensive centralized control</h3>
+  </div>
+  <p><strong>Description:</strong> The contract owner (<code>tx-sender</code> at deploy time) has unchecked authority to: mint unlimited tokens (up to the 1B ft cap), pause/unpause, blacklist any address, set transfer fees up to 10%, change the fee recipient, enable emergency mode, and withdraw tokens. There is no multisig, timelock, or governance check on any admin function.</p>
+  <p><strong>Impact:</strong> Users must fully trust the deployer. The owner can mint tokens to dilute holders, set fees to extract value, or blacklist addresses (if the blacklist were enforced).</p>
+  <p><strong>Recommendation:</strong> Consider implementing a timelock for sensitive operations, or transition admin functions to the governance system.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Implements SIP-010 trait</strong>: The contract correctly declares <code>impl-trait</code> for the SIP-010 standard.</li>
+  <li><strong>Amount validation</strong>: All public functions check <code>(&gt; amount u0)</code> to reject zero-amount operations.</li>
+  <li><strong>Batch transfer</strong>: The <code>batch-transfer</code> function uses a fold pattern that short-circuits on first failure — correct error propagation.</li>
+  <li><strong>Fee rate cap</strong>: <code>set-transfer-fee-rate</code> enforces a maximum of 1000 basis points (10%), preventing extreme fee extraction.</li>
+  <li><strong>Governance deduplication</strong>: The voting system tracks individual votes to prevent the same address from voting twice on the same proposal.</li>
+  <li><strong>Print events</strong>: All state-changing functions emit print events for off-chain indexing.</li>
+</ul>
+
+<h2>Summary</h2>
+<p>This contract has <strong>fundamental architectural flaws</strong> that render it largely non-functional. The dual balance tracking system (C-01, C-02) means the initial 1B token allocation cannot be transferred, and all balance queries return incorrect data after any mint/burn operation. Beyond the broken balance system, three major subsystems — pause, blacklist, and fees — are defined but never enforced (H-01, H-02, H-03), providing zero functionality despite their code presence. The staking system (M-01) doesn't actually lock tokens, and governance (M-02) is vulnerable to vote manipulation.</p>
+<p><strong>This contract should not be used in production.</strong> A rewrite is recommended that: (1) removes the manual <code>token-balances</code> map and relies solely on <code>define-fungible-token</code> + <code>ft-get-balance</code>; (2) integrates pause/blacklist/fee checks into the actual transfer flow; (3) implements real token locking for staking; and (4) adds balance snapshots for governance voting.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a> · Independent security research</p>
+</footer>
+
+</body>
+</html>
