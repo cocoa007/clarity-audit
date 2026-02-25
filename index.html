@@ -438,6 +438,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/charisma-lands.html">Charisma Lands — SFT Wrapping &amp; Energy System</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.lands?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">SIP-013 semi-fungible token wrapping SIP-010 assets into "lands" with passive energy generation. <strong>Critical: <code>store</code> function calls <code>tap(tx-sender)</code> then writes result to recipient's energy — any incoming transfer permanently destroys the recipient's accumulated energy.</strong> Transfer executes state mutations before input validation; pre-Clarity 4 <code>as-contract</code> blanket access risk.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/charisma-rulebook-v0.html">Charisma Rulebook v0 — Protocol Orchestration Hub</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
