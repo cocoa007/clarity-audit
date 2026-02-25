@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Dungeon Master — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Dungeon Master</h1>
+<p class="subtitle">Charisma protocol's core DAO governance controller — ExecutorDAO pattern with extension-based access control and proposal execution</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dungeon-master?chain=mainnet">SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dungeon-master</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://charisma.rocks">Charisma</a> — gamified DeFi on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Clarity 1 (pre-Clarity 4 — no <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Publish Height</td><td>98,098</td></tr>
+  <tr><td>Lines of Code</td><td>~75</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>&#128994; HIGH — compact contract, fully reviewed; security heavily depends on extension/proposal governance (out of scope)</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Dungeon Master is the core governance contract for the Charisma protocol, implementing the <strong>ExecutorDAO</strong> pattern. It serves as the central authority through which all governance actions flow — proposals are executed under the contract's identity, and extensions (trusted sub-contracts) can modify state or trigger further actions.</p>
+
+<p>The contract provides five key capabilities:</p>
+<ul>
+  <li><strong><code>construct</code></strong> — one-time bootstrap by the deployer, initializes the DAO with a bootstrap proposal</li>
+  <li><strong><code>execute</code></strong> — runs a proposal contract under <code>as-contract</code> authority (extensions/self only)</li>
+  <li><strong><code>set-extension</code> / <code>set-extensions</code></strong> — enables or disables trusted extension contracts</li>
+  <li><strong><code>request-extension-callback</code></strong> — allows extensions to invoke callbacks on themselves through the DAO</li>
+</ul>
+
+<p>The trust model is straightforward: only the contract itself (via proposals) or registered extensions can call privileged functions. The deployer's power is revoked after the initial <code>construct</code> call.</p>
+
+<h3>Documented Limitations / Design Notes</h3>
+<ul>
+  <li>Security of the entire DAO depends on the quality of extension and proposal contracts — a malicious extension can do anything the DAO can do</li>
+  <li>The <code>sender</code> parameter in <code>execute</code> is passed through to proposals, allowing extensions to attribute actions to specific users</li>
+  <li>This is a well-known pattern (ExecutorDAO by Marvin Janssen) widely used across Stacks DAOs</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Blanket <code>as-contract</code> grants unlimited asset authority to proposals</h3>
+  </div>
+  <p><strong>Location:</strong> <code>execute</code> function</p>
+  <p><strong>Description:</strong> The <code>execute</code> function runs proposals under <code>as-contract</code>, which in Clarity 1 grants the proposal code full authority to transfer any asset the DAO contract holds — STX, fungible tokens, and NFTs. There is no way to scope or limit what a proposal can do once it executes.</p>
+  <pre><code>(define-public (execute (proposal &lt;proposal-trait&gt;) (sender principal))
+  (begin
+    (try! (is-self-or-extension))
+    (asserts! (map-insert executed-proposals (contract-of proposal) block-height) err-already-executed)
+    (print {event: "execute", proposal: proposal})
+    (as-contract (contract-call? proposal execute sender))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Any proposal or extension that calls <code>execute</code> with a malicious proposal contract can drain all assets held by the DAO. The entire security of the system depends on governance gatekeeping (e.g., voting extensions) never approving a malicious proposal. A compromised or buggy extension is equivalent to a complete DAO takeover.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-nft</code>, <code>with-stx</code>) for proposal execution. This would enforce at the language level which assets a proposal can move, rather than relying solely on governance review. Alternatively, implement a proposal type system with different execution contexts (e.g., admin proposals vs. treasury proposals with spending caps).</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Extension callback allows code execution under DAO identity</h3>
+  </div>
+  <p><strong>Location:</strong> <code>request-extension-callback</code> function</p>
+  <p><strong>Description:</strong> The <code>request-extension-callback</code> function lets any registered extension trigger its own <code>callback</code> function with the DAO as <code>tx-sender</code> (via <code>as-contract</code>). While the function validates that <code>contract-caller</code> matches the extension being called, the callback executes under the DAO's authority.</p>
+  <pre><code>(define-public (request-extension-callback (extension &lt;extension-trait&gt;) (memo (buff 34)))
+  (let ((sender tx-sender))
+    (asserts! (is-extension contract-caller) err-invalid-extension)
+    (asserts! (is-eq contract-caller (contract-of extension)) err-invalid-extension)
+    (as-contract (contract-call? extension callback sender memo))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> A registered extension's <code>callback</code> function runs as the DAO principal. If the extension's callback has any asset-moving logic, it could be abused. The double-check (<code>is-extension</code> + <code>contract-caller == contract-of extension</code>) prevents impersonation, but any enabled extension can self-invoke callbacks with arbitrary memos.</p>
+  <p><strong>Recommendation:</strong> Document the security invariant that extension <code>callback</code> implementations must be carefully audited since they run under DAO identity. With Clarity 4, use <code>as-contract?</code> with scoped allowances for callbacks.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: <code>is-self-or-extension</code> uses <code>tx-sender</code> for self-check instead of <code>contract-caller</code></h3>
+  </div>
+  <p><strong>Location:</strong> <code>is-self-or-extension</code> private function</p>
+  <p><strong>Description:</strong> The authorization check uses <code>(is-eq tx-sender (as-contract tx-sender))</code> for the "self" branch. This checks whether the original transaction sender is the contract itself, which only holds true when the contract is calling itself through <code>as-contract</code>. However, the extension branch checks <code>contract-caller</code>, which is the more appropriate check for inter-contract calls.</p>
+  <pre><code>(define-private (is-self-or-extension)
+  (ok (asserts! (or (is-eq tx-sender (as-contract tx-sender))
+                    (is-extension contract-caller)) err-unauthorized))
+)</code></pre>
+  <p><strong>Impact:</strong> The self-check via <code>tx-sender</code> means the DAO can only call itself when it's the original transaction initiator (i.e., within an <code>as-contract</code> block). This is the intended behavior for the ExecutorDAO pattern — proposals executing under <code>as-contract</code> can call back into the DAO. However, mixing <code>tx-sender</code> and <code>contract-caller</code> checks in the same authorization function is a subtle pattern that could confuse auditors or lead to unexpected behavior if the call graph changes.</p>
+  <p><strong>Recommendation:</strong> Consider documenting why <code>tx-sender</code> is used for the self-check. For maximum clarity, the self-check could use <code>contract-caller</code> instead: <code>(is-eq contract-caller (as-contract tx-sender))</code> — though this would change the semantics slightly (only direct callers, not transitive ones, would pass).</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No mechanism to revoke or rotate extensions in bulk emergencies</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-extensions</code> function</p>
+  <p><strong>Description:</strong> While <code>set-extensions</code> supports batch operations (up to 200), disabling a compromised extension requires either the DAO itself or another extension to act. If a malicious extension is discovered, the response time depends on governance speed.</p>
+  <p><strong>Impact:</strong> In an emergency where an extension is compromised, there is no circuit breaker or emergency shutdown mechanism. The DAO must go through normal governance flow to disable the extension.</p>
+  <p><strong>Recommendation:</strong> Consider implementing a guardian/emergency multisig pattern that can freeze extensions without a full governance vote. This is a common pattern in DeFi DAOs for rapid incident response.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Clarity 1 — missing modern safety features</h3>
+  </div>
+  <p><strong>Description:</strong> This contract uses Clarity 1 (deployed at block 98,098, well before Clarity 4 at Bitcoin block 923,222). It lacks access to critical safety builtins:</p>
+  <ul>
+    <li><code>as-contract?</code> with explicit asset allowances</li>
+    <li><code>restrict-assets?</code> expressions</li>
+    <li><code>contract-hash?</code> for verifying deployed contract code</li>
+    <li><code>stacks-block-time</code> for time-based logic</li>
+  </ul>
+  <p><strong>Recommendation:</strong> When upgrading the DAO (deploying a new version), use Clarity 4 to benefit from language-level asset safety. The <code>as-contract?</code> builtin would be particularly valuable for scoping proposal and callback execution authority.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: <code>sender</code> parameter in <code>execute</code> is caller-supplied, not verified</h3>
+  </div>
+  <p><strong>Description:</strong> The <code>execute</code> function accepts a <code>sender</code> parameter that is passed directly to the proposal's <code>execute</code> function. This parameter is not verified against the actual <code>tx-sender</code> — any extension can supply any principal as the sender.</p>
+  <pre><code>(define-public (execute (proposal &lt;proposal-trait&gt;) (sender principal))
+  (begin
+    (try! (is-self-or-extension))
+    ...
+    (as-contract (contract-call? proposal execute sender))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> This is by design — extensions (like voting contracts) track who initiated a proposal and pass that context through. However, proposal contracts must not use this <code>sender</code> parameter for authorization decisions without additional verification, as it can be spoofed by any registered extension.</p>
+  <p><strong>Recommendation:</strong> Proposal implementations should treat the <code>sender</code> parameter as informational context, not as an authentication credential. Document this trust boundary clearly.</p>
+</div>
+
+<h2>Architecture Analysis</h2>
+
+<p>The Dungeon Master implements a clean <strong>ExecutorDAO</strong> pattern with a minimal attack surface:</p>
+
+<table>
+  <tr><th>Function</th><th>Access Control</th><th>Purpose</th></tr>
+  <tr><td><code>construct</code></td><td>Deployer (one-time)</td><td>Bootstrap DAO with initial proposal</td></tr>
+  <tr><td><code>execute</code></td><td>Self or extension</td><td>Run proposal under DAO authority</td></tr>
+  <tr><td><code>set-extension(s)</code></td><td>Self or extension</td><td>Manage trusted extension registry</td></tr>
+  <tr><td><code>request-extension-callback</code></td><td>Registered extension (self-only)</td><td>Extension self-callback under DAO identity</td></tr>
+</table>
+
+<h3>Trust Model</h3>
+<p>The contract's security is a <strong>delegation chain</strong>:</p>
+<ol>
+  <li><strong>Deployer</strong> bootstraps the DAO via <code>construct</code> (one-time, irrevocable)</li>
+  <li><strong>Bootstrap proposal</strong> registers initial extensions (e.g., voting, treasury)</li>
+  <li><strong>Extensions</strong> gate future proposal execution (e.g., require token-weighted votes)</li>
+  <li><strong>Proposals</strong> execute arbitrary logic under DAO authority</li>
+</ol>
+<p>The weakest link is always the extension that gates proposal execution. A poorly designed voting extension (e.g., one that allows flash-loan voting) would compromise the entire DAO.</p>
+
+<h3>Positive Patterns</h3>
+<ul>
+  <li>&#10004; Clean separation between governance (extensions) and execution (proposals)</li>
+  <li>&#10004; One-time bootstrap prevents deployer from retaining permanent control</li>
+  <li>&#10004; Proposal replay protection via <code>map-insert</code> (each proposal can only execute once)</li>
+  <li>&#10004; Extension callback requires <code>contract-caller == contract-of extension</code> (prevents impersonation)</li>
+  <li>&#10004; Minimal code — small attack surface (~75 lines)</li>
+</ul>
+
+<h2>Conclusion</h2>
+
+<p>The Dungeon Master is a well-structured ExecutorDAO implementation with a minimal codebase and clear access control boundaries. The primary risk is inherent to the pattern: proposals execute with full DAO authority, and security depends entirely on the extensions that gate execution. The use of Clarity 1 means the contract cannot leverage modern asset-scoping features that would significantly reduce the blast radius of a compromised proposal.</p>
+
+<p>For a protocol managing significant DeFi assets, the recommended upgrade path is to redeploy on Clarity 4 with <code>as-contract?</code> allowances and consider adding an emergency guardian mechanism for rapid extension revocation.</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> &#x2022; <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is provided as-is for educational purposes. It does not constitute financial advice or a guarantee of contract security.</p>
+</footer>
+
+</body>
+</html>
