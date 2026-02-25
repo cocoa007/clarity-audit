@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: DME009 Charisma Rewards — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>DME009 Charisma Rewards</h1>
+<p class="subtitle">Modular rewards system for the Charisma DAO — mints governance tokens (CHA) as quest completion rewards</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/0x0fd98f76b0eab5edcd618cadc5b310b38c7fbec6fa104d079cd931573117cb81?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dme009-charisma-rewards</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://charisma.rocks">Charisma</a> — gamified DeFi on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API + <a href="https://github.com/boomcrypto/clarity-deployed-contracts/blob/main/contracts/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS/dme009-charisma-rewards.clar">boomcrypto mirror</a></td></tr>
+  <tr><td>Clarity Version</td><td>2 (pre-Clarity 4)</td></tr>
+  <tr><td>Lines of Code</td><td>~65</td></tr>
+  <tr><td>Deploy Block</td><td>117,449</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — self-contained, minimal logic; external dependency on dungeon-master DAO noted but not reviewed</td></tr>
+  <tr><td>Date</td><td>2026-02-25</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">0</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>DME009 Charisma Rewards is a lean DAO extension contract in the Charisma protocol. It serves a single purpose: mapping quest IDs to reward amounts and minting Charisma governance tokens (via <code>dme000-governance-token.dmg-mint</code>) when quests are completed.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Authorization</strong>: All write functions are gated by <code>is-dao-or-extension</code>, which checks if the caller is the <code>dungeon-master</code> DAO contract or an approved extension.</li>
+  <li><strong>State</strong>: Two maps — <code>quest-rewards-map</code> (quest-id → reward amount) and <code>quest-locked-map</code> (address+quest-id → locked boolean).</li>
+  <li><strong>Claim flow</strong>: <code>claim(quest-id)</code> looks up the reward amount and calls <code>dmg-mint</code> to mint tokens to <code>tx-sender</code> (the calling extension).</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li>Security depends entirely on the <code>dungeon-master</code> DAO contract and which extensions it authorizes.</li>
+  <li>The <code>dme000-governance-token</code> must honor mint requests from this contract.</li>
+  <li>Quest completion verification happens in the calling extension, not in this contract.</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: No Maximum Reward Cap</h3>
+  </div>
+  <p><strong>Location:</strong> <code>set-rewards</code> function</p>
+  <p><strong>Description:</strong> The <code>set-rewards</code> function accepts any <code>uint</code> value with no upper bound check. A compromised or malicious DAO extension could set an astronomically large reward for a quest, enabling unbounded governance token minting.</p>
+  <pre><code>(define-public (set-rewards (quest-id uint) (amount uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (map-set quest-rewards-map quest-id amount))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> If the DAO authorization layer is compromised, this becomes an unlimited mint vector for governance tokens, diluting all existing holders.</p>
+  <p><strong>Recommendation:</strong> Add a <code>max-reward-per-quest</code> constant (e.g., <code>u1000000000000</code>) and assert the amount is below it. This provides defense-in-depth even if DAO governance is compromised.</p>
+  <pre><code>(define-constant max-reward-per-quest u1000000000000) ;; 1M CHA with 6 decimals
+
+(define-public (set-rewards (quest-id uint) (amount uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (asserts! (&lt;= amount max-reward-per-quest) (err u2002))
+    (ok (map-set quest-rewards-map quest-id amount))
+  )
+)</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Clarity Version 2 — Pre-Clarity 4</h3>
+  </div>
+  <p><strong>Description:</strong> The contract is deployed with Clarity version 2. While it does not use <code>as-contract</code> (so no immediate risk), future upgrades of this extension pattern should use Clarity 4's <code>as-contract?</code> with explicit asset allowances for safer token operations.</p>
+  <p><strong>Recommendation:</strong> When deploying successor versions, use Clarity 4 and <code>as-contract?</code> with <code>with-ft</code> allowances to explicitly limit which tokens the contract can move.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: tx-sender Recipient in claim() is the Calling Extension</h3>
+  </div>
+  <p><strong>Description:</strong> The <code>claim</code> function mints tokens to <code>tx-sender</code>. Since <code>claim</code> is gated by <code>is-dao-or-extension</code>, only DAO extensions can call it. This means tokens are minted to the <em>extension contract</em>, not the end user. The calling extension is responsible for distributing tokens to the actual user.</p>
+  <pre><code>(define-public (claim (quest-id uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (let ((reward-amount (default-to u0 (map-get? quest-rewards-map quest-id))))
+      (contract-call? 'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dme000-governance-token
+        dmg-mint reward-amount tx-sender)
+    )
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> No bug — this is by design. The extension pattern delegates user-facing logic to the calling contract. However, any extension calling <code>claim</code> must forward tokens to the user or they accumulate in the extension.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: No Event Emission for Claims</h3>
+  </div>
+  <p><strong>Description:</strong> The contract does not emit any <code>print</code> events when rewards are claimed or configured. Off-chain indexers must parse transaction receipts and <code>contract-call?</code> results to track reward activity.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "claim", quest-id: quest-id, amount: reward-amount, recipient: tx-sender })</code> in the <code>claim</code> function for better observability.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Clean DAO authorization pattern:</strong> Every write function properly checks <code>is-dao-or-extension</code> before executing. No unprotected state mutations.</li>
+  <li><strong>Safe defaults:</strong> <code>default-to u0</code> for missing quest rewards means unknown quests yield zero tokens, not a runtime error.</li>
+  <li><strong>Minimal attack surface:</strong> The contract is extremely simple (~65 lines) with no complex logic, reentrancy vectors, or asset custody.</li>
+  <li><strong>Proper trait implementation:</strong> Implements <code>extension-trait</code> with the required <code>callback</code> function.</li>
+  <li><strong>Quest locking mechanism:</strong> The <code>quest-locked-map</code> provides a per-user, per-quest lock that prevents double claims (enforced by the calling extension).</li>
+</ul>
+
+<h2>Full Source</h2>
+<pre><code>;; Title: DME009 Charisma Rewards
+;; Author: rozar.btc
+;; Depends-On: DME000, DME001 
+;; Synopsis:
+;; A modular rewards system that disburses Charisma rewards for quest completions.
+
+(impl-trait 'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.extension-trait.extension-trait)
+
+(define-constant err-not-found (err u2001))
+(define-constant err-unauthorized (err u3100))
+
+(define-map quest-rewards-map uint uint)
+(define-map quest-locked-map
+  { address: principal, quest-id: uint }
+  bool
+)
+
+;; --- Authorization check
+
+(define-public (is-dao-or-extension)
+  (ok (asserts! (or (is-eq tx-sender
+    'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dungeon-master)
+    (contract-call?
+      'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dungeon-master
+      is-extension contract-caller))
+    err-unauthorized))
+)
+
+;; --- Internal DAO functions
+
+(define-public (claim (quest-id uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (let ((reward-amount (default-to u0 (map-get? quest-rewards-map quest-id))))
+      (contract-call?
+        'SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dme000-governance-token
+        dmg-mint reward-amount tx-sender)
+    )
+  )
+)
+
+(define-public (set-rewards (quest-id uint) (amount uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (map-set quest-rewards-map quest-id amount))
+  )
+)
+
+(define-public (set-locked (address principal) (quest-id uint) (locked bool))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (map-set quest-locked-map { address: address, quest-id: quest-id } locked))
+  )
+)
+
+;; --- Public functions
+
+(define-read-only (get-rewards (quest-id uint))
+  (ok (default-to u0 (map-get? quest-rewards-map quest-id)))
+)
+
+(define-read-only (is-locked (address principal) (quest-id uint))
+  (ok (default-to false (map-get? quest-locked-map
+    { address: address, quest-id: quest-id })))
+)
+
+;; --- Extension callback
+
+(define-public (callback (sender principal) (memo (buff 34)))
+  (ok true)
+)</code></pre>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ☕ — <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is provided as-is for informational purposes. It does not constitute financial or legal advice. Smart contract interactions carry inherent risk.</p>
+</footer>
+
+</body>
+</html>
