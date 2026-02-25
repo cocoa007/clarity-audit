@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Core v2 Audit — Clarity Audit Notes</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);font-size:.85em;background:var(--code-bg);padding:.15em .4em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{border:none;padding:0;font-size:.85rem;line-height:1.5}
+.meta{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem}
+.meta p{margin-bottom:.25rem;font-size:.9rem}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.25rem 0}
+.finding h3{margin-top:0}
+.severity-critical{border-left:4px solid var(--red)}
+.severity-high{border-left:4px solid #f0883e}
+.severity-medium{border-left:4px solid var(--yellow)}
+.severity-low{border-left:4px solid var(--blue)}
+.severity-info{border-left:4px solid var(--text-muted)}
+.tag{display:inline-block;font-size:.75rem;padding:.1em .5em;border-radius:4px;font-weight:600;margin-right:.5rem}
+.tag-critical{background:var(--red);color:#fff}
+.tag-high{background:#f0883e;color:#fff}
+.tag-medium{background:var(--yellow);color:#000}
+.tag-low{background:var(--blue);color:#fff}
+.tag-info{background:var(--text-muted);color:#000}
+.back{display:inline-block;margin-bottom:1.5rem;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{text-align:left;padding:.5rem .75rem;border:1px solid var(--border)}
+th{background:var(--surface)}
+</style>
+</head>
+<body>
+<a class="back" href="/clarity-audit/">← Back to index</a>
+
+<h1>StackingDAO Core v2 — Security Audit</h1>
+<p class="subtitle">Liquid stacking protocol — deposit STX, receive stSTX, withdraw via NFT receipt</p>
+
+<div class="meta">
+  <p><strong>Contract:</strong>
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v2?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v2</a></code> ·
+  Deploy height: 147394 · 301 lines</p>
+  <p><strong>Clarity version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</p>
+  <p><strong>Prior version:</strong> <a href="stacking-dao-core.html">StackingDAO Core v1 audit</a> (referenced pox-3, now deprecated)</p>
+  <p><strong>Date:</strong> February 25, 2026</p>
+  <p><strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007.btc</a></p>
+  <p><strong>Audit confidence: Medium.</strong> Well-structured contract with clear separation of concerns. Multi-contract architecture makes full verification challenging — depends on <code>.dao</code>, <code>.data-core-v1</code>, <code>.reserve</code>, <code>.ststx-token</code>, <code>.ststx-withdraw-nft</code>, and four trait-parameterized contracts. Core logic reviewed thoroughly; trust assumptions on external contracts noted.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="tag tag-high">HIGH</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-medium">MEDIUM</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-low">LOW</span></td><td>1</td></tr>
+<tr><td><span class="tag tag-info">INFO</span></td><td>3</td></tr>
+</table>
+
+<h2>Architecture Overview</h2>
+<p>StackingDAO v2 is a liquid stacking protocol on Stacks. Users deposit STX and receive stSTX (a fungible token representing their staked position). Withdrawals are a two-phase process: <code>init-withdraw</code> mints an NFT receipt and locks stSTX, then <code>withdraw</code> burns both and returns STX after a PoX cycle boundary. A <code>cancel-withdraw</code> path lets users reclaim stSTX before the unlock height.</p>
+
+<p>Key design: all external contracts (reserve, commission, staking, direct-helpers) are passed as trait parameters and validated against a DAO registry via <code>check-is-protocol</code>. This is a well-known Stacks pattern for upgradeable protocol components.</p>
+
+<h2>Documented Limitations</h2>
+<ul>
+<li>Protocol depends on DAO governance for contract registry — admin functions gated by <code>check-is-protocol contract-caller</code></li>
+<li>Withdrawal timing is bound to PoX cycles — users cannot withdraw instantly</li>
+<li>v1→v2 migration function (<code>migrate-ststx</code>) is a one-time administrative operation</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding severity-high">
+<h3><span class="tag tag-high">H-01</span> No fee cap — admin can set 100% deposit/withdrawal fee</h3>
+<p><strong>Location:</strong> <code>set-stack-fee</code>, <code>set-unstack-fee</code> (lines 236–250)</p>
+<p><strong>Description:</strong> The <code>stack-fee</code> and <code>unstack-fee</code> variables (in basis points) have no upper bound validation. A compromised or malicious DAO governance contract could set fees to 10000 (100%), causing users to lose their entire deposit or withdrawal amount to fees.</p>
+<pre><code>(define-public (set-stack-fee (fee uint))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    ;; No max check — fee could be u10000 (100%)
+    (var-set stack-fee fee)
+    (ok true)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> If governance is compromised, all new deposits and withdrawals can be fully drained to fee recipients. Existing stSTX holders' withdrawals would also be affected.</p>
+<p><strong>Recommendation:</strong> Add a maximum fee constant (e.g., <code>MAX_FEE u500</code> = 5%) and assert in both setters: <code>(asserts! (&lt;= fee MAX_FEE) (err ERR_MAX_FEE))</code>. Note: v1 had <code>MAX_COMMISSION u2000</code> (20%) — this guard was removed in v2.</p>
+</div>
+
+<div class="finding severity-high">
+<h3><span class="tag tag-high">H-02</span> Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority</h3>
+<p><strong>Location:</strong> Multiple: <code>deposit</code> (line 88), <code>init-withdraw</code> (line 120), <code>cancel-withdraw</code> (lines 158–160), <code>withdraw</code> (lines 186–194)</p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> (pre-Clarity 4) throughout, which grants the called contract unrestricted access to all assets held by this contract principal. Any trait-parameterized contract called within <code>as-contract</code> blocks (reserve, commission, staking) could potentially move assets beyond what is intended.</p>
+<p><strong>Impact:</strong> While the DAO registry validation mitigates this (only approved contracts can be passed), if any approved contract has a vulnerability, it could abuse the blanket <code>as-contract</code> authority to drain STX or stSTX held by the core contract.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances: <code>(as-contract? (with-stx ...))</code>. This enforces at the language level which assets can be moved, eliminating the risk even if a registered protocol contract is compromised.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">M-01</span> Potential arithmetic underflow in <code>get-withdraw-unlock-burn-height</code></h3>
+<p><strong>Location:</strong> <code>get-withdraw-unlock-burn-height</code> (line 49)</p>
+<p><strong>Description:</strong> The expression <code>(- start-block-next-cycle withdraw-offset)</code> will panic if <code>withdraw-offset</code> exceeds <code>start-block-next-cycle</code>. While this is unlikely in practice (cycle start heights are large numbers), a misconfigured <code>cycle-withdraw-offset</code> in the data contract could cause all deposit, init-withdraw, and cancel-withdraw operations to fail (since they call functions that might reference this read-only).</p>
+<pre><code>(if (< burn-block-height (- start-block-next-cycle withdraw-offset))
+  ;; underflow panics if withdraw-offset > start-block-next-cycle</code></pre>
+<p><strong>Impact:</strong> A bad configuration value in <code>.data-core-v1</code> could DoS the withdrawal timing calculation, though this read-only is only called by <code>init-withdraw</code>.</p>
+<p><strong>Recommendation:</strong> Use a safe subtraction pattern or validate the offset: <code>(if (> start-block-next-cycle withdraw-offset) (- start-block-next-cycle withdraw-offset) u0)</code></p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">M-02</span> <code>cancel-withdraw</code> round-trips STX through reserve unnecessarily</h3>
+<p><strong>Location:</strong> <code>cancel-withdraw</code> (lines 158–160)</p>
+<p><strong>Description:</strong> To cancel a withdrawal, the contract calls <code>request-stx-for-withdrawal</code> (which transfers STX from reserve to this contract) and immediately sends it back with <code>stx-transfer?</code>. This round-trip exists because <code>request-stx-for-withdrawal</code> is the only way to decrement the <code>stx-for-withdrawals</code> counter. However, this creates a window where reserve funds are temporarily in the core contract, and the two-step operation could fail partway (e.g., if reserve has insufficient unlocked STX).</p>
+<pre><code>;; Request STX from reserve (decrements withdrawal counter)
+(try! (as-contract (contract-call? reserve request-stx-for-withdrawal stx-amount tx-sender)))
+;; Immediately send it back
+(try! (as-contract (stx-transfer? stx-amount tx-sender (contract-of reserve))))</code></pre>
+<p><strong>Impact:</strong> If the reserve lacks sufficient unlocked STX to fulfill the request, cancellation fails even though no STX actually needs to move. This could lock users into unwanted withdrawals during periods of high stacking utilization.</p>
+<p><strong>Recommendation:</strong> Add a dedicated <code>cancel-stx-for-withdrawal</code> function to the reserve trait that decrements the counter without moving STX.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">L-01</span> <code>withdraw</code> uses strict <code>&gt;</code> instead of <code>&gt;=</code> for unlock height check</h3>
+<p><strong>Location:</strong> <code>withdraw</code> (line 183)</p>
+<p><strong>Description:</strong> The assertion <code>(asserts! (&gt; burn-block-height unlock-burn-height) ...)</code> requires the block height to be strictly greater than the unlock height. If the unlock height is exactly the start of the next cycle, this means users cannot withdraw in the first block of the cycle — they must wait one additional block.</p>
+<pre><code>(asserts! (> burn-block-height unlock-burn-height) (err ERR_WITHDRAW_LOCKED))</code></pre>
+<p><strong>Impact:</strong> Minor UX issue — one-block delay on withdrawal availability. Not exploitable.</p>
+<p><strong>Recommendation:</strong> Consider using <code>&gt;=</code> if the intent is to allow withdrawal once the cycle boundary is reached.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">I-01</span> Deposit event logs <code>stxstx-amount</code> (typo for <code>ststx-amount</code>)</h3>
+<p><strong>Location:</strong> <code>deposit</code> (line 95)</p>
+<p><strong>Description:</strong> The print statement uses key <code>stxstx-amount</code> instead of <code>ststx-amount</code>. This is inconsistent with other events and could confuse indexers.</p>
+<pre><code>(print { action: "deposit", data: { stacker: tx-sender, stx-amount: stx-amount,
+  stxstx-amount: ststx-amount, ... } })</code></pre>
+<p><strong>Recommendation:</strong> Fix to <code>ststx-amount</code> in a future version for consistency.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">I-02</span> Exchange rate truncation on deposit and withdrawal</h3>
+<p><strong>Location:</strong> <code>deposit</code> (line 76), <code>init-withdraw</code> (line 109)</p>
+<p><strong>Description:</strong> The stSTX↔STX conversions use integer division which truncates. On deposit: <code>(/ (* stx-user-amount u1000000) stx-ststx)</code>. On withdrawal: <code>(/ (* ststx-amount stx-ststx) u1000000)</code>. Small rounding losses accumulate in favor of the protocol.</p>
+<p><strong>Impact:</strong> Dust-level losses per transaction. Standard pattern in DeFi — not a bug, but users should be aware.</p>
+<p><strong>Recommendation:</strong> Informational only. Consider documenting the rounding behavior.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">I-03</span> <code>migrate-ststx</code> has no re-entrancy guard or one-time flag</h3>
+<p><strong>Location:</strong> <code>migrate-ststx</code> (lines 276–286)</p>
+<p><strong>Description:</strong> The migration function burns stSTX from v1 core and mints to v2 core. It is gated by <code>check-is-protocol</code> but has no flag to prevent multiple calls. If v1 core somehow re-acquires stSTX, migration could be called again.</p>
+<p><strong>Impact:</strong> Low — would only mint stSTX equal to what v1 core holds, and is admin-gated. But a one-time guard would be cleaner.</p>
+<p><strong>Recommendation:</strong> Add a <code>migrated</code> boolean flag that prevents re-execution.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><strong>Strong access control:</strong> All external contracts validated against DAO registry. Admin functions properly gated by <code>check-is-protocol contract-caller</code>.</li>
+<li><strong>Upgrade from v1:</strong> Now uses pox-4 (correct for current epoch). Removed hardcoded commission in favor of flexible fee system.</li>
+<li><strong>Two-phase withdrawal:</strong> NFT-based withdrawal receipts are a solid pattern — transferable, verifiable, and prevent double-withdrawal.</li>
+<li><strong>Clean separation of concerns:</strong> Core only handles user-facing flows. State management, token logic, and stacking operations are delegated to specialized contracts.</li>
+<li><strong>Shutdown mechanism:</strong> <code>shutdown-deposits</code> provides an emergency brake for new deposits.</li>
+</ul>
+
+<h2>v1 → v2 Changes</h2>
+<ul>
+<li>Upgraded from pox-3 to pox-4</li>
+<li>Replaced fixed commission (500 bps / 5%) with separate <code>stack-fee</code> and <code>unstack-fee</code> variables (both default to 0)</li>
+<li>Removed <code>MAX_COMMISSION</code> constant — fee cap no longer enforced (see H-01)</li>
+<li>Added <code>cancel-withdraw</code> function — users can now reverse pending withdrawals</li>
+<li>Added <code>direct-helpers</code> trait parameter for direct stacking tracking</li>
+<li>Added <code>pool</code> parameter to deposit for pool routing</li>
+<li>Added <code>migrate-ststx</code> for v1 → v2 token migration</li>
+</ul>
+
+<p style="margin-top:3rem;color:var(--text-muted);font-size:.85rem;">
+Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+<a href="/clarity-audit/">Full audit portfolio</a> ·
+Report generated February 25, 2026
+</p>
+</body>
+</html>

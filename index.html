@@ -399,6 +399,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/stacking-dao-core-v2.html">StackingDAO Core v2 — Liquid Stacking</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v2?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
+    <span class="findings-compact"><span class="h">2H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Core user-facing contract for StackingDAO liquid stacking (deposit STX → stSTX, NFT-based withdrawals). <strong>High: no fee cap — admin can set 100% deposit/withdrawal fees (v1 had MAX_COMMISSION, v2 removed it).</strong> Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority to trait-parameterized contracts. Clean architecture with DAO registry validation on all external calls.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/alex-staking-v2.html">ALEX alex-staking-v2 — Staking Wrapper</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
