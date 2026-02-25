@@ -373,6 +373,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/dungeon-crawler-rc6.html">Dungeon Crawler RC6 — Charisma Interaction Router</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/0xaf79d2c230004afbc98da996c4f9591136bc6f794b1fca214fb40bf7cd87167b?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">1M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Charisma protocol's user-facing batch router for interaction contracts. <strong>High: <code>explore</code> panics on partial input — optional parameters are broken by unconditional <code>unwrap-panic</code> in output tuple, forcing all 8 slots.</strong> Silent error swallowing prevents failure detection. Minimal attack surface — no state, no funds, no privileges.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/charisma-rulebook-v0.html">Charisma Rulebook v0 — Protocol Orchestration Hub</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
