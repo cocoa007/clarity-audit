@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/alex-vault.html">alex-vault — ALEX DEX Vault</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.alex-vault?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
+    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Central custody vault for ALEX — the largest Stacks DEX. Holds all pool liquidity with allowlist-based access control and flash loans. <strong>No revocation mechanism for approved contracts (H-01)</strong> — once approved, a contract cannot be removed. Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority (H-02). Flash loan missing post-balance verification and re-entrancy guard. Owner correctly set to executor-dao at deployment.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/v0-3-market.html">v0-3-market — Lending/Borrowing Market Controller</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>

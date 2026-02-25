@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALEX Vault Audit — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .number { font-size: 1.8rem; font-weight: bold; }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.severity-critical { color: #ff4444; font-weight: bold; }
+.severity-high { color: var(--red); font-weight: bold; }
+.severity-medium { color: var(--yellow); font-weight: bold; }
+.severity-low { color: var(--blue); font-weight: bold; }
+.severity-info { color: var(--text-muted); font-weight: bold; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+.finding h3 { margin-top: 0; }
+.finding-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+nav { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+nav a { margin-right: 1.5rem; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>ALEX Vault — Security Audit</h1>
+<p class="subtitle">
+  <code>SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.alex-vault</code><br>
+  Audited: 2026-02-25 · Clarity version: pre-Clarity 4 · Confidence: <strong style="color: var(--yellow);">Medium</strong>
+</p>
+
+<h2>Overview</h2>
+<p>The ALEX Vault is the central custodial contract for the <a href="https://alexgo.io">ALEX DEX</a> — the largest decentralized exchange on Stacks. It holds all pool liquidity and provides token transfer and flash loan capabilities to approved contracts.</p>
+
+<p><strong>Source:</strong> <a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.alex-vault?chain=mainnet">On-chain (Hiro Explorer)</a> · <a href="https://api.hiro.so/v2/contracts/source/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9/alex-vault">Hiro API</a></p>
+
+<p><strong>Architecture:</strong> The vault implements an allowlist-based custody pattern. Three maps control access: <code>approved-contracts</code> (can transfer funds), <code>approved-tokens</code> (tokens the vault interacts with), and <code>approved-flash-loan-users</code> (contracts that can execute flash loans). The contract owner (set to <code>.executor-dao</code> at deployment) manages all three lists.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — DeFi vault holding all DEX liquidity</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — Deployed on mainnet, actively used</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>2 — ~180 lines, trait interactions, flash loans</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>3 — ALEX is largest Stacks DEX</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 — DEX vault with flash loans, new category</td><td>1.5</td><td>3</td></tr>
+</table>
+<p><strong>Score: 2.65 / 3.0</strong> — well above 1.8 threshold. No Clarity version penalty (deployed pre-Clarity 4 era).</p>
+
+<h2>Findings Summary</h2>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="number" style="color: #ff4444;">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--red);">2</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--yellow);">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--blue);">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--text-muted);">2</div><div class="label">Informational</div></div>
+</div>
+
+<h2>High Severity</h2>
+
+<div class="finding">
+  <h3><span class="severity-high">H-01</span> — No Revocation Mechanism for Approved Principals</h3>
+  <p class="finding-meta">Location: <code>add-approved-contract</code>, <code>add-approved-flash-loan-user</code>, <code>add-approved-token</code></p>
+  <p><strong>Description:</strong> The contract provides <code>add-approved-contract</code>, <code>add-approved-flash-loan-user</code>, and <code>add-approved-token</code> functions that set map entries to <code>true</code>, but there are <strong>no corresponding removal functions</strong>. Once a principal is approved, it cannot be revoked.</p>
+  <pre><code>(define-public (add-approved-contract (new-approved-contract principal))
+  (begin 
+    (try! (check-is-owner)) 
+    (ok (map-set approved-contracts new-approved-contract true))
+  )
+)
+;; No remove-approved-contract exists</code></pre>
+  <p><strong>Impact:</strong> If an approved contract is compromised or found to be malicious, the owner cannot revoke its access to vault funds. The only remediation would be to migrate all liquidity to a new vault contract — a complex, high-risk operation for a live DEX. Given that the vault holds <strong>all</strong> ALEX pool liquidity, inability to quickly revoke a compromised contract's access is a significant risk.</p>
+  <p><strong>Recommendation:</strong> Add removal functions for all three maps:</p>
+  <pre><code>(define-public (revoke-approved-contract (contract principal))
+  (begin
+    (try! (check-is-owner))
+    (ok (map-set approved-contracts contract false))
+  )
+)</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="severity-high">H-02</span> — Pre-Clarity 4 <code>as-contract</code> Provides Blanket Asset Access</h3>
+  <p class="finding-meta">Location: <code>transfer-ft</code>, <code>transfer-sft</code>, <code>flash-loan</code></p>
+  <p><strong>Description:</strong> The contract uses the legacy <code>as-contract</code> primitive (pre-Clarity 4) which grants <strong>blanket authority</strong> over all vault-held assets within the enclosed expression. Every call to an external token contract via <code>as-contract</code> gives that token contract full access to move any asset the vault holds.</p>
+  <pre><code>;; In transfer-ft — as-contract gives the token contract full vault authority
+(as-contract (contract-call? token transfer-fixed amount tx-sender recipient none))</code></pre>
+  <p><strong>Impact:</strong> If a malicious or compromised token contract is added to <code>approved-tokens</code>, calling <code>transfer-ft</code> or <code>flash-loan</code> with that token could allow it to drain other vault-held assets during execution. The <code>approved-tokens</code> allowlist mitigates this somewhat, but combined with H-01 (no revocation), a bad token approval is permanent.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4's <code>as-contract?</code> with explicit asset allowances:</p>
+  <pre><code>;; Clarity 4 — only allow transfer of the specific token
+(as-contract? (contract-call? token transfer-fixed amount tx-sender recipient none)
+  (with-ft token amount)
+)</code></pre>
+</div>
+
+<h2>Medium Severity</h2>
+
+<div class="finding">
+  <h3><span class="severity-medium">M-01</span> — Flash Loan Lacks Post-Execution Balance Verification</h3>
+  <p class="finding-meta">Location: <code>flash-loan</code></p>
+  <p><strong>Description:</strong> The flash loan function computes <code>pre-bal</code> before the loan, sends tokens out, calls the user's <code>execute</code> callback, then transfers <code>amount-with-fee</code> back from <code>tx-sender</code>. However, it <strong>never verifies the vault's post-execution balance</strong> is at least <code>pre-bal + fee</code>.</p>
+  <pre><code>;; Pre-balance captured
+(pre-bal (unwrap! (get-balance token) ERR-INVALID-BALANCE))
+;; ... loan sent, callback executed, repayment transferred ...
+;; No post-balance check!
+(ok amount-with-fee)</code></pre>
+  <p><strong>Impact:</strong> The repayment relies solely on the <code>transfer-fixed</code> call succeeding. If the token contract has non-standard behavior (e.g., deflationary tokens with transfer fees, rebasing tokens), the vault could receive less than expected. Best practice for flash loans is to verify the invariant: <code>post-bal >= pre-bal</code>.</p>
+  <p><strong>Recommendation:</strong> Add a post-balance assertion:</p>
+  <pre><code>(let ((post-bal (unwrap! (get-balance token) ERR-INVALID-BALANCE)))
+  (asserts! (>= post-bal (+ pre-bal fee)) ERR-INVALID-BALANCE)
+  (ok amount-with-fee)
+)</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="severity-medium">M-02</span> — Flash Loan Callback Enables Re-Entrancy</h3>
+  <p class="finding-meta">Location: <code>flash-loan</code> → <code>contract-call? flash-loan-user execute</code></p>
+  <p><strong>Description:</strong> The flash loan sends tokens to the borrower and then calls <code>flash-loan-user.execute</code>, which runs arbitrary code from an external contract. During this callback, the vault's token balance is depleted by the loan amount, but vault state otherwise appears normal.</p>
+  <pre><code>;; Tokens sent out — vault balance reduced
+(as-contract (try! (contract-call? token transfer-fixed amount tx-sender recipient none)))
+;; Arbitrary code executes with vault in depleted state
+(try! (contract-call? flash-loan-user execute token amount memo))</code></pre>
+  <p><strong>Impact:</strong> If the flash-loan-user contract is also an approved contract (or can trigger calls from one), it could call back into <code>transfer-ft</code> or <code>flash-loan</code> during execution, potentially extracting additional funds while the balance check uses stale data. The <code>approved-flash-loan-users</code> allowlist limits this to approved contracts, but the interaction between flash loan users and approved contracts should be carefully managed.</p>
+  <p><strong>Recommendation:</strong> Add a re-entrancy guard (lock variable) around flash loan execution, or verify the post-balance invariant (see M-01) which would catch any re-entrancy-based extraction.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity-medium">M-03</span> — No Flash Loan Fee Minimum or Maximum</h3>
+  <p class="finding-meta">Location: <code>set-flash-loan-fee-rate</code>, <code>flash-loan-fee-rate</code></p>
+  <p><strong>Description:</strong> The flash loan fee rate defaults to <code>u0</code> (zero) and can be set to any <code>uint</code> value with no bounds checking.</p>
+  <pre><code>(define-data-var flash-loan-fee-rate uint u0)
+
+(define-public (set-flash-loan-fee-rate (fee uint))
+  (begin 
+    (try! (check-is-owner)) 
+    (ok (var-set flash-loan-fee-rate fee))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> With a zero fee, flash loans are free — enabling costless arbitrage, oracle manipulation, and governance attacks. While the owner (DAO) controls this, the default of zero means the vault is vulnerable until explicitly configured. An excessively high fee could also cause overflow in <code>mul-up</code> calculations.</p>
+  <p><strong>Recommendation:</strong> Set a reasonable default fee (e.g., <code>u50000</code> = 0.05%) and add bounds validation.</p>
+</div>
+
+<h2>Low Severity</h2>
+
+<div class="finding">
+  <h3><span class="severity-low">L-01</span> — <code>get-balance</code> is Public Instead of Read-Only</h3>
+  <p class="finding-meta">Location: <code>get-balance</code></p>
+  <p><strong>Description:</strong> The <code>get-balance</code> function is defined as <code>define-public</code> but only reads data. It should be <code>define-read-only</code> if the underlying <code>get-balance-fixed</code> on the token contract is also read-only (which is standard for SIP-010).</p>
+  <p><strong>Impact:</strong> Being public means callers must pay gas for what should be a free read operation. It also means it cannot be called from other <code>define-read-only</code> functions.</p>
+  <p><strong>Recommendation:</strong> Change to <code>define-read-only</code> if the token's <code>get-balance-fixed</code> is read-only. Note: if any approved token has a public (not read-only) <code>get-balance-fixed</code>, this must remain public.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity-low">L-02</span> — Off-by-One in Flash Loan Balance Check</h3>
+  <p class="finding-meta">Location: <code>flash-loan</code></p>
+  <p><strong>Description:</strong> The flash loan requires <code>(> pre-bal amount)</code> (strict greater than), meaning users cannot borrow the vault's full balance of a token. Borrowing <code>pre-bal</code> exactly will fail.</p>
+  <pre><code>(asserts! (> pre-bal amount) ERR-INVALID-BALANCE)</code></pre>
+  <p><strong>Impact:</strong> Minor — prevents borrowing the last unit of a token. This may be intentional as a safety margin, but is inconsistent with standard flash loan implementations that use <code>>=</code>.</p>
+  <p><strong>Recommendation:</strong> If intentional, document the 1-unit reserve requirement. If not, change to <code>(>= pre-bal amount)</code>.</p>
+</div>
+
+<h2>Informational</h2>
+
+<div class="finding">
+  <h3><span class="severity-info">I-01</span> — Non-Standard Token Interface (<code>transfer-fixed</code> / <code>get-balance-fixed</code>)</h3>
+  <p class="finding-meta">Location: All token interactions</p>
+  <p><strong>Description:</strong> The contract uses <code>transfer-fixed</code> and <code>get-balance-fixed</code> instead of the standard SIP-010 <code>transfer</code> and <code>get-balance</code>. These are ALEX-specific fixed-point wrappers that normalize all tokens to 8 decimal places (<code>ONE_8 = 10^8</code>).</p>
+  <p><strong>Impact:</strong> The vault can only work with tokens that implement the ALEX <code>trait-sip-010.sip-010-trait</code> interface (which extends standard SIP-010 with fixed-point variants). This is by design but limits interoperability.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="severity-info">I-02</span> — Owner Set to executor-dao at Deployment</h3>
+  <p class="finding-meta">Location: Contract initialization (bottom of file)</p>
+  <p><strong>Description:</strong> Good practice — the contract owner is immediately transferred to <code>.executor-dao</code> rather than remaining as the deployer's wallet. Initial approved contracts (<code>.alex-reserve-pool</code>, <code>.fixed-weight-pool</code>) and token (<code>.age000-governance-token</code>) are also set at deployment.</p>
+  <pre><code>(set-contract-owner .executor-dao)
+(map-set approved-contracts .alex-reserve-pool true)
+(map-set approved-contracts .fixed-weight-pool true)
+(map-set approved-tokens .age000-governance-token true)</code></pre>
+  <p><strong>Impact:</strong> Positive — DAO governance controls the vault rather than an individual. This significantly reduces single-point-of-failure risk.</p>
+</div>
+
+<h2>Design Analysis</h2>
+
+<h3>Access Control Model</h3>
+<p>The vault uses <code>tx-sender</code> (not <code>contract-caller</code>) to check authorization. This means approved contracts must use <code>as-contract</code> when calling vault functions, causing <code>tx-sender</code> to reflect the calling contract's principal. This is a deliberate design choice — it prevents unauthorized contracts from piggybacking on an approved contract's transaction flow. However, it creates a tight coupling: any refactoring of approved contracts must preserve the <code>as-contract</code> wrapping or vault calls will fail.</p>
+
+<h3>Flash Loan Architecture</h3>
+<p>The flash loan implementation follows a standard borrow→callback→repay pattern. The borrower receives tokens, executes arbitrary logic, and must repay <code>amount × (1 + fee_rate)</code>. The fee calculation uses <code>mul-up</code> (rounding up), which correctly favors the vault. However, the lack of post-balance verification (M-01) and re-entrancy protection (M-02) are deviations from best practice.</p>
+
+<h3>Trait Usage</h3>
+<p>The contract uses three traits: <code>ft-trait</code> (fungible tokens), <code>sft-trait</code> (semi-fungible tokens), and <code>flash-loan-user-trait</code>. Trait-based dispatch is clean and extensible, but each trait interaction via <code>as-contract</code> grants blanket authority (H-02).</p>
+
+<h2>Audit Confidence</h2>
+<p><strong style="color: var(--yellow);">Medium</strong> — Source verified on-chain via Hiro API. All findings verified against the canonical deployed source. The contract is part of a larger multi-contract system (ALEX DEX), and interactions with <code>executor-dao</code>, <code>alex-reserve-pool</code>, and <code>fixed-weight-pool</code> were not fully traced. Cross-contract re-entrancy paths (M-02) could not be fully enumerated without auditing the full ALEX contract suite.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a></p>
+  <p>Independent audit by cocoa007.btc — not affiliated with ALEX Lab Foundation</p>
+</footer>
+
+</body>
+</html>
