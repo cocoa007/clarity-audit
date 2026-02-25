@@ -542,6 +542,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/stacking-pool-signer-v1.html">StackingDAO Pool Signer v1 — Stacking Delegation</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-pool-signer-restake-v1?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
+    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Pool signer contract managing STX stacking delegation to PoX-4 signers. Handles delegate-stack-stx, extend, increase, and aggregation commits. <strong>Medium: no timelock on admin changes (reward address, ownership) + blanket as-contract (pre-Clarity 4).</strong> Clean architecture with consistent access control.</p>
+  <p class="date">February 25, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/stacking-dao-core-v3.html">StackingDAO Core v3 — Liquid Stacking (v3 upgrade)</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
