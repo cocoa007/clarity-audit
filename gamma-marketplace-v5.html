@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Gamma marketplace-v5 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #fff; }
+.badge.info { background: var(--text-muted); color: var(--bg); }
+.tldr { background: var(--surface); border-left: 3px solid var(--accent); padding: 1rem 1.25rem; margin: 1.5rem 0; border-radius: 0 6px 6px 0; }
+.meta-table td:first-child { color: var(--text-muted); width: 140px; }
+.confidence { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; background: var(--green); color: #000; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Gamma marketplace-v5</h1>
+<p class="subtitle">NFT marketplace with escrow, commission, and royalties — the primary NFT trading venue on Stacks</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code>SPNWZ5V2TPWGQGVDR6T7B6RQ4XMGZ4PXTEE0VQ0S.marketplace-v5</code></td></tr>
+  <tr><td>Source</td><td><a href="https://api.hiro.so/v2/contracts/source/SPNWZ5V2TPWGQGVDR6T7B6RQ4XMGZ4PXTEE0VQ0S/marketplace-v5">Hiro API (on-chain)</a></td></tr>
+  <tr><td>Clarity version</td><td>1</td></tr>
+  <tr><td>Lines</td><td>187</td></tr>
+  <tr><td>Audit date</td><td>2026-02-26</td></tr>
+  <tr><td>Auditor</td><td>cocoa007.btc</td></tr>
+  <tr><td>Confidence</td><td><span class="confidence">High</span> — single contract, fully verified against on-chain source</td></tr>
+</table>
+
+<div class="tldr">
+  <strong>TL;DR:</strong> Well-structured NFT marketplace with proper escrow pattern. Oracle owner can grief purchases via unbounded royalty percentages causing uint underflow. Uses Clarity 1's blanket <code>as-contract</code> — migration to Clarity 4's <code>as-contract?</code> with explicit NFT allowances would significantly reduce trust surface. No critical exploits found — the centralized oracle acts as an effective (if trusted) allowlist.
+</div>
+
+<h2>Overview</h2>
+<p>Gamma's marketplace-v5 is the primary NFT marketplace contract on Stacks. It implements a standard escrow model: sellers transfer NFTs into the contract, buyers pay STX, and the contract distributes payment to the seller, commission to the marketplace operator, and royalties to the collection creator.</p>
+
+<p>The contract depends on a companion <code>nft-oracle</code> contract that stores royalty configuration per NFT collection. Only collections registered in the oracle can be listed — this acts as a curated allowlist.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Listing:</strong> Seller transfers NFT to contract escrow, sets price and commission rate</li>
+  <li><strong>Purchase:</strong> Buyer sends STX (split: seller, marketplace, royalty recipient), receives NFT from escrow</li>
+  <li><strong>Unlist:</strong> Owner reclaims NFT from escrow</li>
+  <li><strong>Admin unlist:</strong> Marketplace owner can return NFTs to their owners (emergency)</li>
+</ul>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>Centralized control: marketplace owner controls freeze flags, minimum prices, commissions</li>
+  <li>Oracle dependency: only oracle-registered NFT collections can be listed</li>
+  <li>Admin can unlist any asset (emergency mechanism)</li>
+</ul>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>H-01</td><td><span class="badge high">High</span></td><td>Unbounded royalty percentage causes purchase DoS via uint underflow</td></tr>
+  <tr><td>M-01</td><td><span class="badge medium">Medium</span></td><td>Inconsistent access control: tx-sender vs contract-caller</td></tr>
+  <tr><td>M-02</td><td><span class="badge medium">Medium</span></td><td>change-price bypasses minimum price validation</td></tr>
+  <tr><td>L-01</td><td><span class="badge low">Low</span></td><td>Clarity 1 blanket as-contract — no asset-level restrictions</td></tr>
+  <tr><td>L-02</td><td><span class="badge low">Low</span></td><td>Commission can be changed after listing but before purchase</td></tr>
+  <tr><td>I-01</td><td><span class="badge info">Info</span></td><td>No event emissions for off-chain indexing</td></tr>
+  <tr><td>I-02</td><td><span class="badge info">Info</span></td><td>Centralized oracle creates single point of failure</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">High</span>
+    <strong>H-01: Unbounded royalty percentage causes purchase DoS via uint underflow</strong>
+  </div>
+
+  <p><strong>Location:</strong> <code>purchase-asset</code>, line ~127</p>
+
+  <p><strong>Description:</strong> The <code>to-owner-amount</code> calculation subtracts both commission and royalty from the price:</p>
+
+<pre><code>(to-owner-amount (- (- price commission-amount) royalty-amount))</code></pre>
+
+  <p>The <code>nft-oracle</code> contract allows the oracle owner to set <strong>any</strong> <code>uint</code> as the royalty percentage for a collection. If <code>commission + royalty > 10000</code> (100%), the subtraction underflows (Clarity uints panic on underflow), permanently bricking all purchases for that collection.</p>
+
+  <p>The oracle owner can set royalty-percent to, say, <code>u9900</code> (99%). With minimum commission of 200 (2%), that's 101% — every <code>purchase-asset</code> call reverts. Listed NFTs are stuck in escrow (owners can still unlist, but buyers can't purchase).</p>
+
+  <p><strong>Impact:</strong> Oracle owner (or compromised oracle key) can DoS purchases for any collection. NFTs remain in escrow; owners can unlist but the marketplace is non-functional for affected collections. While the oracle is centrally controlled by Gamma, key compromise would be devastating.</p>
+
+  <p><strong>Recommendation:</strong> Add a bounds check in <code>purchase-asset</code>:</p>
+
+<pre><code>(asserts! (&lt;= (+ commission-amount royalty-amount) price) (err err-fee-exceeds-price))</code></pre>
+
+  <p>Or cap royalty-percent at listing time so it can't exceed a reasonable bound (e.g., 50%).</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">Medium</span>
+    <strong>M-01: Inconsistent access control — tx-sender vs contract-caller</strong>
+  </div>
+
+  <p><strong>Location:</strong> <code>admin-unlist-asset</code> vs admin setter functions</p>
+
+  <p><strong>Description:</strong> The contract uses two different identity checks for admin operations:</p>
+
+<pre><code>;; admin-unlist-asset — uses tx-sender (documented choice)
+(asserts! (is-eq tx-sender contract-owner) (err err-not-allowed))
+
+;; set-minimum-commission, set-listings-frozen, etc. — use contract-caller
+(asserts! (is-eq contract-caller contract-owner) (err err-not-allowed))</code></pre>
+
+  <p>The <code>admin-unlist-asset</code> comment explains this is intentional (for post-condition protection). However, this means the admin setters can be called through an intermediary contract (where <code>contract-caller</code> is the owner), while <code>admin-unlist-asset</code> requires a direct transaction.</p>
+
+  <p><strong>Impact:</strong> If the marketplace owner is a multisig or DAO contract, it can call the admin setters but NOT <code>admin-unlist-asset</code>. This could be a governance limitation if ownership is transferred to a smart contract.</p>
+
+  <p><strong>Recommendation:</strong> Document this asymmetry clearly. If ownership may transfer to a smart contract, consider adding a <code>contract-caller</code>-based admin-unlist variant.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">Medium</span>
+    <strong>M-02: change-price bypasses minimum price validation</strong>
+  </div>
+
+  <p><strong>Location:</strong> <code>change-price</code>, line ~99</p>
+
+  <p><strong>Description:</strong> The <code>list-asset</code> function enforces minimum listing price and commission:</p>
+
+<pre><code>(asserts! (and (>= commission (var-get minimum-commission))
+              (>= price (var-get minimum-listing-price)))
+         (err err-commission-or-price-too-low))</code></pre>
+
+  <p>But <code>change-price</code> does NOT re-validate against the minimum:</p>
+
+<pre><code>(define-public (change-price (nft &lt;nft-trait&gt;) (nft-id uint) (price uint))
+  (let ((nft-data ...))
+    (asserts! (is-eq (get owner nft-data) tx-sender) (err err-not-allowed))
+    (ok (map-set on-sale ...  {price: price, ...}))))</code></pre>
+
+  <p>A seller can list at 1 STX, then immediately change price to 1 microSTX, bypassing the minimum listing price. At very low prices, commission and royalty amounts truncate to 0 via integer division.</p>
+
+  <p><strong>Impact:</strong> Sellers can effectively trade NFTs with zero marketplace commission and zero royalties by setting price to a trivially small amount (and settling the real payment off-chain).</p>
+
+  <p><strong>Recommendation:</strong> Add minimum price validation to <code>change-price</code>:</p>
+
+<pre><code>(asserts! (>= price (var-get minimum-listing-price)) (err err-commission-or-price-too-low))</code></pre>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">Low</span>
+    <strong>L-01: Clarity 1 blanket as-contract — no asset-level restrictions</strong>
+  </div>
+
+  <p><strong>Location:</strong> <code>transfer-nft-from-escrow</code>, <code>return-nft-from-escrow</code></p>
+
+  <p><strong>Description:</strong> The contract uses Clarity 1's <code>as-contract</code>, which grants blanket authority to transfer any assets the contract holds. In Clarity 4, <code>as-contract?</code> with <code>with-nft</code> allowances would restrict the contract to only transferring the specific NFT being traded.</p>
+
+<pre><code>;; Current (Clarity 1) — blanket authority
+(as-contract (contract-call? nft transfer nft-id contract-address owner))
+
+;; Clarity 4 — explicit NFT allowance (recommended)
+(as-contract? (with-nft nft nft-id) (contract-call? nft transfer nft-id contract-address owner))</code></pre>
+
+  <p><strong>Impact:</strong> Low — the trait-based call limits what operations can be performed, and Clarity prevents re-entrancy. But a Clarity 4 upgrade would provide defense-in-depth.</p>
+
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4 with <code>as-contract?</code> and explicit asset allowances when redeploying.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">Low</span>
+    <strong>L-02: Minimum commission can be raised after listing</strong>
+  </div>
+
+  <p><strong>Location:</strong> <code>set-minimum-commission</code></p>
+
+  <p><strong>Description:</strong> A listing's commission rate is fixed at listing time. If the marketplace owner later raises <code>minimum-commission</code>, existing listings with lower commission rates remain valid and purchasable. This is actually correct behavior (don't retroactively break existing listings), but worth noting for protocol governance.</p>
+
+  <p><strong>Impact:</strong> Low — listings made before a commission increase continue at the old rate. This is likely intentional.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">Info</span>
+    <strong>I-01: No event emissions for off-chain indexing</strong>
+  </div>
+
+  <p><strong>Description:</strong> The contract emits no <code>(print ...)</code> events. Marketplace activity (listings, purchases, unlists) must be tracked by monitoring transaction calls rather than structured events. This makes off-chain indexing harder and less reliable.</p>
+
+  <p><strong>Recommendation:</strong> Add <code>print</code> statements with structured data for key operations:
+  <code>(print {event: "list", nft: (contract-of nft), id: nft-id, price: price, seller: tx-sender})</code></p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">Info</span>
+    <strong>I-02: Centralized oracle creates single point of failure</strong>
+  </div>
+
+  <p><strong>Description:</strong> The marketplace depends on <code>nft-oracle</code> for two functions: (1) authorizing which NFT collections can be listed (allowlist), and (2) setting royalty amounts. Both are controlled by a single <code>contract-owner</code> key. Compromise of this key allows manipulating royalties (see H-01) or de-listing collections.</p>
+
+  <p><strong>Recommendation:</strong> Consider migrating oracle governance to a multisig or DAO for decentralization.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Proper escrow pattern:</strong> NFTs are actually transferred into the contract on listing and out on purchase/unlist — no bookkeeping-only bugs</li>
+  <li><strong>Correct STX flow:</strong> Payments go from buyer to seller/commission/royalty — no self-send or locked-fund bugs</li>
+  <li><strong>Oracle as allowlist:</strong> Only curated collections can be listed, preventing spam and malicious NFT contracts</li>
+  <li><strong>Admin unlist with return:</strong> Emergency admin function correctly returns NFT to the listed owner, not to the admin</li>
+  <li><strong>Duplicate listing prevention:</strong> Uses <code>map-insert</code> (not <code>map-set</code>) to prevent overwriting existing listings</li>
+  <li><strong>Owner validation:</strong> Both unlist and change-price verify the caller is the listing owner</li>
+</ul>
+
+<h2>Architecture Notes</h2>
+<p>The contract is refreshingly simple at 187 lines — a good example of keeping attack surface small. The main trust assumptions are:</p>
+<ol>
+  <li>The marketplace owner (<code>contract-owner</code>) is trusted to set fair commission rates and not abuse freeze flags</li>
+  <li>The oracle owner is trusted to set reasonable royalty percentages</li>
+  <li>NFT contracts passed as traits are registered in the oracle (enforced at listing time)</li>
+</ol>
+
+<p>The contract correctly separates the escrow (holds NFTs) from the payment flow (buyer sends STX directly to recipients). This avoids the common anti-pattern of accumulating funds in the contract.</p>
+
+<hr style="margin-top: 3rem; border-color: var(--border);">
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+  <a href="/clarity-audit/">Full audit portfolio</a> ·
+  Findings: 0 Critical · 1 High · 2 Medium · 2 Low · 2 Informational
+</p>
+
+</body>
+</html>

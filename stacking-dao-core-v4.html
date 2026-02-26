@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Core v4 Audit — Clarity Audit Notes</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);font-size:.85em;background:var(--code-bg);padding:.15em .4em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{border:none;padding:0;font-size:.85rem;line-height:1.5}
+.meta{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem}
+.meta p{margin-bottom:.25rem;font-size:.9rem}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.25rem 0}
+.finding h3{margin-top:0}
+.severity-critical{border-left:4px solid var(--red)}
+.severity-high{border-left:4px solid #f0883e}
+.severity-medium{border-left:4px solid var(--yellow)}
+.severity-low{border-left:4px solid var(--blue)}
+.severity-info{border-left:4px solid var(--text-muted)}
+.tag{display:inline-block;font-size:.75rem;padding:.1em .5em;border-radius:4px;font-weight:600;margin-right:.5rem}
+.tag-critical{background:var(--red);color:#fff}
+.tag-high{background:#f0883e;color:#fff}
+.tag-medium{background:var(--yellow);color:#000}
+.tag-low{background:var(--blue);color:#fff}
+.tag-info{background:var(--text-muted);color:#000}
+.back{display:inline-block;margin-bottom:1.5rem;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{text-align:left;padding:.5rem .75rem;border:1px solid var(--border)}
+th{background:var(--surface)}
+</style>
+</head>
+<body>
+<a class="back" href="/clarity-audit/">← Back to index</a>
+
+<h1>StackingDAO Core v4 — Security Audit</h1>
+<p class="subtitle">Liquid stacking protocol — deposit STX, receive stSTX, withdraw via NFT receipt or idle pool (v4 upgrade)</p>
+
+<div class="meta">
+  <p><strong>Contract:</strong>
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v4?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v4</a></code> · ~290 lines</p>
+  <p><strong>Clarity version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</p>
+  <p><strong>Prior version:</strong> <a href="stacking-dao-core-v3.html">StackingDAO Core v3 audit</a></p>
+  <p><strong>Date:</strong> February 26, 2026</p>
+  <p><strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007.btc</a></p>
+  <p><strong>Audit confidence: Medium.</strong> Well-structured contract with clear separation of concerns. Multi-contract architecture (depends on <code>.dao</code>, <code>.data-core-v1</code>, <code>.data-core-v2</code>, <code>.reserve</code>, <code>.ststx-token</code>, <code>.ststx-withdraw-nft-v2</code>, and four trait-parameterized contracts). Core logic reviewed thoroughly; trust assumptions on external contracts noted.</p>
+</div>
+
+<h2>V3 → V4 Changes</h2>
+<ul>
+<li><strong>New: <code>withdraw-idle</code> function.</strong> Users can now instantly withdraw from the idle STX pool (deposits not yet committed to PoX stacking). This is a major UX improvement — no need to wait for PoX cycle boundary if idle liquidity is available.</li>
+<li><strong>New: <code>withdraw-idle-fee</code> variable.</strong> Separate fee for idle withdrawals, with the same 100% BPS cap as other fees.</li>
+<li><strong>New: <code>shutdown-withdraw-idle</code> flag.</strong> Admin can independently disable idle withdrawals.</li>
+<li><strong>New: Idle STX tracking.</strong> <code>deposit</code> now calls <code>data-core-v2.increase-stx-idle</code> to track idle STX per cycle. <code>withdraw-idle</code> calls <code>data-core-v2.decrease-stx-idle</code>.</li>
+<li><strong>New: <code>get-idle-cycle</code> read-only.</strong> Returns which cycle's idle pool is relevant based on current block height vs withdraw offset.</li>
+<li><strong>New: Withdraw inset.</strong> <code>get-withdraw-unlock-burn-height</code> now adds a <code>withdraw-inset</code> from <code>data-core-v2</code>, allowing fine-grained control of unlock timing.</li>
+<li><strong>Deposit takes <code>direct-helpers</code> trait.</strong> V4 deposit now accepts and validates a <code>direct-helpers</code> trait parameter, calling <code>add-direct-stacking</code> for direct stacking pool tracking.</li>
+<li><strong><code>migrate-ststx</code> removed.</strong> Migration function from v3 is no longer present — migration is complete.</li>
+<li><strong><code>cancel-withdraw</code> still absent.</strong> Remains removed since v3.</li>
+</ul>
+
+<h2>Summary</h2>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="tag tag-high">HIGH</span></td><td>1</td></tr>
+<tr><td><span class="tag tag-medium">MEDIUM</span></td><td>3</td></tr>
+<tr><td><span class="tag tag-low">LOW</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-info">INFO</span></td><td>2</td></tr>
+</table>
+
+<h2>Architecture Overview</h2>
+<p>StackingDAO v4 is a liquid stacking protocol on Stacks. Users deposit STX and receive stSTX (a fungible token). Withdrawals come in three flavors:</p>
+<ol>
+<li><strong>Idle withdrawal (<code>withdraw-idle</code>):</strong> Instant — draws from STX deposited in the current cycle that hasn't been committed to PoX yet.</li>
+<li><strong>Standard withdrawal (<code>init-withdraw</code> → <code>withdraw</code>):</strong> Two-phase — mint NFT receipt, wait for PoX cycle boundary, then redeem.</li>
+</ol>
+<p>External contracts (reserve, commission, staking, direct-helpers) are passed as trait parameters and validated against a DAO registry via <code>check-is-protocol</code>. Idle STX is tracked per-cycle via <code>data-core-v2</code>.</p>
+
+<h2>Documented Limitations</h2>
+<ul>
+<li>Protocol depends on DAO governance for contract registry</li>
+<li>Withdrawal timing bound to PoX cycles (except idle withdrawals)</li>
+<li>Idle pool availability is first-come-first-served — no guarantee of liquidity</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding severity-high">
+<h3><span class="tag tag-high">H-01</span> Fee cap at 100% still allows total confiscation of user funds</h3>
+<p><strong>Location:</strong> <code>set-stack-fee</code>, <code>set-unstack-fee</code>, <code>set-withdraw-idle-fee</code></p>
+<p><strong>Description:</strong> All three fee setters cap at <code>DENOMINATOR_BPS</code> (10000 = 100%). A compromised DAO governance contract could set fees to 100%, causing users to lose their entire deposit, withdrawal, or idle withdrawal amount. This finding has persisted since v2 — v3 added the cap but at 100%, and v4 extends the same pattern to the new <code>withdraw-idle-fee</code>.</p>
+<pre><code>(define-public (set-withdraw-idle-fee (fee uint))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    (asserts! (&lt;= fee DENOMINATOR_BPS) (err ERR_WRONG_BPS))
+    ;; fee can be u10000 = 100%
+    (var-set withdraw-idle-fee fee)
+    (ok true)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> If governance is compromised, all deposits and withdrawals can be fully drained to fee recipients.</p>
+<p><strong>Recommendation:</strong> Set a reasonable maximum fee constant, e.g. <code>(define-constant MAX_FEE u500)</code> (5%) and use that in the assertions. The v1 contract had <code>MAX_COMMISSION u2000</code> (20%) which was already generous.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">M-01</span> Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority</h3>
+<p><strong>Location:</strong> Multiple: <code>deposit</code>, <code>withdraw-idle</code>, <code>init-withdraw</code>, <code>withdraw</code></p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> extensively. In pre-Clarity 4, this grants unrestricted access to all assets held by the contract. V4 adds another <code>as-contract</code> usage path in the new <code>withdraw-idle</code> function, expanding the attack surface.</p>
+<p><strong>Impact:</strong> If a DAO-approved protocol contract is malicious or compromised, it could drain all contract-held assets during any <code>as-contract</code> call.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4's <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>).</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">M-02</span> Idle pool race condition — first-come-first-served with no reservation</h3>
+<p><strong>Location:</strong> <code>withdraw-idle</code></p>
+<p><strong>Description:</strong> The idle pool check <code>(asserts! (&gt;= current-idle-stx stx-amount) (err ERR_INSUFFICIENT_IDLE))</code> is evaluated at transaction execution time. Multiple users may submit <code>withdraw-idle</code> transactions in the same block, all seeing sufficient idle STX, but only the first to execute will succeed. Later transactions revert with <code>ERR_INSUFFICIENT_IDLE</code>.</p>
+<pre><code>(idle-cycle (unwrap-panic (get-idle-cycle)))
+(current-idle-stx (contract-call? .data-core-v2 get-stx-idle idle-cycle))
+...
+(asserts! (&gt;= current-idle-stx stx-amount) (err ERR_INSUFFICIENT_IDLE))</code></pre>
+<p><strong>Impact:</strong> Users may burn gas on failed transactions during high-demand periods. No fund loss — the assertion prevents over-withdrawal. This is inherent to first-come-first-served designs on blockchains, but worth noting.</p>
+<p><strong>Recommendation:</strong> Informational/by-design. Consider documenting the race condition for integrators. A partial-fill pattern could mitigate but adds complexity.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">M-03</span> No minimum deposit/withdrawal amount allows dust and rounding-to-zero</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code>, <code>init-withdraw</code></p>
+<p><strong>Description:</strong> No minimum amount checks. A deposit of 1 micro-STX could mint 0 stSTX due to integer division when the STX/stSTX ratio is high. Similarly, tiny <code>init-withdraw</code> calls mint NFTs with near-zero value.</p>
+<pre><code>;; deposit: if stx-user-amount * DENOMINATOR_6 &lt; stx-ststx, ststx-amount = 0
+(ststx-amount (/ (* stx-user-amount DENOMINATOR_6) stx-ststx))</code></pre>
+<p><strong>Impact:</strong> Rounding-to-zero deposits donate STX without receiving stSTX. Dust withdrawal NFTs bloat state. Low severity in practice since gas costs make this uneconomical.</p>
+<p><strong>Recommendation:</strong> Add minimum amount assertions, e.g. <code>(asserts! (&gt;= stx-amount u1000000) (err ERR_MIN_AMOUNT))</code>.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">L-01</span> <code>unwrap-panic</code> usage in multiple locations</h3>
+<p><strong>Location:</strong> <code>init-withdraw</code> (<code>get-last-token-id</code>), <code>deposit</code> (<code>get-idle-cycle</code>), <code>withdraw-idle</code> (<code>get-idle-cycle</code>)</p>
+<p><strong>Description:</strong> Several <code>unwrap-panic</code> calls exist where <code>unwrap!</code> with a meaningful error would provide better debuggability. The <code>get-idle-cycle</code> calls are particularly unnecessary since that function always returns <code>(ok ...)</code>, but using <code>unwrap-panic</code> on an infallible function is a code smell.</p>
+<p><strong>Impact:</strong> Poor error reporting if underlying functions ever change behavior. No fund risk.</p>
+<p><strong>Recommendation:</strong> Replace with <code>(unwrap! ... (err ERR_...))</code> or <code>(try! ...)</code> for self-documenting errors.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">L-02</span> No <code>cancel-withdraw</code> — withdrawals remain irrevocable</h3>
+<p><strong>Location:</strong> Absent (removed since v3)</p>
+<p><strong>Description:</strong> Once <code>init-withdraw</code> is called, users must wait for the PoX cycle boundary. There is no way to cancel and recover stSTX. The new <code>withdraw-idle</code> partially mitigates this for users with idle liquidity, but doesn't help those already committed to a standard withdrawal.</p>
+<p><strong>Impact:</strong> Users who accidentally withdraw or need liquidity before unlock have no recourse except secondary market NFT transfers (if the NFT contract supports it).</p>
+<p><strong>Recommendation:</strong> Consider re-adding <code>cancel-withdraw</code> as governance-controlled, or document prominently.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">I-01</span> Rounding consistently favors the protocol</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code>, <code>init-withdraw</code>, <code>withdraw</code></p>
+<p><strong>Description:</strong> Integer division rounds down throughout. On deposit, users receive fewer stSTX; on withdrawal, users receive less STX. The new <code>withdraw-idle</code> follows the same pattern: <code>stx-amount = (/ (* ststx-amount stx-ststx) DENOMINATOR_6)</code> rounds down against the user.</p>
+<p><strong>Impact:</strong> Negligible — sub-micro-STX amounts. Standard for integer-arithmetic DeFi.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">I-02</span> Idle pool tracking depends on external <code>data-core-v2</code> integrity</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code></p>
+<p><strong>Description:</strong> The idle STX pool is tracked via <code>data-core-v2.increase-stx-idle</code> and <code>data-core-v2.decrease-stx-idle</code>. If the data contract has bugs or is replaced without migrating state, the idle pool could become out of sync with actual reserve balances, either blocking idle withdrawals or allowing over-withdrawal.</p>
+<p><strong>Impact:</strong> Depends on data-core-v2 correctness — not directly exploitable via this contract alone. The <code>ERR_INSUFFICIENT_IDLE</code> check provides a safety net against over-withdrawal from this contract's perspective, but actual reserve balance is the true constraint.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><strong>Idle withdrawals are a major UX win.</strong> Users no longer have to wait a full PoX cycle for liquidity if idle STX is available. Well-designed with per-cycle tracking.</li>
+<li><strong>Protocol validation on all traits.</strong> All four trait parameters (reserve, commission, staking, direct-helpers) are validated against DAO registry before use.</li>
+<li><strong>Independent shutdown controls.</strong> Each function (deposit, init-withdraw, withdraw, withdraw-idle) has its own shutdown flag, allowing granular emergency response.</li>
+<li><strong>Clean fee architecture.</strong> Separate fee variables for stack, unstack, and idle withdrawal allow differentiated pricing.</li>
+<li><strong>Event logging.</strong> All state-changing functions emit structured print events.</li>
+<li><strong>Migration complete.</strong> Removal of <code>migrate-ststx</code> reduces attack surface.</li>
+</ul>
+
+<h2>V3 Findings Status in V4</h2>
+<table>
+<tr><th>V3 Finding</th><th>Status in V4</th></tr>
+<tr><td>H-01: Fee cap at 100%</td><td>❌ Not fixed — same pattern extended to new <code>withdraw-idle-fee</code></td></tr>
+<tr><td>M-01: as-contract blanket authority</td><td>❌ Not fixed — new <code>as-contract</code> path in <code>withdraw-idle</code></td></tr>
+<tr><td>M-02: No minimum amounts</td><td>❌ Not fixed — applies to new <code>withdraw-idle</code> too</td></tr>
+<tr><td>L-01: cancel-withdraw absent</td><td>⚠️ Partially mitigated — <code>withdraw-idle</code> provides an alternative exit for idle STX</td></tr>
+<tr><td>L-02: unwrap-panic</td><td>❌ Not fixed — more instances added</td></tr>
+<tr><td>I-01: Rounding favors protocol</td><td>ℹ️ Same behavior in new <code>withdraw-idle</code></td></tr>
+</table>
+
+<p style="margin-top:3rem;color:var(--text-muted);font-size:.85rem">
+  Audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a>
+</p>
+
+</body>
+</html>
