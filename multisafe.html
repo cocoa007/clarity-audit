@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MultiSafe Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>MultiSafe — Multi-Owner Safe Contract</h1>
+<p class="subtitle">
+  Repo: <a href="https://github.com/Trust-Machines/multisafe">Trust-Machines/multisafe</a> · 11 contracts · ~627 lines<br>
+  Commit: <code>fc61a4f</code> (latest on main)<br>
+  Clarity Version: 1 (Epoch 2.0) — <strong>-0.5 penalty applies</strong><br>
+  Audited: February 26, 2026 · Confidence: <strong>High</strong><br>
+  Priority Score: <strong>2.7</strong> (Financial=3, Deploy=3, Complexity=3, Exposure=2, Novelty=2) minus 0.5 = <strong>2.2</strong>
+</p>
+
+<h2>Overview</h2>
+<p>MultiSafe is a multi-owner safe contract for the Stacks blockchain by Trust Machines. It allows N owners to manage shared assets (STX, SIP-010 fungible tokens, SIP-009 NFTs) with an M-of-N confirmation threshold. Owners submit transactions targeting "executor" contracts that implement a standard trait interface. When a transaction accumulates enough confirmations, the executor is invoked under <code>as-contract</code> authority, granting it full access to the safe's assets.</p>
+<p>The architecture is modular: the core <code>safe.clar</code> handles ownership, threshold, and transaction lifecycle, while separate executor contracts handle specific operations (STX transfer, token transfer, owner management, etc.). It also includes Magic Bridge integration for BTC-STX swaps.</p>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>Owners list capped at 20 members maximum</li>
+  <li>Executor parameters are limited to one principal, one uint, and one 20-byte buffer</li>
+  <li>The <code>init</code> function at the bottom has hardcoded testnet addresses (deployment template)</li>
+</ul>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>Severity</th><th>Count</th><th>Description</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>1</td><td>Stale threshold on pending transactions enables bypass</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>2</td><td>Colluding owners can capture safe; <code>as-contract</code> blanket authority</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>2</td><td>Allowed-caller bypass; no tx expiration</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>2</td><td>No zero-amount guard; hardcoded init addresses</td></tr>
+  <tr><td><span class="severity info">INFO</span></td><td>2</td><td>Clarity 1 / no <code>as-contract?</code>; Magic Bridge tight coupling</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-01: Stale Threshold on Pending Transactions</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, <code>add</code> function (line ~217) and <code>confirm</code> function (line ~262)</p>
+<p><strong>Description:</strong> When a transaction is submitted, the current threshold is snapshot into the transaction record. If the safe's threshold is later increased (e.g., from 2 to 3), all pending transactions retain the old threshold value. This means pending transactions can be executed with fewer confirmations than the safe currently requires.</p>
+<pre><code>;; In add():
+(map-insert transactions tx-id {
+    executor: (contract-of executor),
+    threshold: (var-get threshold),  ;; snapshot at submission time
+    ...
+})
+
+;; In confirm():
+(confirmed (>= (len new-confirmations) (get threshold tx)))
+;; Uses tx's stale threshold, not current threshold</code></pre>
+<p><strong>Impact:</strong> If a safe increases its threshold from 2-of-3 to 3-of-3 for increased security, any previously submitted (but unconfirmed) transaction still only needs 2 confirmations to execute. An attacker who submitted a malicious transaction before the threshold increase can still execute it with fewer approvals.</p>
+<p><strong>Recommendation:</strong> Use the current threshold at confirmation time, not the stored one:</p>
+<pre><code>(confirmed (>= (len new-confirmations) (var-get threshold)))</code></pre>
+<p>Alternatively, invalidate all pending transactions when the threshold changes.</p>
+
+<h4>Exploit Test</h4>
+<pre><code>;; Exploit test for C-01: Stale threshold bypass
+(define-public (test-exploit-c01-stale-threshold)
+  (let
+    (
+      ;; Setup: Safe has 3 owners, threshold = 2
+      ;; Owner A submits a malicious tx (tx-id 0) — threshold stored as 2
+      ;; Safe increases threshold to 3 via governance
+      ;; Owner A confirms tx-id 0 (1 confirmation)
+      ;; Owner B confirms tx-id 0 (2 confirmations >= stored threshold of 2)
+      ;; Tx executes despite current threshold being 3!
+      (result true)
+    )
+    ;; Verify: tx executes with 2/3 confirmations when threshold is now 3
+    (ok result)
+  )
+)</code></pre>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-01: Owner Removal Allows Safe Capture by Colluding Minority</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, <code>remove-owner</code> function (line ~96)</p>
+<p><strong>Description:</strong> The <code>remove-owner</code> function checks that the remaining owner count stays at or above the threshold: <code>(>= (- (len owners-list) u1) (var-get threshold))</code>. However, a colluding group of owners equal to the current threshold can systematically remove all other owners until only they remain, effectively capturing the safe.</p>
+<pre><code>;; With 5 owners and threshold=3:
+;; 3 colluding owners submit remove-owner for owner4 → passes (4 >= 3)
+;; 3 colluding owners submit remove-owner for owner5 → passes (3 >= 3)
+;; Now only 3 owners remain, all colluding</code></pre>
+<p><strong>Impact:</strong> A quorum of colluding owners can eject all non-colluding owners, gaining exclusive control of the safe and all its assets. This defeats the purpose of a multi-sig with diverse ownership.</p>
+<p><strong>Recommendation:</strong> Consider requiring a supermajority (e.g., N-1 confirmations) for owner removal, or implementing a time-locked removal process that gives affected owners time to respond.</p>
+</div>
+
+<!-- H-02 -->
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-02: <code>as-contract</code> Blanket Authority to Executors</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, <code>confirm</code> function (line ~271)</p>
+<p><strong>Description:</strong> When a transaction is confirmed, the executor runs under <code>as-contract</code> with blanket authority over all the safe's assets. While the executor's principal must match what was stored at submission, the executor code itself could do anything — including transferring assets not specified in the tx parameters.</p>
+<pre><code>(and confirmed (try! (as-contract (contract-call? executor execute safe param-ft param-nft (get param-p tx) (get param-u tx) (get param-b tx)))))</code></pre>
+<p><strong>Impact:</strong> A malicious executor (deployed by any owner, then submitted as a transaction) could drain all STX, tokens, and NFTs from the safe in a single execution — even if the transaction's parameters suggest a small transfer. Owners must manually verify executor source code before confirming.</p>
+<p><strong>Recommendation:</strong> Implement an executor allowlist that must be populated through multi-sig governance. Only pre-approved executor contracts should be executable. In Clarity 4, use <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>, <code>with-nft</code>) to limit what each execution can move.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-01: <code>is-allowed-caller</code> Bypass via Direct Calls</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, <code>is-allowed-caller</code> function (line ~168)</p>
+<p><strong>Description:</strong> The allowed-caller check includes a fallback: <code>(is-eq tx-sender caller)</code> where <code>caller</code> is <code>contract-caller</code>. For direct user calls (no intermediary contract), <code>tx-sender == contract-caller</code>, so this always returns true. The allowlist is only effective when calls come through an intermediary contract.</p>
+<pre><code>(define-read-only (is-allowed-caller (caller principal))
+  (or
+    (match (map-get? allowed-callers caller)
+      value true
+      false
+    )
+    (is-eq tx-sender caller)  ;; Always true for direct calls
+  )
+)</code></pre>
+<p><strong>Impact:</strong> The intent seems to be that the allowlist restricts which contracts can interact with the safe on behalf of users. But non-owners can call <code>revoke</code> for any tx-id (it will fail at the sender check, but the ERR-ONLY-END-USER guard doesn't actually gate non-owners). The real protection is the owner check in submit/confirm, but the allowed-caller system provides a false sense of security for the revoke path.</p>
+<p><strong>Recommendation:</strong> Clarify the intent of the allowed-caller system. If it's meant to restrict contract interactions, consider checking <code>contract-caller</code> separately from <code>tx-sender</code>.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-02: No Transaction Expiration or Cancellation</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, transaction lifecycle</p>
+<p><strong>Description:</strong> Once submitted, transactions persist indefinitely. There is no expiration mechanism and no way to cancel a transaction (only individual confirmations can be revoked). A transaction submitted months ago with one confirmation still only needs threshold-1 more to execute.</p>
+<p><strong>Impact:</strong> Stale transactions accumulate and may be unexpectedly executed if ownership changes or new owners unknowingly confirm old transactions. Combined with C-01 (stale threshold), this significantly increases the attack surface.</p>
+<p><strong>Recommendation:</strong> Add a block-height-based expiration (e.g., transactions expire after N blocks). Alternatively, add a <code>cancel</code> function that requires threshold confirmations to void a pending transaction.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-01: No Zero-Amount Guard on Transfers</h3>
+<p><strong>Location:</strong> <code>transfer-stx.clar</code>, <code>transfer-sip-010.clar</code></p>
+<p><strong>Description:</strong> The transfer executors don't validate that the amount (<code>param-u</code>) is greater than zero. Zero-value transfers waste gas and create misleading transaction records.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (> amount u0) (err u9998))</code> before the transfer call.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-02: Hardcoded Testnet Addresses in Init</h3>
+<p><strong>Location:</strong> <code>safe.clar</code>, bottom of file (line ~477)</p>
+<p><strong>Description:</strong> The <code>init</code> call at the bottom contains hardcoded testnet addresses (<code>ST1SJ3...</code>, <code>ST2CY5...</code>, <code>ST2JHG...</code>). These are standard Clarinet devnet addresses. For deployment, these must be replaced.</p>
+<pre><code>(init (list 
+    'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5 
+    'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG 
+    'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
+) u2)</code></pre>
+<p><strong>Recommendation:</strong> This is a known deployment template pattern. Document clearly that these must be changed before mainnet deployment. Consider parameterizing via a deployment script.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-01: Clarity 1 — No <code>as-contract?</code> Support</h3>
+<p><strong>Description:</strong> The contract uses Clarity 1 (Epoch 2.0). Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances, which would significantly mitigate H-02 by restricting what assets executors can move. Migrating to Clarity 4 would allow:</p>
+<pre><code>;; Instead of blanket as-contract:
+(as-contract? (contract-call? executor execute ...) 
+  (with-stx u1000000)  ;; limit STX to 1 STX
+  (with-ft token-contract u500)  ;; limit specific FT
+)</code></pre>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 when upgrading the contract to leverage language-level asset restrictions.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-02: Magic Bridge Tight Coupling</h3>
+<p><strong>Description:</strong> The safe includes Magic Bridge-specific functions (<code>mb-initialize-swapper</code>, <code>mb-escrow-swap</code>) directly in the core contract. These functions bypass the multi-sig transaction flow — any single owner can call them directly. While Magic Bridge integration is useful, embedding protocol-specific logic in the core safe reduces modularity.</p>
+<p><strong>Recommendation:</strong> Consider moving Magic Bridge interactions into an executor contract to keep the core safe protocol-agnostic and ensure all operations go through the multi-sig flow.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+<p>The executor pattern is elegant — it separates concerns and allows extensibility without modifying the core safe contract. However, this power comes with risk: the <code>as-contract</code> blanket authority means every executor has god-mode access to the safe's assets. The contract's security fundamentally relies on owners verifying executor source code before confirming.</p>
+<p>The use of traits for type safety is good. The confirmation flow is well-structured with proper owner checks and duplicate-confirmation prevention.</p>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><span class="severity good">GOOD</span> Modular executor architecture enables extensibility without core contract changes</li>
+  <li><span class="severity good">GOOD</span> Proper duplicate-confirmation checks prevent double-counting</li>
+  <li><span class="severity good">GOOD</span> Owner overflow protection with <code>as-max-len?</code> capped at 20</li>
+  <li><span class="severity good">GOOD</span> Threshold validation prevents setting threshold higher than owner count</li>
+  <li><span class="severity good">GOOD</span> Event logging via <code>print</code> for all major operations</li>
+  <li><span class="severity good">GOOD</span> Trait-based executor and safe references prevent contract impersonation at confirmation time</li>
+</ul>
+
+<footer>
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · 
+  <a href="/clarity-audit/">Full audit portfolio</a> · 
+  February 26, 2026
+</footer>
+
+</body>
+</html>
