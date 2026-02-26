@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Commission v2 Audit — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .number { font-size: 1.8rem; font-weight: bold; }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.severity-critical { color: #ff4444; font-weight: bold; }
+.severity-high { color: var(--red); font-weight: bold; }
+.severity-medium { color: var(--yellow); font-weight: bold; }
+.severity-low { color: var(--blue); font-weight: bold; }
+.severity-info { color: var(--text-muted); font-weight: bold; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+.finding h3 { margin-top: 0; }
+.finding-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+.back-link { display: inline-block; margin-bottom: 1.5rem; color: var(--text-muted); }
+.confidence { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+.confidence-high { background: rgba(63,185,80,0.15); color: var(--green); }
+.confidence-medium { background: rgba(210,153,34,0.15); color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">← Back to audit index</a>
+
+<h1>StackingDAO Commission v2</h1>
+<p class="subtitle">
+  Independent security audit by <a href="https://github.com/cocoa007">cocoa007.btc</a><br>
+  Contract: <code>SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.commission-v2</code><br>
+  Source: <a href="https://explorer.hiro.so/txid/0x457ade5ac0a9a1fa1ca7c87c0f6e6c2df9a49109ef178acc243231f0a97eeaed?chain=mainnet">On-chain (block 147,391)</a> ·
+  <a href="https://api.hiro.so/v2/contracts/source/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG/commission-v2">API source</a><br>
+  Clarity version: 2 · Date: 2026-02-26 · Confidence: <span class="confidence confidence-high">High</span>
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="number" style="color: var(--green)">0</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" style="color: var(--red)">0</div>
+    <div class="label">High</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" style="color: var(--yellow)">1</div>
+    <div class="label">Medium</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" style="color: var(--blue)">2</div>
+    <div class="label">Low</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" style="color: var(--text-muted)">2</div>
+    <div class="label">Informational</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  This contract is part of the <strong>StackingDAO</strong> protocol, a liquid stacking protocol on Stacks.
+  It handles the splitting of stacking rewards (commission) between protocol treasury and stakers.
+  The commission percentage is configurable via DAO governance, with a minimum 70% floor for the staker share.
+</p>
+<p>
+  The contract is well-structured and relatively simple at 123 lines. All privileged operations are gated behind
+  <code>.dao check-is-protocol</code>, which delegates access control to the DAO governance system.
+  The trait-based staking contract parameter is also validated against the DAO's protocol registry.
+</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>add-commission</strong>: Called by core contract to split STX rewards — staker portion sent to staking contract, protocol portion held in this contract</li>
+  <li><strong>withdraw-commission</strong>: Protocol can withdraw accumulated protocol commission</li>
+  <li><strong>set-staking-basispoints</strong>: DAO governance sets the staker share (minimum 70%)</li>
+  <li>All timing is based on PoX cycle calculations from <code>pox-4</code></li>
+</ul>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>The staking-basispoints variable starts at 0 (all rewards to protocol) until explicitly set via governance — this is by design as the contract comment notes "set later"</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity-medium">[M-01]</span> Zero-amount withdrawal succeeds silently</h3>
+  <div class="finding-meta">Location: <code>withdraw-commission</code> (line 83–93)</div>
+  <p><strong>Description:</strong> When the contract has zero STX balance, <code>withdraw-commission</code> attempts
+  <code>stx-transfer?</code> with amount 0. In Clarity, <code>stx-transfer?</code> with amount 0 returns an error
+  (<code>(err u1)</code>), which would cause the whole transaction to abort via <code>try!</code>. This means the function
+  cannot be called when the balance is zero — it will revert instead of returning <code>(ok u0)</code>.</p>
+  <pre><code>(define-public (withdraw-commission)
+  (let (
+    (receiver tx-sender)
+    (amount (stx-get-balance (as-contract tx-sender)))
+  )
+    (try! (contract-call? .dao check-is-protocol tx-sender))
+    (try! (as-contract (stx-transfer? amount tx-sender receiver)))
+    (ok amount)
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Not a funds-at-risk issue, but causes unexpected transaction failures when called with no accumulated commission. Off-chain systems calling this function may need to pre-check the balance.</p>
+  <p><strong>Recommendation:</strong> Add a guard: <code>(asserts! (> amount u0) (ok u0))</code> before the transfer to return cleanly when there's nothing to withdraw.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity-low">[L-01]</span> Initial staking-basispoints is zero — all rewards go to protocol until configured</h3>
+  <div class="finding-meta">Location: <code>staking-basispoints</code> variable (line 24)</div>
+  <p><strong>Description:</strong> The <code>staking-basispoints</code> variable defaults to <code>u0</code>.
+  Until governance explicitly calls <code>set-staking-basispoints</code>, the staker share is 0% and the
+  full commission amount is kept by the protocol. The code comment says "set later" confirming this is intentional,
+  but there is a window between deployment and configuration where stakers receive nothing.</p>
+  <pre><code>(define-data-var staking-basispoints uint u0) ;; 0% in basis points, set later</code></pre>
+  <p><strong>Impact:</strong> If the DAO is slow to configure, or if a governance proposal fails, stakers
+  may miss commission from early reward cycles. This is low severity because the DAO is expected to configure
+  this promptly, and the MIN_STAKING_BASISPOINTS (70%) floor prevents setting it too low once configured.</p>
+  <p><strong>Recommendation:</strong> Consider initializing to <code>MIN_STAKING_BASISPOINTS</code> (u7000) as the default, so stakers are protected even before governance acts.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity-low">[L-02]</span> <code>unwrap-panic</code> on pox-4 get-pox-info</h3>
+  <div class="finding-meta">Location: <code>get-prepare-cycle-length</code> (line 119–121)</div>
+  <p><strong>Description:</strong> The <code>get-prepare-cycle-length</code> helper uses <code>unwrap-panic</code> on the result of <code>get-pox-info</code>. If the PoX contract ever returns <code>none</code> (which is unlikely but theoretically possible during protocol upgrades), this would abort the entire transaction with a runtime error rather than returning a graceful error.</p>
+  <pre><code>(define-read-only (get-prepare-cycle-length)
+  (get prepare-cycle-length (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox-4 get-pox-info)))
+)</code></pre>
+  <p><strong>Impact:</strong> Low — <code>get-pox-info</code> on pox-4 is a stable system contract that should always return data. The panic would only surface if the contract is called during an epoch transition where pox-4 is being replaced.</p>
+  <p><strong>Recommendation:</strong> Acceptable for a read-only helper. If used in public functions via <code>get-cycle-rewards-end-block</code>, consider wrapping with a default fallback value.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity-info">[I-01]</span> Pre-Clarity 4: uses <code>as-contract</code> instead of <code>as-contract?</code></h3>
+  <div class="finding-meta">Location: lines 73, 88, 91</div>
+  <p><strong>Description:</strong> This contract was deployed with Clarity version 2 and uses the legacy <code>as-contract</code> form,
+  which grants blanket asset access to the enclosed expression. Clarity 4 introduced <code>as-contract?</code> with explicit
+  asset allowances (<code>with-stx</code>, <code>with-ft</code>, etc.) that restrict which assets can be moved.</p>
+  <p><strong>Impact:</strong> In this contract, <code>as-contract</code> is only used for STX transfers, so the practical risk is limited.
+  However, any future upgrade or code change within the <code>as-contract</code> block could inadvertently move other assets held by the contract.</p>
+  <p><strong>Recommendation:</strong> If the protocol upgrades to a commission-v3, use Clarity 4 with:
+  <code>(as-contract? (with-stx) (stx-transfer? ...))</code></p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity-info">[I-02]</span> No event emission for commission operations</h3>
+  <div class="finding-meta">Location: <code>add-commission</code>, <code>withdraw-commission</code>, <code>set-staking-basispoints</code></div>
+  <p><strong>Description:</strong> None of the public functions emit <code>print</code> events. This makes it harder for
+  off-chain indexers and monitoring systems to track commission splits, withdrawals, and parameter changes without
+  parsing transaction details.</p>
+  <p><strong>Impact:</strong> No security impact. Affects observability and off-chain integration.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "add-commission", stx-amount: stx-amount, staking: amount-for-staking, protocol: amount-to-keep })</code> and similar for other functions.</p>
+</div>
+
+<h2>Security Properties Verified</h2>
+<table>
+  <tr><th>Property</th><th>Status</th></tr>
+  <tr><td>All privileged functions gated by DAO governance</td><td style="color: var(--green)">✅ Verified</td></tr>
+  <tr><td>Trait parameter validated against DAO protocol registry</td><td style="color: var(--green)">✅ Verified</td></tr>
+  <tr><td>Minimum staker share enforced (70%)</td><td style="color: var(--green)">✅ Verified</td></tr>
+  <tr><td>No reentrancy vectors</td><td style="color: var(--green)">✅ Verified (Clarity prevents reentrancy by design)</td></tr>
+  <tr><td>STX transfers have correct sender/receiver</td><td style="color: var(--green)">✅ Verified</td></tr>
+  <tr><td>No integer overflow in basis point math</td><td style="color: var(--green)">✅ Verified (max 10000 bps × uint amount fits u128)</td></tr>
+  <tr><td>withdraw-commission correctly captures tx-sender before as-contract</td><td style="color: var(--green)">✅ Verified</td></tr>
+</table>
+
+<h2>Summary</h2>
+<p>
+  The StackingDAO commission-v2 contract is a well-designed, minimal commission splitter with proper DAO governance guards.
+  No critical or high severity issues were found. The contract correctly validates the staking contract trait parameter,
+  enforces a minimum staker share, and properly handles the <code>as-contract</code> pattern for STX transfers.
+</p>
+<p>
+  The main areas for improvement are: adding a zero-balance guard on withdrawals (M-01), considering a safer default
+  for the staker share (L-01), and migrating to Clarity 4's <code>as-contract?</code> in a future version (I-01).
+</p>
+<p>
+  Overall, this is a solid contract with a small, well-scoped attack surface. The reliance on DAO governance
+  for access control means the security of this contract is ultimately dependent on the security of the DAO itself.
+</p>
+
+<p style="margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+  <a href="index.html">Full audit portfolio</a> ·
+  Priority score: 2.45/3.0
+</p>
+
+</body>
+</html>
