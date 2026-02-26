@@ -206,19 +206,19 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">39</div>
+    <div class="num">29</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">54</div>
+    <div class="num">48</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">365</div>
+    <div class="num">296</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
-    <div class="num">52</div>
+    <div class="num">51</div>
     <div class="label">Critical</div>
   </div>
 </div>
@@ -227,318 +227,6 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stackingdao-commission-v2.html">StackingDAO Commission v2 — Reward Splitter</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0x457ade5ac0a9a1fa1ca7c87c0f6e6c2df9a49109ef178acc243231f0a97eeaed?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="m">1M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">StackingDAO's commission splitter — splits stacking rewards between protocol treasury and stakers with a DAO-governed ratio (70% minimum to stakers). <strong>Medium: zero-amount withdrawal reverts unexpectedly.</strong> Clean design, proper DAO access control, 123 lines. Pre-Clarity 4 (uses legacy <code>as-contract</code>).</p>
-  <p class="date">February 26, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/sip-010-trait-ft-standard.html">SIP-010 Fungible Token Trait — Ecosystem Standard</a>
-    <span class="confidence">ℹ️ INFO</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard?chain=mainnet">SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE</a></span>
-    <span class="findings-compact"><span class="i">INFO ONLY</span></span>
-  </div>
-  <p class="summary">The canonical SIP-010 fungible token trait — Stacks' equivalent of ERC-20. Trait definition only (no executable logic, no vulnerabilities). Reference document explaining the standard, its 7 required functions, and a security checklist for implementors.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/executor-dao.html">ExecutorDAO — Modular DAO Framework</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://github.com/MarvinJanssen/executor-dao">MarvinJanssen/executor-dao</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">The foundational modular DAO framework for Stacks — widely forked by ALEX, Charisma, Megapont, aibtcdev. <strong>High: blanket <code>as-contract</code> grants unlimited asset authority to proposals/extensions.</strong> No emergency shutdown. Unverified <code>sender</code> parameter in <code>execute</code>. Elegant 68-line core with one-time bootstrap and replay protection. Essential Clarity 4 migration guide for forks.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/fixed-weight-pool-v1-01.html">ALEX fixed-weight-pool-v1-01 — Balancer-style Weighted AMM</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.fixed-weight-pool-v1-01?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
-    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">3L</span> <span class="i">4I</span></span>
-  </div>
-  <p class="summary">ALEX Balancer-style weighted AMM with unequal token weights and EMA oracle. <strong>High: silent balance underflow masks insolvency; unbounded fee rates can brick pools.</strong> Oracle manipulable with low smoothing. Multi-hop double-fee compounding. Pre-Clarity 4 as-contract. 1,320 lines with inlined log/exp/pow math.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/dao-traits-v4.html">StackerDAO dao-traits-v4 — DAO Trait Definitions</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dao-traits-v4?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
-    <span class="findings-compact"><span class="i">4I</span></span>
-  </div>
-  <p class="summary">Trait-only contract defining 10 interfaces for StackerDAO's modular DAO framework. Zero executable code, zero attack surface. Duplicates canonical SIP-010 and SIP-009 traits (fragments interop). Governance token trait uses non-standard <code>dmg-</code> naming prefix.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/amm-swap-pool-v1-1.html">ALEX amm-swap-pool-v1-1 — AMM Swap Pool</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">4M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Core ALEX DEX AMM — hybrid constant-product/constant-sum curve with oracle. <strong>High: multi-hop swaps (3-4 hops) have zero slippage protection.</strong> Fee rates unbounded; saturating balance subtraction can desync pool state from vault. Pre-Clarity 4 as-contract.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/age000-governance-token.html">age000-governance-token — ALEX Governance Token</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.age000-governance-token?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
-    <span class="findings-compact"><span class="m">3M</span> <span class="l">3L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">ExecutorDAO governance token for ALEX DEX — SIP-010 fungible token with dual-token lock mechanism. <strong>No approved-contract removal function (M-03)</strong> — once approved, contracts retain mint/burn access permanently. Privileged burn/transfer operate on arbitrary owners without consent. Deployer retains permanent mint/burn approval via hardcoded <code>tx-sender</code>. Mutable decimals could break all integrations.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/alex-vault.html">alex-vault — ALEX DEX Vault</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.alex-vault?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
-    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Central custody vault for ALEX — the largest Stacks DEX. Holds all pool liquidity with allowlist-based access control and flash loans. <strong>No revocation mechanism for approved contracts (H-01)</strong> — once approved, a contract cannot be removed. Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority (H-02). Flash loan missing post-balance verification and re-entrancy guard. Owner correctly set to executor-dao at deployment.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/v0-3-market.html">v0-3-market — Lending/Borrowing Market Controller</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0x433a0e9f3c0646cbdec6b51de28d6bd82fbb09bdbbf6481e455d735978918fe6?chain=mainnet">SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7</a></span>
-    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Central controller for Zest Protocol lending market (6 vaults, Pyth/DIA oracles, graduated liquidation). <strong>No critical or high findings.</strong> Exemplary Clarity 4 usage with <code>as-contract?</code> explicit asset allowances. Simplified liquidation curve exponent and edge-case bad debt socialization trigger. One of the best-engineered Clarity contracts audited.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/trust-score-v1.html">trust-score-v1 — On-Chain Reputation System</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.trust-score-v1?chain=mainnet">SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">1M</span> <span class="l">1L</span> <span class="i">1I</span></span>
-  </div>
-  <p class="summary">Permissionless reputation system — <strong>Critical: no access control on increase/decrease-reputation, anyone can set any user's score to any value.</strong> No funds at risk (no token transfers). Action tracker disconnected from reputation scoring. Below normal audit threshold (0.75 &lt; 1.8).</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/delay-vault-v1.html">delay-vault-v1 — Timelock / Delay Vault</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.delay-vault-v1?chain=mainnet">SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Minimal timelock contract for scheduling delayed operations. <strong>High: no access control — anyone can schedule and execute any operation.</strong> Zero-delay bypass defeats timelock purpose. Execute has no side effects (no-op registry). Not suitable for production use.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/arkadiko-vaults-tokens-v1-1.html">Arkadiko Vaults Tokens v1-1 — Collateral Registry</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-tokens-v1-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
-    <span class="findings-compact"><span class="m">1M</span> <span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Collateral token parameter registry for Arkadiko Vaults. <strong>No funds at risk — pure configuration contract.</strong> Missing parameter bounds validation in <code>set-token</code> could allow DAO owner misconfiguration to brick vault operations. Clean minimal design with proper list management.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/arkadiko-freddie-v1-1.html">Arkadiko Freddie v1-1 — Vault Manager</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-freddie-v1-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
-    <span class="findings-compact"><span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Core vault manager for Arkadiko stablecoin. <strong>High: missing owner check in <code>close-vault</code> allows anyone to force-close non-stacking vaults.</strong> Permissionless <code>redeem-tokens</code> lets anyone trigger fee distributions. Well-architected orchestration layer with comprehensive trait validation via DAO registry.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/borrow-helper-v2-1-7.html">Zest Protocol borrow-helper-v2-1-7 — Lending Helper</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.borrow-helper-v2-1-7?chain=mainnet">SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N</a></span>
-    <span class="findings-compact"><span class="m">1M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Thin helper/router for Zest lending protocol. <strong>Medium: liquidation event emits debt reserve state as collateral reserve state (copy-paste bug) — misleads off-chain liquidation bots.</strong> Clean stateless design with no custody risk. Security delegates to <code>pool-borrow-v2-4</code>.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stackswap-swap-router-v1b.html">StackSwap Swap Router v1b — Multi-Hop Router</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-router-v1b?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275</a></span>
-    <span class="findings-compact"><span class="m">1M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Two-hop swap router for StackSwap DEX. <strong>Clean, minimal design — stateless and custody-free.</strong> Both hops have user-specified slippage protection (better than most routers). Missing swap deadline enables mempool delay attacks. Companion to <a href="/clarity-audit/stackswap-swap-v5k.html">stackswap-swap-v5k audit</a>.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stableswap-swap-helper-v-1-5.html">Stableswap Swap Helper v1.5 — Multi-Hop Router</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-swap-helper-v-1-5?chain=mainnet">SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR</a></span>
-    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Charisma DEX stableswap multi-hop router (1-5 pools). Intermediate swaps pass hardcoded <code>u1</code> min-amount (sandwich vector on multi-hop). Pre-Clarity 4 <code>as-contract</code> blanket authority. <strong>Low risk overall — stateless custody-free design with no stored funds.</strong></p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/xyk-core-v-1-2.html">XYK Core v1.2 — AMM DEX Router</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0xda5f8b6e45410d4d21f0cd1fba8b44a6a40a8ca07b3e2ace0c8bc2cffd64c492?chain=mainnet">SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">XYK constant-product AMM router. <strong>High: <code>get-dx</code> quote uses wrong fee parameters (x-fees instead of y-fees), diverging from actual swap output.</strong> Add-liquidity has no max-y-amount bound (sandwich vector). Clean architecture with proper pool registration and slippage protection.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/dungeon-master.html">Dungeon Master — Charisma DAO Governance Controller</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.dungeon-master?chain=mainnet">SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Charisma protocol's core ExecutorDAO — manages extensions, proposals, and bootstrap. <strong>High: blanket <code>as-contract</code> in Clarity 1 grants unlimited asset authority to proposals.</strong> Clean architecture with one-time bootstrap and replay protection, but no emergency shutdown mechanism.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/dungeon-crawler-rc6.html">Dungeon Crawler RC6 — Charisma Interaction Router</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0xaf79d2c230004afbc98da996c4f9591136bc6f794b1fca214fb40bf7cd87167b?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">1M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Charisma protocol's user-facing batch router for interaction contracts. <strong>High: <code>explore</code> panics on partial input — optional parameters are broken by unconditional <code>unwrap-panic</code> in output tuple, forcing all 8 slots.</strong> Silent error swallowing prevents failure detection. Minimal attack surface — no state, no funds, no privileges.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/token-apower.html">ALEX Power Token (APower) — Non-Transferable DeFi Token</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.token-apower?chain=mainnet">SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9</a></span>
-    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">ALEX protocol's non-transferable auto-compounding power token (SIP-010 with disabled transfers). <strong>Medium: mutable decimals breaks fixed-point math; burn allows arbitrary sender targeting without consent.</strong> Simple, DAO-governed accounting token — low overall risk.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/charisma-lands.html">Charisma Lands — SFT Wrapping &amp; Energy System</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.lands?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">SIP-013 semi-fungible token wrapping SIP-010 assets into "lands" with passive energy generation. <strong>Critical: <code>store</code> function calls <code>tap(tx-sender)</code> then writes result to recipient's energy — any incoming transfer permanently destroys the recipient's accumulated energy.</strong> Transfer executes state mutations before input validation; pre-Clarity 4 <code>as-contract</code> blanket access risk.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/charisma-rulebook-v0.html">Charisma Rulebook v0 — Protocol Orchestration Hub</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charisma-rulebook-v0?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Central token operation gateway for Charisma protocol managing XP, energy, and governance tokens. <strong>High: status effects contract has unrestricted power to manipulate amounts and redirect targets for all token operations.</strong> Multi-owner claims are misleading — single owner has full unilateral control with no multi-sig or timelock.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/charismatic-flow-hold-to-earn.html">Charismatic Flow Hold-to-Earn Engine</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0x281b1688dd98a86d885bc12bbe8bafc554d925ac534afd8dd95169905271fa0c?chain=mainnet">SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Hold-to-earn staking engine using trapezoidal numerical integration of historical token balances. <strong>High: discrete balance sampling (2–39 points) allows inter-sample manipulation — attacker acquires tokens before sample blocks, inflates integral, sells after.</strong> Division-by-zero risk if total supply reaches zero.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/dme009-charisma-rewards.html">DME009 Charisma Rewards — Quest Reward Distribution</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/0x0fd98f76b0eab5edcd618cadc5b310b38c7fbec6fa104d079cd931573117cb81?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS</a></span>
-    <span class="findings-compact"><span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Minimal DAO extension for minting Charisma governance tokens as quest rewards. Clean authorization pattern, no critical issues. <strong>Low: no maximum reward cap — defense-in-depth recommendation.</strong></p>
-  <p class="date">February 25, 2026</p>
-</div>
 
 <div class="audit-card">
   <div class="card-header">
@@ -555,67 +243,15 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
-    <a href="/clarity-audit/stackswap-swap-v5k.html">StackSwap stackswap-swap-v5k — AMM Swap</a>
+    <a href="/clarity-audit/velar-univ2-core.html">Velar univ2-core — UniswapV2 AMM</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
   <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-v5k?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core?chain=mainnet">SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
   </div>
-  <p class="summary">Core constant-product AMM for StackSwap DEX. <strong>High: all pair state delegated to external LP token contracts creates trust boundary risk.</strong> Good safe-transfer protections but centralization risk via DAO owner LP token replacement.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stacking-pool-signer-v1.html">StackingDAO Pool Signer v1 — Stacking Delegation</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-pool-signer-restake-v1?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Pool signer contract managing STX stacking delegation to PoX-4 signers. Handles delegate-stack-stx, extend, increase, and aggregation commits. <strong>Medium: no timelock on admin changes (reward address, ownership) + blanket as-contract (pre-Clarity 4).</strong> Clean architecture with consistent access control.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/ststx-token.html">stSTX Token (StackingDAO) — Liquid Staking Token</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="m">1M</span> <span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">SIP-010 liquid staking token for StackingDAO. DAO-gated mint/burn with clean architecture. <strong>Medium: inconsistent auth — <code>set-token-uri</code> checks <code>tx-sender</code> while mint/burn check <code>contract-caller</code>.</strong> Protocol contracts can burn from any address. Pre-Clarity 4.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stacking-dao-core-v3.html">StackingDAO Core v3 — Liquid Stacking (v3 upgrade)</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v3?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">V3 upgrade of StackingDAO liquid stacking core. Adds fee cap (but at 100%), removes cancel-withdraw, fixes off-by-one in withdrawal timing. <strong>High: fee cap at 100% still allows total confiscation.</strong> Still pre-Clarity 4 with blanket <code>as-contract</code>. Includes v2→v3 diff analysis.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stacking-dao-core-v2.html">StackingDAO Core v2 — Liquid Stacking</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v2?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="h">2H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Core user-facing contract for StackingDAO liquid stacking (deposit STX → stSTX, NFT-based withdrawals). <strong>High: no fee cap — admin can set 100% deposit/withdrawal fees (v1 had MAX_COMMISSION, v2 removed it).</strong> Pre-Clarity 4 <code>as-contract</code> grants blanket asset authority to trait-parameterized contracts. Clean architecture with DAO registry validation on all external calls.</p>
-  <p class="date">February 25, 2026</p>
+  <p class="summary">UniswapV2-style constant-product AMM on Stacks mainnet. <strong>Critical: no MINIMUM_LIQUIDITY allows first-depositor inflation attack.</strong> High: inconsistent access control (contract-caller vs tx-sender). Multi-tier fee system with anti-rug bounds.</p>
+  <p class="date">February 26, 2026</p>
 </div>
 
 <div class="audit-card">
@@ -629,58 +265,6 @@ footer {
   </div>
   <p class="summary">Token migration wrapper for ALEX staking. <strong>High: blocklist bypass via direct reserve pool interaction.</strong> Thin wrapper with minimal attack surface; security depends on underlying reserve pool.</p>
   <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/univ2-path2.html">Velar univ2-path2 — Multi-Hop Swap Router</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-path2?chain=mainnet">SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1</a></span>
-    <span class="findings-compact"><span class="c">0C</span> <span class="h">0H</span> <span class="m">1M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Multi-hop swap router for Velar DEX (2-5 token paths). <strong>Medium: zero output not validated — dust swaps silently lose funds.</strong> Stateless design with no admin surface. Pre-Clarity 4, no deadline mechanism.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/univ2-core.html">Velar univ2-core — UniswapV2 Core AMM Engine</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core?chain=mainnet">SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1</a></span>
-    <span class="findings-compact"><span class="c">0C</span> <span class="h">0H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Core constant-product AMM for Velar DEX (Uniswap V2 port). <strong>Medium: swap fee validation parentheses bug bypasses protocol-fee check; no minimum liquidity lock; pre-Clarity 4 as-contract blanket authority.</strong> Strong anti-rug guards and constant-product invariant enforcement.</p>
-  <p class="date">February 25, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/univ2-router.html">Velar univ2-router — UniswapV2 DEX Router</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-router?chain=mainnet">SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1</a></span>
-    <span class="findings-compact"><span class="c">0C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Thin routing layer for Velar DEX (UniswapV2 fork). <strong>High: no transaction deadline enables stale-swap sandwich attacks.</strong> Swaps execute before precondition validation. Trait parameters unverified at router level.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/amm-registry-v2-01.html">ALEX amm-registry-v2-01 — AMM Pool Registry</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-registry-v2-01?chain=mainnet">SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM</a></span>
-    <span class="findings-compact"><span class="c">0C</span> <span class="h">0H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Pool configuration registry for ALEX DEX. No token operations — pure state management. <strong>Medium: update-pool allows pool-id mismatch between maps; fee rates have no upper bound despite existing unused error constant.</strong></p>
-  <p class="date">February 25, 2026</p>
 </div>
 
 <div class="audit-card">
@@ -706,58 +290,6 @@ footer {
     <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">2I</span></span>
   </div>
   <p class="summary">Liquity-style vault manager for Arkadiko stablecoin. <strong>Critical: redemption fee block-last overflow bricks future redemptions via uint underflow.</strong> Stability fees crystallize into vault principal on partial redemption.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/zest-rewards-v8.html">Zest Protocol rewards-v8 — Rewards Distribution</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.rewards-v8?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
-    <span class="findings-compact"><span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Rewards distribution for stSTX/stSTXbtc liquid staking. sBTC rewards silently lost when both token supplies are zero during processing. Pre-Clarity 4 <code>as-contract</code> grants blanket authority to commission trait contracts.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/arkadiko-auction-engine-v4-3.html">Arkadiko Auction Engine v4-3 — Liquidation Auctions</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-auction-engine-v4-3?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Liquidation auction engine for Arkadiko stablecoin protocol. <strong>Critical: DIKO backstop uses manipulable DEX spot price with zero slippage protection — sandwich attack extracts value during every backstop activation.</strong> No auction timeout leaves collateral locked indefinitely.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/arkadiko-stacker-v3-1.html">Arkadiko Stacker v3-1 — PoX Stacking Manager</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-stacker-v3-1?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">PoX stacking proxy for Arkadiko protocol. <strong>Critical: <code>return-stx</code> has no access control — anyone can drain unlocked STX back to reserve, griefing stacking operations.</strong> Hardcoded pox-3 makes contract functionally deprecated.</p>
-  <p class="date">February 24, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/arkadiko-oracle-v2-3.html">Arkadiko Oracle v2-3 — Multisig Price Oracle</a>
-    <span class="confidence">🟢 HIGH</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-oracle-v2-3?chain=mainnet">SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR</a></span>
-    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
-  </div>
-  <p class="summary">Multisig price oracle for Arkadiko DeFi protocol. <strong>Critical: oracle signatures permanently burned on failed updates via front-running — enables oracle denial of service.</strong> No staleness protection on price reads. No price deviation bounds.</p>
   <p class="date">February 24, 2026</p>
 </div>
 
@@ -1097,19 +629,6 @@ footer {
   </div>
   <p class="summary">Contract never holds funds (deposits go to owner). Owner has unilateral veto on approved transactions. Signer count bugs can brick wallet.</p>
   <p class="date">February 21, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/stackswap-liquidity-token-v5k.html">StackSwap liquidity-token-v5k — LP Token Template</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-v5kpj0x4qap?chain=mainnet">SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-v5k*</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">Factory LP token with unvalidated token parameter in transfer-token (H-01). DAO unwrap-panic creates permanent freeze risk. Pair state coupling increases systemic risk.</p>
-  <p class="date">February 25, 2026</p>
 </div>
 
 <div class="audit-card">

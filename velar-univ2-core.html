@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velar univ2-core Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat .number { font-size: 1.5rem; font-weight: 700; }
+.stat .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
+th { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core?chain=mainnet">Explorer ↗</a>
+</div>
+
+<h1>Velar univ2-core</h1>
+<p class="subtitle">
+  UniswapV2-style AMM core contract — deployed on Stacks mainnet<br>
+  Contract: <code>SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core</code><br>
+  Source: <a href="https://api.hiro.so/v2/contracts/source/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1/univ2-core">Hiro API (on-chain)</a><br>
+  Clarity version: Pre-Clarity 4 (deployed at block 138413)<br>
+  Lines of code: 628<br>
+  Audit date: 2026-02-26 · Auditor: cocoa007.btc<br>
+  Confidence: <strong>Medium</strong> — multi-contract system (LP tokens, fee receivers external); core contract analyzed in isolation
+</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (DeFi AMM)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>3 (628 lines, multi-contract)</td><td>2</td><td>6</td></tr>
+  <tr><td>User exposure</td><td>3 (known DEX project)</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 (UniV2 on Clarity — new category)</td><td>1.5</td><td>3</td></tr>
+</table>
+<p><strong>Score: 2.85 / 3.0</strong> (after -0.5 pre-Clarity 4 penalty: <strong>2.35</strong>) — well above 1.8 threshold ✅</p>
+
+<h2>Summary</h2>
+<div class="stat-grid">
+  <div class="stat"><div class="number" style="color:var(--red)">1</div><div class="label">Critical</div></div>
+  <div class="stat"><div class="number" style="color:#da3633">1</div><div class="label">High</div></div>
+  <div class="stat"><div class="number" style="color:var(--yellow)">3</div><div class="label">Medium</div></div>
+  <div class="stat"><div class="number" style="color:var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat"><div class="number" style="color:var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>
+  Velar's <code>univ2-core</code> is a UniswapV2-style constant-product AMM on Stacks. It implements pool creation,
+  liquidity provision (mint/burn), token swaps with a multi-tier fee system (LP fees, protocol fees, share fees),
+  and protocol revenue collection. The contract manages all pool reserves in a single principal via <code>as-contract</code>.
+</p>
+<p><strong>Architecture:</strong> Factory + pair logic combined. Pools are stored in a map indexed by uint ID. External dependencies include SIP-010 token traits, a custom <code>ft-plus-trait</code> for LP tokens (with mint/burn), and a <code>share-fee-to-trait</code> for fee distribution.</p>
+<p><strong>Documented Limitations:</strong> The contract explicitly notes that sync/skim is not implementable because all pool tokens are held by a single contract and iteration over pools is not possible.</p>
+
+<h2>Findings</h2>
+
+<!-- C-01 -->
+<div class="finding">
+  <h3><span class="severity critical">CRITICAL</span> C-01: No MINIMUM_LIQUIDITY — First Depositor Inflation Attack</h3>
+  <p><strong>Location:</strong> <code>calc-mint</code>, <code>mint</code></p>
+  <p><strong>Description:</strong>
+    UniswapV2 burns the first <code>MINIMUM_LIQUIDITY</code> (1000) LP tokens to a dead address to prevent the first depositor
+    from manipulating the LP token price. This contract's <code>calc-mint</code> returns <code>sqrti(amt0 * amt1)</code> directly
+    with no minimum subtraction.
+  </p>
+  <pre><code>(define-read-only
+  (calc-mint (amt0 uint) (amt1 uint) (reserve0 uint) (reserve1 uint) (total-supply uint))
+  (if (is-eq total-supply u0)
+      (sqrti (* amt0 amt1))   ;; No MINIMUM_LIQUIDITY burned
+      (min (/ (* amt0 total-supply) reserve0)
+           (/ (* amt1 total-supply) reserve1))))</code></pre>
+  <p><strong>Impact:</strong>
+    An attacker can:
+    (1) Create a pool and deposit a tiny amount (e.g. 1 wei of each token), receiving 1 LP token.
+    (2) Directly transfer (donate) a large amount of one token to the contract address.
+    (3) The reserves don't update (no sync), but when the next user mints, the actual balance vs. tracked reserve divergence causes their LP tokens to round down to near-zero, effectively stealing their deposit.
+    Alternatively, even without donation, the first depositor with 1 LP token controls 100% of the pool and can set an arbitrary initial price.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Burn a fixed <code>MINIMUM_LIQUIDITY</code> amount on first deposit, or require a minimum initial deposit size.
+    Since Clarity lacks a burn address for LP tokens, mint the minimum to the contract itself or to a known dead principal.
+  </p>
+</div>
+
+<!-- H-01 -->
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-01: Inconsistent Access Control — <code>contract-caller</code> vs <code>tx-sender</code></h3>
+  <p><strong>Location:</strong> <code>check-owner</code> (line ~28), <code>check-protocol-fee-to</code> (line ~37)</p>
+  <p><strong>Description:</strong>
+    <code>check-owner</code> validates against <code>contract-caller</code>, which is correct — it prevents intermediary contracts from spoofing the owner. However, <code>check-protocol-fee-to</code> validates against <code>tx-sender</code>:
+  </p>
+  <pre><code>;; Owner check — uses contract-caller (correct)
+(define-private (check-owner)
+  (ok (asserts! (is-eq contract-caller (get-owner)) err-check-owner)))
+
+;; Protocol fee check — uses tx-sender (inconsistent)
+(define-private (check-protocol-fee-to)
+  (ok (asserts! (is-eq tx-sender (get-protocol-fee-to)) err-auth)))</code></pre>
+  <p><strong>Impact:</strong>
+    If the <code>protocol-fee-to</code> principal interacts through a proxy/router contract, <code>tx-sender</code> still resolves to the original signer, so <code>collect</code> works. But if a malicious contract tricks the protocol-fee-to address into calling it (which then calls collect), the check passes because <code>tx-sender</code> is the original signer. This is the opposite of the threat model <code>check-owner</code> protects against.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Use <code>contract-caller</code> consistently for all privileged operations, or document the design intent if <code>tx-sender</code> is deliberate for <code>collect</code>.
+  </p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-01: Mismatched Parentheses in Swap Fee Validation</h3>
+  <p><strong>Location:</strong> <code>swap</code> preconditions</p>
+  <p><strong>Description:</strong>
+    The swap precondition block has a subtle parenthesis grouping issue:
+  </p>
+  <pre><code>(or (is-eq (get num swap-fee) (get den swap-fee))
+    (and (> amt-fee-lps u0))
+         (or (is-eq (get num protocol-fee) (get den protocol-fee))
+             (> amt-fee-protocol u0)))</code></pre>
+  <p>
+    The <code>(and (> amt-fee-lps u0))</code> closes immediately — <code>and</code> with a single argument is identity.
+    The protocol-fee <code>or</code> becomes a third argument to the outer <code>or</code>, not nested under <code>and</code>.
+    The effective logic is: <code>(or swap-fee-is-100% amt-fee-lps>0 protocol-fee-check)</code>.
+    The intended logic was likely: <code>(or swap-fee-is-100% (and amt-fee-lps>0 protocol-fee-check))</code>.
+  </p>
+  <p><strong>Impact:</strong>
+    The fee validation is weaker than intended. If <code>amt-fee-lps > 0</code>, the protocol fee check is bypassed.
+    In practice this is mitigated because the k-invariant still holds and fees are bounded by anti-rug constraints,
+    but it means the assertion doesn't catch edge cases the developer intended to guard against.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Fix parenthesization to match intended logic:
+  </p>
+  <pre><code>(or (is-eq (get num swap-fee) (get den swap-fee))
+    (and (> amt-fee-lps u0)
+         (or (is-eq (get num protocol-fee) (get den protocol-fee))
+             (> amt-fee-protocol u0))))</code></pre>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-02: No Slippage Protection in Mint</h3>
+  <p><strong>Location:</strong> <code>mint</code></p>
+  <p><strong>Description:</strong>
+    The <code>mint</code> function accepts <code>amt0</code> and <code>amt1</code> but provides no <code>min-liquidity</code> parameter.
+    The caller has no way to enforce a minimum number of LP tokens received.
+  </p>
+  <p><strong>Impact:</strong>
+    A front-runner can sandwich a mint transaction — swapping to skew the price before the victim's mint, causing them to receive fewer LP tokens than expected, then swapping back afterward.
+    This is a standard MEV/sandwich attack on AMM liquidity provision.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Add a <code>min-liquidity</code> parameter to <code>mint</code> and assert <code>(>= liquidity min-liquidity)</code>.
+    Alternatively, implement this in a router contract (common UniV2 pattern).
+  </p>
+</div>
+
+<!-- M-03 -->
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-03: Pre-Clarity 4 <code>as-contract</code> — Unrestricted Asset Authority</h3>
+  <p><strong>Location:</strong> All <code>as-contract</code> usages (mint, burn, swap, collect)</p>
+  <p><strong>Description:</strong>
+    The contract uses <code>as-contract</code> (pre-Clarity 4) which grants blanket authority over all assets held by the contract principal. Any token trait passed to <code>mint</code>, <code>burn</code>, <code>swap</code>, or <code>collect</code> executes under the contract's full authority.
+  </p>
+  <p>
+    While the contract validates that trait principals match the stored pool data, the <code>as-contract</code> block itself
+    has no language-level restriction on which assets can be moved. A vulnerability in the trait validation logic or
+    a malicious token implementation could potentially move unrelated assets.
+  </p>
+  <p><strong>Impact:</strong>
+    If a token contract's <code>transfer</code> implementation contains malicious logic, it executes with the AMM contract's
+    full asset authority — potentially draining tokens from other pools.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code> / <code>with-stx</code> allowances
+    to restrict which assets each operation can move.
+  </p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-01: No Timelock on Ownership Transfer</h3>
+  <p><strong>Location:</strong> <code>set-owner</code></p>
+  <p><strong>Description:</strong>
+    Ownership can be transferred instantly in a single transaction. There is no two-step transfer
+    (propose → accept) or timelock delay.
+  </p>
+  <p><strong>Impact:</strong>
+    If the owner's key is compromised, the attacker can immediately transfer ownership and change all fee parameters
+    (within anti-rug bounds). A timelock would give users time to exit.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Implement a two-step ownership transfer pattern: <code>propose-owner</code> + <code>accept-owner</code>,
+    optionally with a timelock.
+  </p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-02: Integer Rounding Favors Zero Fees on Small Swaps</h3>
+  <p><strong>Location:</strong> <code>calc-swap</code></p>
+  <p><strong>Description:</strong>
+    Fee calculations use integer division which truncates:
+  </p>
+  <pre><code>(/ (* amt-in (get num swap-fee)) (get den swap-fee))</code></pre>
+  <p>
+    For very small <code>amt-in</code> values, <code>amt-fee-total</code> rounds to 0, meaning the swap is effectively fee-free.
+    With default 998/1000, any <code>amt-in &lt; 500</code> yields zero fee.
+  </p>
+  <p><strong>Impact:</strong>
+    Dust-sized swaps bypass fees entirely. Low practical impact since gas costs exceed any profit from fee-free dust swaps, but it represents a deviation from intended fee collection.
+  </p>
+  <p><strong>Recommendation:</strong>
+    Accept as known behavior or add a minimum swap amount requirement.
+  </p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-01: No Sync/Skim — Reserve Desynchronization Risk</h3>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong>
+    UniswapV2 provides <code>sync()</code> and <code>skim()</code> to handle cases where actual token balances diverge from tracked reserves (e.g., tokens sent directly to the contract). The contract acknowledges this limitation in comments, noting it's not implementable because all pools share a single contract principal.
+  </p>
+  <p><strong>Impact:</strong>
+    Tokens sent directly to the contract address are permanently locked and cannot be recovered. Reserve tracking assumes all balance changes go through the contract's functions.
+  </p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-02: Single Principal Holds All Pool Assets</h3>
+  <p><strong>Location:</strong> Architecture</p>
+  <p><strong>Description:</strong>
+    Unlike Ethereum's UniswapV2 where each pair is a separate contract, all pool reserves are held by the single <code>univ2-core</code> contract principal. This is an architectural consequence of Clarity's design.
+  </p>
+  <p><strong>Impact:</strong>
+    A critical vulnerability in any pool operation could potentially affect all pools' assets. The blast radius of a single bug is the entire DEX TVL rather than a single pair.
+    Post-conditions at the transaction level can mitigate this, but users must set them correctly.
+  </p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>K-invariant enforcement:</strong> The swap postcondition <code>(>= (* a b) k)</code> correctly ensures the constant product property holds after every swap.</li>
+  <li><strong>Anti-rug fee bounds:</strong> <code>MAX-SWAP-FEE</code> and <code>MAX-PROTOCOL-FEE</code> constants prevent the owner from setting exploitative fee levels. Swap fee can only decrease (num can only increase toward den).</li>
+  <li><strong>Token trait validation:</strong> All operations verify that passed token trait principals match the stored pool configuration, preventing token substitution attacks.</li>
+  <li><strong>LP token registry:</strong> The <code>lp-tokens</code> map prevents reuse of LP tokens across pools.</li>
+  <li><strong>Clean separation of concerns:</strong> Fee calculation is a pure read-only function, making it easy to verify independently.</li>
+</ul>
+
+<h2>Exploit Tests</h2>
+<p>See <a href="exploits/velar-univ2-core-exploits.clar">velar-univ2-core-exploits.clar</a> for C-01 exploit demonstration.</p>
+
+<footer style="margin-top:3rem; padding-top:1rem; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem;">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+  <a href="index.html">Full audit portfolio</a> ·
+  This is not a formal security audit. Use at your own risk.
+</footer>
+
+</body>
+</html>
