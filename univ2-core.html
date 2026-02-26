@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Velar univ2-core — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core?chain=mainnet">Explorer ↗</a>
+</nav>
+
+<h1>🔍 Velar DEX: univ2-core</h1>
+<p class="subtitle">Independent security audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> — 2026-02-25</p>
+
+<h2>Overview</h2>
+<table class="meta-table">
+<tr><td>Contract</td><td><code>SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-core</code></td></tr>
+<tr><td>Source</td><td><a href="https://api.hiro.so/v2/contracts/source/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1/univ2-core">Hiro API (on-chain)</a></td></tr>
+<tr><td>Deployed at block</td><td>138,413</td></tr>
+<tr><td>Clarity version</td><td>Pre-Clarity 4 (penalty: -0.5)</td></tr>
+<tr><td>Lines of code</td><td>629</td></tr>
+<tr><td>Audit confidence</td><td>Medium — single-contract review, multi-contract dependencies (lp-token, share-fee-to) not audited</td></tr>
+</table>
+
+<p>Velar's <code>univ2-core</code> is the central AMM engine implementing Uniswap V2-style constant-product pools on Stacks. It handles pool creation, liquidity provision (mint/burn), token swaps with a three-tier fee system (LP fees, protocol fees, share fees), and protocol revenue collection. All pool token balances are held by this single contract principal.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Pool factory</strong> — owner-gated <code>create</code> with sequential pool IDs, token-pair index, LP-token registry</li>
+  <li><strong>AMM core</strong> — <code>mint</code>, <code>burn</code>, <code>swap</code> with constant-product invariant (k = r0 × r1)</li>
+  <li><strong>Fee system</strong> — swap-fee (kept by LPs + protocol), protocol-fee (fraction of swap fee), share-fee (fraction of protocol fee sent to share-fee-to contract)</li>
+  <li><strong>Revenue collection</strong> — protocol fees accumulate in <code>revenue</code> map, collected by <code>protocol-fee-to</code> principal</li>
+</ul>
+
+<h2>Findings Summary</h2>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Medium Findings</h2>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">M-01</span>
+  <h3>Swap Fee Validation Parentheses Bug — Protocol Fee Check Bypassed</h3>
+</div>
+
+<p><strong>Location:</strong> <code>swap</code> function, preconditions block (~line 420)</p>
+
+<p><strong>Description:</strong> The swap precondition block contains a mismatched parenthesisation that weakens the fee validation logic. The intended logic appears to be: "if swap-fee is not 100%, then LP fees must be positive AND protocol fee check must pass." However, the actual parsed structure is an <code>or</code> with three independent branches:</p>
+
+<pre><code>;; Actual parse (note where parens close):
+(or (is-eq (get num swap-fee) (get den swap-fee))   ;; branch 1: swap-fee = 100%
+    (and (> amt-fee-lps u0))                          ;; branch 2: amt-fee-lps > 0 (standalone)
+         (or (is-eq (get num protocol-fee) ...        ;; branch 3: protocol-fee check
+              (> amt-fee-protocol u0)))
+</code></pre>
+
+<p>The <code>(and (> amt-fee-lps u0))</code> wraps only one expression, making it equivalent to <code>(> amt-fee-lps u0)</code>. Since this is a standalone branch of the outer <code>or</code>, whenever LP fees are positive (which is the normal case for any swap-fee &lt; 100%), the entire <code>or</code> evaluates to <code>true</code> and the protocol-fee check is skipped entirely.</p>
+
+<p><strong>Impact:</strong> Limited in practice because: (1) the constant-product postcondition <code>(>= (* a b) k)</code> still enforces economic soundness, and (2) the fee decomposition check <code>(is-eq amt-in (+ amt-in-adjusted amt-fee-lps amt-fee-share amt-fee-rest))</code> ensures no tokens vanish. However, the protocol-fee validation being bypassed means the precondition is weaker than intended — a swap with a malformed protocol-fee could pass if LP fees are positive.</p>
+
+<p><strong>Recommendation:</strong> Fix the parenthesisation to:</p>
+<pre><code>(or (is-eq (get num swap-fee) (get den swap-fee))
+    (and (> amt-fee-lps u0)
+         (or (is-eq (get num protocol-fee) (get den protocol-fee))
+             (> amt-fee-protocol u0))))</code></pre>
+</div>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">M-02</span>
+  <h3>No Minimum Liquidity Lock on First Mint</h3>
+</div>
+
+<p><strong>Location:</strong> <code>calc-mint</code> function, <code>mint</code> function</p>
+
+<p><strong>Description:</strong> Unlike Uniswap V2 which permanently burns <code>MINIMUM_LIQUIDITY</code> (1000 wei) of LP tokens on the first deposit, this contract mints the full <code>sqrti(amt0 * amt1)</code> to the first depositor. This is a well-known design choice omission that enables a first-depositor price manipulation attack.</p>
+
+<p><strong>Attack scenario:</strong></p>
+<ol>
+  <li>First depositor mints with <code>amt0=1, amt1=1e12</code>, receiving <code>sqrti(1e12) = 1e6</code> LP tokens</li>
+  <li>Depositor then directly sends a large amount of token0 to the contract (not through <code>mint</code>)</li>
+  <li>Since reserves don't update from direct transfers (no sync), subsequent depositors who use <code>mint</code> get fewer LP tokens than expected because <code>calc-mint</code> uses the stored (lower) reserves while the actual token balance is higher</li>
+</ol>
+
+<p><strong>Impact:</strong> Moderate — the attack is limited because (a) only the owner can create pools, providing a trust layer, and (b) tokens sent directly to the contract without going through <code>mint</code> are unrecoverable (no sync/skim), making the attack costly. The more practical risk is LP token precision loss for small initial deposits.</p>
+
+<p><strong>Recommendation:</strong> Burn a minimum amount of LP tokens on first mint (e.g., 1000 units permanently locked) to establish a minimum pool value floor.</p>
+</div>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">M-03</span>
+  <h3>Pre-Clarity 4 <code>as-contract</code> — Blanket Asset Authority</h3>
+</div>
+
+<p><strong>Location:</strong> <code>mint</code>, <code>burn</code>, <code>swap</code>, <code>collect</code> — all <code>as-contract</code> blocks</p>
+
+<p><strong>Description:</strong> The contract uses the pre-Clarity 4 <code>as-contract</code> which grants blanket authority over all assets held by the contract principal. Since all pools share a single contract address, any code executing within <code>as-contract</code> has access to <strong>all tokens across all pools</strong>.</p>
+
+<p>The trait-based design means the contract calls <code>transfer</code> on user-supplied token contracts. A malicious token contract's <code>transfer</code> implementation could, when called under <code>as-contract</code>, re-enter or execute arbitrary operations with the contract's full authority.</p>
+
+<p><strong>Mitigating factors:</strong> (1) Only the owner can create pools, so malicious tokens must be explicitly added. (2) Stacks post-conditions at the transaction level can limit actual token movement. (3) The token trait parameters are validated against the stored pool data before any <code>as-contract</code> call.</p>
+
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-nft</code> asset allowances. This eliminates the blanket authority risk at the language level.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>Low Findings</h2>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge low">L-01</span>
+  <h3>Inconsistent Caller Authentication: <code>tx-sender</code> vs <code>contract-caller</code></h3>
+</div>
+
+<p><strong>Location:</strong> <code>check-owner</code> uses <code>contract-caller</code>; <code>check-protocol-fee-to</code> uses <code>tx-sender</code></p>
+
+<p><strong>Description:</strong> The owner authentication checks <code>contract-caller</code> (the immediate caller), while the protocol-fee-to authentication checks <code>tx-sender</code> (the original transaction signer). This inconsistency means:</p>
+<ul>
+  <li><code>set-owner</code>, <code>create</code>, fee updates — can be called through an intermediary contract (checks <code>contract-caller</code>)</li>
+  <li><code>collect</code> — must be called directly by the protocol-fee-to address, NOT through another contract (checks <code>tx-sender</code>)</li>
+</ul>
+
+<p><strong>Impact:</strong> Low — the protocol-fee-to principal cannot use a multisig contract or any intermediary to collect revenue. This may be intentional (preventing intermediary contracts from collecting fees) but is undocumented and inconsistent.</p>
+
+<p><strong>Recommendation:</strong> Standardize on <code>contract-caller</code> for both checks, or document the design rationale for using <code>tx-sender</code> in <code>check-protocol-fee-to</code>.</p>
+</div>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge low">L-02</span>
+  <h3>No Sync/Skim — Directly Sent Tokens Are Permanently Locked</h3>
+</div>
+
+<p><strong>Location:</strong> Contract-wide (noted in comments as "not implementable")</p>
+
+<p><strong>Description:</strong> The contract explicitly notes that sync/skim is not implementable because all pools share a single contract address and there's no way to iterate over pools. Any tokens sent directly to the contract (not through <code>mint</code> or <code>swap</code>) are permanently locked — they don't update reserves and cannot be recovered.</p>
+
+<p><strong>Impact:</strong> Low — accidental token sends are a known UX hazard. The on-chain comment acknowledges this limitation. The impact is confined to user error (sending tokens directly to the contract address).</p>
+
+<p><strong>Recommendation:</strong> Document this prominently in user-facing materials. Consider adding a pools list with a fold-based sync function in a future version.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>Informational Findings</h2>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">I-01</span>
+  <h3>Integer Division Rounding in Fee Calculations</h3>
+</div>
+
+<p><strong>Location:</strong> <code>calc-swap</code>, <code>calc-burn</code>, <code>calc-mint</code></p>
+
+<p><strong>Description:</strong> All fee and liquidity calculations use Clarity's integer division which rounds down. For small swap amounts, the rounding can result in zero fees or zero liquidity. For example, with swap-fee 998/1000 and amt-in=1, the adjusted amount is <code>(/ (* 1 998) 1000) = 0</code>, and the fee total is 1, but the protocol fee split may also round to zero.</p>
+
+<p><strong>Impact:</strong> Informational — this is standard behavior for integer AMMs and is mitigated by the precondition checks that require <code>(> amt-in-adjusted u0)</code> and <code>(> amt-fee-lps u0)</code>. Very small swaps will simply fail preconditions rather than execute with zero fees.</p>
+</div>
+
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">I-02</span>
+  <h3>Owner Centralization — No Timelock on Fee Changes</h3>
+</div>
+
+<p><strong>Location:</strong> <code>set-owner</code>, <code>update-swap-fee</code>, <code>update-protocol-fee</code>, <code>update-share-fee</code>, <code>set-protocol-fee-to</code>, <code>set-share-fee-to</code></p>
+
+<p><strong>Description:</strong> The single owner principal has immediate, unilateral control over:</p>
+<ul>
+  <li>Transferring ownership</li>
+  <li>Changing swap fees (up to 0.5% cap — anti-rug guard at num≥995 with den=1000)</li>
+  <li>Changing protocol fees (up to 50% of swap fee — anti-rug guard at num≤500 with den=1000)</li>
+  <li>Changing share fees and the share-fee-to contract</li>
+  <li>Changing the protocol-fee-to address</li>
+</ul>
+
+<p>The anti-rug guards provide reasonable caps, but there is no timelock or governance delay — changes take effect immediately.</p>
+
+<p><strong>Impact:</strong> Informational — this is a standard trust assumption for protocol-controlled DEXes. The anti-rug guards (MAX-SWAP-FEE at 995/1000 = max 0.5% fee, MAX-PROTOCOL-FEE at 500/1000 = max 50% of fees to protocol) are well-designed and limit the blast radius of owner misbehavior.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Constant-product invariant enforced</strong> — the postcondition <code>(>= (* a b) k)</code> in <code>swap</code> is the critical safety check and is correctly implemented</li>
+  <li><strong>Anti-rug guards on fees</strong> — <code>MAX-SWAP-FEE</code> and <code>MAX-PROTOCOL-FEE</code> caps with denominator matching prevent the owner from setting exploitative fees</li>
+  <li><strong>Token validation</strong> — all public functions verify that provided trait references match the stored pool data before executing transfers</li>
+  <li><strong>Fee decomposition check</strong> — <code>(is-eq amt-in (+ amt-in-adjusted amt-fee-lps amt-fee-share amt-fee-rest))</code> ensures no tokens are lost in fee splitting</li>
+  <li><strong>Event logging</strong> — comprehensive <code>print</code> events for all operations enable off-chain indexing and monitoring</li>
+  <li><strong>Clean code structure</strong> — well-organized sections (ownership, storage, read, write, ctors, CRUD operations) with clear pre/postcondition separation</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>Methodology</h2>
+<p>This audit was performed on the on-chain source fetched from the Hiro API. The contract was analyzed for common Clarity vulnerability patterns including: reentrancy via trait callbacks, integer overflow/underflow, access control bypasses, economic invariant violations, rounding errors, and centralization risks. The audit scope is limited to this single contract — dependencies (<code>ft-plus-trait</code>, <code>univ2-share-fee-to-trait</code>, LP token implementations) were not audited.</p>
+
+<p><strong>Priority score:</strong> Financial=3, Deployment=3, Complexity=3, Exposure=3, Novelty=1 → <strong>2.7/3.0</strong> (after -0.5 Clarity version penalty: 2.2)</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="index.html">All audits</a> · Not financial advice · 2026-02-25</p>
+</footer>
+
+</body>
+</html>

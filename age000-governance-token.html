@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALEX Governance Token Audit — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .number { font-size: 1.8rem; font-weight: bold; }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.severity-critical { color: #ff4444; font-weight: bold; }
+.severity-high { color: var(--red); font-weight: bold; }
+.severity-medium { color: var(--yellow); font-weight: bold; }
+.severity-low { color: var(--blue); font-weight: bold; }
+.severity-info { color: var(--text-muted); font-weight: bold; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+.finding h3 { margin-top: 0; }
+.finding-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+nav { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+nav a { margin-right: 1.5rem; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>ALEX Governance Token — Security Audit</h1>
+<p class="subtitle">
+  <code>SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.age000-governance-token</code><br>
+  Audited: 2026-02-25 · Clarity version: pre-Clarity 4 · Confidence: <strong style="color: var(--green);">High</strong>
+</p>
+
+<h2>Overview</h2>
+<p>AGE000 Governance Token is the core governance token contract for the <a href="https://alexgo.io">ALEX DEX</a> ExecutorDAO system — the largest decentralized exchange on Stacks. It implements SIP-010 fungible token traits alongside a DAO-governed extension interface for minting, burning, locking, and transferring tokens.</p>
+
+<p><strong>Source:</strong> <a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.age000-governance-token?chain=mainnet">On-chain (Hiro Explorer)</a> · <a href="https://api.hiro.so/v2/contracts/source/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9/age000-governance-token">Hiro API</a></p>
+
+<p><strong>Architecture:</strong> The contract defines two fungible tokens: <code>alex</code> (transferable) and <code>alex-locked</code> (non-transferable locked variant). Access control is dual-layered: the ExecutorDAO and its extensions can call privileged <code>edg-*</code> functions, while a separate <code>approved-contracts</code> map grants mint/burn access to specific contracts. Standard SIP-010 <code>transfer</code> is available to token holders. A fixed-point math layer (8-decimal precision) wraps core operations for protocol-level convenience.</p>
+
+<h2>Priority Score</h2>
+<table>
+<tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+<tr><td>Financial risk</td><td>3</td><td>3</td><td>9</td></tr>
+<tr><td>Deployment likelihood</td><td>3</td><td>2</td><td>6</td></tr>
+<tr><td>Code complexity</td><td>2</td><td>2</td><td>4</td></tr>
+<tr><td>User exposure</td><td>3</td><td>1.5</td><td>4.5</td></tr>
+<tr><td>Novelty</td><td>2</td><td>1.5</td><td>3</td></tr>
+<tr><td colspan="3"><strong>Raw Score</strong></td><td><strong>2.65</strong></td></tr>
+<tr><td colspan="3">Clarity version penalty (pre-Clarity 4)</td><td>-0.50</td></tr>
+<tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.15 ✓</strong></td></tr>
+</table>
+
+<h2>Findings Summary</h2>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="number" style="color: #ff4444;">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--red);">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--yellow);">3</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--blue);">3</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="number" style="color: var(--text-muted);">3</div><div class="label">Informational</div></div>
+</div>
+
+<!-- ==================== MEDIUM ==================== -->
+
+<h2>Medium Findings</h2>
+
+<div class="finding">
+<h3><span class="severity-medium">M-01</span> — Privileged functions can burn tokens from any owner without consent</h3>
+<div class="finding-meta">Location: <code>edg-burn</code>, <code>burn</code></div>
+<p><strong>Description:</strong> The <code>edg-burn</code> function accepts an arbitrary <code>owner</code> parameter and burns tokens from their account. It only verifies the caller is the DAO or an approved contract — it does not check that the <code>owner</code> consented. Any approved contract or DAO extension can burn tokens from any holder.</p>
+<pre><code>(define-public (edg-burn (amount uint) (owner principal))
+  (begin
+    (asserts! (or (is-ok (is-dao-or-extension)) (is-ok (check-is-approved))) err-unauthorised)
+    (ft-burn? alex amount owner)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> A compromised or malicious approved contract could burn tokens from arbitrary users. While this is gated behind DAO governance, the lack of owner consent is a trust assumption that should be explicit.</p>
+<p><strong>Recommendation:</strong> This is by design for DAO governance tokens (the DAO needs slashing/burning capability). However, consider adding an explicit <code>sender-is-owner</code> check on the public <code>burn</code> wrapper, while keeping the DAO-only <code>edg-burn</code> unrestricted. Alternatively, document this trust assumption prominently.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-medium">M-02</span> — edg-transfer allows moving tokens between arbitrary accounts</h3>
+<div class="finding-meta">Location: <code>edg-transfer</code></div>
+<p><strong>Description:</strong> The <code>edg-transfer</code> function transfers tokens from <code>sender</code> to <code>recipient</code> with only DAO/extension authorization — it does not verify the <code>sender</code> consented to the transfer.</p>
+<pre><code>(define-public (edg-transfer (amount uint) (sender principal) (recipient principal))
+  (begin
+    (try! (is-dao-or-extension))
+    (ft-transfer? alex amount sender recipient)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> Any DAO extension can unilaterally move tokens from one user to another. This is a powerful privilege that extends beyond normal token operations. Combined with the DAO's ability to add extensions dynamically, a malicious proposal could drain any holder's tokens.</p>
+<p><strong>Recommendation:</strong> By design for DAO governance, but this is one of the most sensitive functions in the contract. In a Clarity 4 migration, <code>as-contract?</code> with <code>with-ft</code> allowances would provide language-level constraints on which tokens can be moved.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-medium">M-03</span> — No mechanism to remove approved contracts</h3>
+<div class="finding-meta">Location: <code>edg-add-approved-contract</code>, <code>approved-contracts</code> map</div>
+<p><strong>Description:</strong> The contract provides <code>edg-add-approved-contract</code> to add entries to the <code>approved-contracts</code> map (setting them to <code>true</code>), but there is no corresponding removal function. Once a contract is approved, it remains approved forever unless the governance token contract itself is replaced.</p>
+<pre><code>(define-public (edg-add-approved-contract (new-approved-contract principal))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (map-set approved-contracts new-approved-contract true))
+  )
+)</code></pre>
+<p><strong>Impact:</strong> If an approved contract is found to have a vulnerability, it cannot be deauthorized. Approved contracts can mint and burn tokens (including burning from arbitrary owners per M-01). The only mitigation would be to deploy a new governance token contract entirely.</p>
+<p><strong>Recommendation:</strong> Add a <code>edg-remove-approved-contract</code> function (or generalize to <code>edg-set-approved-contract</code> taking a bool). This would allow the DAO to revoke privileges without redeploying.</p>
+</div>
+
+<!-- ==================== LOW ==================== -->
+
+<h2>Low Findings</h2>
+
+<div class="finding">
+<h3><span class="severity-low">L-01</span> — Unlimited token supply with no cap</h3>
+<div class="finding-meta">Location: <code>define-fungible-token alex</code></div>
+<p><strong>Description:</strong> The <code>alex</code> token is defined without a max supply parameter: <code>(define-fungible-token alex)</code>. This means there is no protocol-level cap on minting — supply is bounded only by the <code>uint</code> max value.</p>
+<p><strong>Impact:</strong> The DAO (or any approved contract) can mint unlimited tokens. While governance controls minting, there is no safety net against hyperinflation through a malicious proposal.</p>
+<p><strong>Recommendation:</strong> Consider defining a max supply: <code>(define-fungible-token alex u1000000000000000)</code>. This provides a hard ceiling that even governance cannot override.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-low">L-02</span> — Mutable decimals can break integrations</h3>
+<div class="finding-meta">Location: <code>set-decimals</code></div>
+<p><strong>Description:</strong> The <code>set-decimals</code> function allows the DAO to change the token's decimal count post-deployment. This also affects the fixed-point math layer since <code>pow-decimals</code> uses the mutable value.</p>
+<pre><code>(define-public (set-decimals (new-decimals uint))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (var-set token-decimals new-decimals))
+  )
+)</code></pre>
+<p><strong>Impact:</strong> Changing decimals after deployment would break all DEX integrations, wallet displays, and the fixed-point conversion functions (<code>fixed-to-decimals</code>, <code>decimals-to-fixed</code>). If decimals were changed to 0, <code>pow-decimals</code> would return 1 and the fixed-point layer would produce wildly incorrect values.</p>
+<p><strong>Recommendation:</strong> Make decimals immutable: <code>(define-constant token-decimals u8)</code>. Mutable name/symbol/URI are acceptable (rebranding), but decimals should never change.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-low">L-03</span> — edg-mint-many silently includes failed mints in result</h3>
+<div class="finding-meta">Location: <code>edg-mint-many</code>, <code>edg-mint-many-iter</code></div>
+<p><strong>Description:</strong> The helper <code>edg-mint-many-iter</code> calls <code>ft-mint?</code> directly (not wrapped in <code>try!</code>), and the outer function uses <code>map</code> which collects results. If any individual mint fails (e.g., to an invalid principal or due to supply cap), the error is silently included in the result list rather than aborting the whole batch.</p>
+<pre><code>(define-private (edg-mint-many-iter (item {amount: uint, recipient: principal}))
+  (ft-mint? alex (get amount item) (get recipient item))
+)
+
+(define-public (edg-mint-many (recipients (list 200 {amount: uint, recipient: principal})))
+  (begin
+    (try! (is-dao-or-extension))
+    (ok (map edg-mint-many-iter recipients))
+  )
+)</code></pre>
+<p><strong>Impact:</strong> A batch mint that partially fails could go unnoticed by the calling proposal. The caller receives <code>(ok (list ...))</code> containing a mix of <code>(ok true)</code> and <code>(err ...)</code> values with no aggregate failure signal.</p>
+<p><strong>Recommendation:</strong> Use <code>fold</code> with error propagation instead of <code>map</code>, or have the iterator use <code>unwrap-panic</code> to abort on any failure.</p>
+</div>
+
+<!-- ==================== INFORMATIONAL ==================== -->
+
+<h2>Informational Findings</h2>
+
+<div class="finding">
+<h3><span class="severity-info">I-01</span> — Pre-Clarity 4 contract</h3>
+<div class="finding-meta">Location: Contract-wide</div>
+<p><strong>Description:</strong> This contract was deployed before Clarity 4 was available and does not use the new <code>as-contract?</code> safety builtins. While this contract doesn't use <code>as-contract</code> (it doesn't hold assets), a Clarity 4 migration would benefit the broader ExecutorDAO system that interacts with this token.</p>
+<p><strong>Recommendation:</strong> When upgrading the DAO system, consider migrating to Clarity 4 with explicit asset allowances on any contracts that call <code>edg-transfer</code> or <code>edg-mint</code>.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-info">I-02</span> — Hardcoded approved contracts at deployment</h3>
+<div class="finding-meta">Location: Contract tail</div>
+<p><strong>Description:</strong> Four contracts are hardcoded as approved at deploy time:</p>
+<pre><code>(map-set approved-contracts .alex-reserve-pool true)
+(map-set approved-contracts .exchange true)
+(map-set approved-contracts .faucet true)
+(map-set approved-contracts tx-sender true)</code></pre>
+<p>Notably, <code>tx-sender</code> (the deployer) is given permanent mint/burn approval, and a <code>.faucet</code> contract is included.</p>
+<p><strong>Impact:</strong> The deployer retains mint/burn privileges independent of the DAO. If the deployer key is compromised, tokens can be minted freely. Combined with M-03 (no removal mechanism), this approval cannot be revoked.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity-info">I-03</span> — get-balance includes locked tokens</h3>
+<div class="finding-meta">Location: <code>get-balance</code></div>
+<p><strong>Description:</strong> The SIP-010 <code>get-balance</code> function returns the sum of both <code>alex</code> and <code>alex-locked</code> balances. This means the reported balance includes non-transferable locked tokens.</p>
+<pre><code>(define-read-only (get-balance (who principal))
+  (ok (+ (ft-get-balance alex who) (ft-get-balance alex-locked who)))
+)</code></pre>
+<p><strong>Impact:</strong> Integrations relying on <code>get-balance</code> to determine transferable tokens will overestimate. The separate <code>edg-get-locked</code> function exists for locked balance queries, but standard SIP-010 consumers won't know to use it.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Clean SIP-010 compliance:</strong> Standard transfer function correctly checks <code>tx-sender</code> or <code>contract-caller</code> equals sender — proper owner authorization.</li>
+  <li><strong>Dual-token lock mechanism:</strong> Using a separate <code>alex-locked</code> fungible token for locking is elegant — locked tokens can't be transferred via standard SIP-010, and total supply remains consistent.</li>
+  <li><strong>DAO-gated privileged operations:</strong> All sensitive functions require either DAO authorization or approved-contract status.</li>
+  <li><strong>Fixed-point math layer:</strong> The <code>ONE_8</code> conversion functions provide safe protocol-level precision handling, avoiding rounding errors in callers.</li>
+  <li><strong>Extension callback:</strong> The <code>callback</code> function allows the DAO to activate this as an extension cleanly.</li>
+</ul>
+
+<h2>Recommendations Summary</h2>
+<ol>
+  <li><strong>Add approved-contract removal</strong> — Critical operational gap (M-03). A single <code>edg-set-approved-contract</code> function with a bool parameter would solve this.</li>
+  <li><strong>Make decimals immutable</strong> — Changing decimals post-deployment would catastrophically break integrations (L-02).</li>
+  <li><strong>Consider deployer privilege</strong> — The hardcoded <code>tx-sender</code> approval (I-02) means the deployer retains mint/burn power permanently. Evaluate whether this is still needed.</li>
+  <li><strong>Cap token supply</strong> — Even a generous cap provides a safety net against accidental hyperinflation (L-01).</li>
+</ol>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is provided as-is for informational purposes. It does not constitute financial advice.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Pool Signer v1 Audit — Clarity Audit Notes</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);font-size:.85em;background:var(--code-bg);padding:.15em .4em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{border:none;padding:0;font-size:.85rem;line-height:1.5}
+.meta{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem}
+.meta p{margin-bottom:.25rem;font-size:.9rem}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.25rem 0}
+.finding h3{margin-top:0}
+.severity-critical{border-left:4px solid var(--red)}
+.severity-high{border-left:4px solid #f0883e}
+.severity-medium{border-left:4px solid var(--yellow)}
+.severity-low{border-left:4px solid var(--blue)}
+.severity-info{border-left:4px solid var(--text-muted)}
+.tag{display:inline-block;font-size:.75rem;padding:.1em .5em;border-radius:4px;font-weight:600;margin-right:.5rem}
+.tag-critical{background:var(--red);color:#fff}
+.tag-high{background:#f0883e;color:#fff}
+.tag-medium{background:var(--yellow);color:#000}
+.tag-low{background:var(--blue);color:#fff}
+.tag-info{background:var(--text-muted);color:#000}
+.back{display:inline-block;margin-bottom:1.5rem;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{text-align:left;padding:.5rem .75rem;border:1px solid var(--border)}
+th{background:var(--surface)}
+</style>
+</head>
+<body>
+<a class="back" href="/clarity-audit/">← Back to index</a>
+
+<h1>StackingDAO Pool Signer v1 — Security Audit</h1>
+<p class="subtitle">Pool signer contract — manages STX stacking delegation to PoX signers for the StackingDAO protocol</p>
+
+<div class="meta">
+  <p><strong>Contract:</strong>
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-pool-signer-restake-v1?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-pool-signer-restake-v1</a></code> · 518 lines</p>
+  <p><strong>Clarity version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</p>
+  <p><strong>Related audits:</strong> <a href="stacking-dao-core.html">StackingDAO Core</a> · <a href="stacking-dao-core-v2.html">Core v2</a> · <a href="stacking-dao-core-v3.html">Core v3</a></p>
+  <p><strong>Date:</strong> February 25, 2026</p>
+  <p><strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007.btc</a></p>
+  <p><strong>Audit confidence: Medium.</strong> Single-contract audit with clear logic flow. Depends on external contracts (<code>.dao</code>, <code>.data-core-v1</code>, <code>.data-pools-v1</code>) whose behavior is assumed correct. PoX-4 interactions verified against the protocol specification.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="tag tag-medium">MEDIUM</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-low">LOW</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-info">INFO</span></td><td>3</td></tr>
+</table>
+
+<h2>Architecture Overview</h2>
+<p>This contract is StackingDAO's pool signer — it manages the delegation of STX to PoX-4 signers on behalf of the stacking pool. The contract:</p>
+<ul>
+<li>Delegates STX from pool members to the PoX-4 stacking contract</li>
+<li>Manages signer keys, signatures, and aggregation commits per reward cycle</li>
+<li>Handles extend and increase operations for already-stacking delegates</li>
+<li>Provides admin functions for pool owner and DAO governance to manage signer configuration</li>
+</ul>
+
+<p><strong>Access control model:</strong> Three-way OR — <code>pool-owner</code> (mutable), any DAO-active contract via <code>.dao</code>, or the contract itself (via <code>as-contract tx-sender</code>). All admin and PoX wrapper functions use this same guard.</p>
+
+<p><strong>Key flow:</strong> <code>prepare-stacking-dao</code> → fetches delegate list from <code>.data-pools-v1</code> → for each delegate: delegate-stack-stx (new) or extend+increase (existing) → aggregate-commit or aggregate-increase to the signer.</p>
+
+<h2>Findings</h2>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-01: No timelock on critical admin state changes</h3>
+<p><strong>Location:</strong> <code>set-pool-owner</code>, <code>set-pox-reward-address</code></p>
+<p><strong>Description:</strong> The pool owner can instantly change both the pool owner address and the PoX reward address. A compromised pool-owner key allows an attacker to immediately redirect all future stacking rewards to their own address and lock out the legitimate owner.</p>
+<pre><code>(define-public (set-pox-reward-address (new-address { version: (buff 1), hashbytes: (buff 32) }))
+  (begin
+    (asserts! (or
+      (is-eq contract-caller (var-get pool-owner))
+      (is-eq true (contract-call? .dao get-contract-active contract-caller))
+      (is-eq contract-caller (as-contract tx-sender)))
+      (err ERR_UNAUTHORISED))
+    (var-set pox-reward-address new-address)  ;; Immediate effect, no timelock
+    (ok true)))</code></pre>
+<p><strong>Impact:</strong> If the pool-owner private key is compromised, the attacker can redirect BTC stacking rewards and transfer ownership in a single transaction. Delegators' STX remains locked in stacking but rewards flow to the attacker for the duration of the cycle.</p>
+<p><strong>Recommendation:</strong> Implement a two-step ownership transfer pattern (propose + accept) and a timelock on reward address changes, giving delegators time to react. Alternatively, route all admin changes through the DAO governance exclusively.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-02: Blanket asset access via pre-Clarity 4 <code>as-contract</code></h3>
+<p><strong>Location:</strong> All <code>as-contract</code> calls (lines throughout <code>delegation</code>, <code>aggregation</code>, PoX wrappers)</p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> (pre-Clarity 4) which grants unrestricted asset transfer authority for the enclosed expression. While the contract currently only uses this authority for PoX stacking operations, any future code change or composability path could inadvertently transfer STX, FTs, or NFTs held by the contract.</p>
+<pre><code>;; Example: delegation function
+(try! (as-contract (delegate-stack-stx delegate delegation-amount
+  (get-pox-reward-address) burn-block-height u1)))
+
+;; Clarity 4 equivalent (recommended):
+(try! (as-contract? (delegate-stack-stx delegate delegation-amount
+  (get-pox-reward-address) burn-block-height u1)
+  with-stacking))</code></pre>
+<p><strong>Impact:</strong> Low immediate risk (contract doesn't hold transferable assets), but increases the attack surface if the contract is upgraded or composed with other contracts that deposit assets.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-stacking</code> allowance. This restricts the contract's authority to only stacking operations at the language level.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-01: Silent error swallowing for stacking threshold</h3>
+<p><strong>Location:</strong> <code>prepare-delegate-many</code></p>
+<p><strong>Description:</strong> The aggregation step silently ignores <code>ERR_STACKING_THRESHOLD_NOT_MET</code> (error 11). While this is intentional (small pools may not meet the minimum), it masks any other error with code 11 and provides no observability into how often the threshold is missed.</p>
+<pre><code>(match (aggregation)
+  success true
+  error (begin
+    (asserts! (is-eq error u11) (err error))  ;; Only error 11 is swallowed
+    true))</code></pre>
+<p><strong>Impact:</strong> If the threshold is persistently not met, delegators' STX sits idle without earning rewards, and there's no on-chain signal to alert operators.</p>
+<p><strong>Recommendation:</strong> Emit a print event when the threshold is not met so off-chain monitoring can detect and alert on the condition: <code>(begin (print { action: "threshold-not-met", cycle: next-cycle }) true)</code></p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-02: No cycle validation in <code>set-cycle-signer-info</code></h3>
+<p><strong>Location:</strong> <code>set-cycle-signer-info</code></p>
+<p><strong>Description:</strong> The admin function accepts any reward cycle value, including past cycles. Setting signer info for an already-completed cycle wastes gas and creates confusing map state.</p>
+<p><strong>Impact:</strong> Low — only the admin can call this, and past-cycle signer info is never read by the aggregation logic (which always uses <code>next-cycle</code>). However, it could lead to operator confusion.</p>
+<p><strong>Recommendation:</strong> Add a check: <code>(asserts! (>= reward-cycle (+ (current-pox-reward-cycle) u1)) (err ERR_INVALID_CYCLE))</code></p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-01: Missing print events for admin state changes</h3>
+<p><strong>Location:</strong> <code>set-pool-owner</code>, <code>set-pox-reward-address</code>, <code>set-cycle-to-index</code></p>
+<p><strong>Description:</strong> Admin functions that modify critical state (<code>pool-owner</code>, <code>pox-reward-address</code>, <code>cycle-to-index</code>) do not emit print events. This makes off-chain monitoring and audit trails harder to maintain.</p>
+<p><strong>Recommendation:</strong> Add print statements to all admin functions, e.g.: <code>(print { action: "set-pool-owner", old-owner: (var-get pool-owner), new-owner: owner })</code></p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-02: <code>can-prepare</code> has no upper bound</h3>
+<p><strong>Location:</strong> <code>can-prepare</code></p>
+<p><strong>Description:</strong> The timing check <code>(> burn-block-height (- start-block-next-cycle withdraw-offset))</code> only enforces a lower bound — it doesn't prevent preparation after the next cycle has already started. In practice, PoX-4 will reject stale operations, but an explicit upper bound would fail faster with a clearer error.</p>
+<pre><code>(define-read-only (can-prepare)
+  (let (
+    (current-cycle (current-pox-reward-cycle))
+    (start-block-next-cycle (reward-cycle-to-burn-height (+ current-cycle u1)))
+    (withdraw-offset (contract-call? .data-core-v1 get-cycle-withdraw-offset))
+  )
+    (> burn-block-height (- start-block-next-cycle withdraw-offset))))</code></pre>
+<p><strong>Recommendation:</strong> Add: <code>(and (> burn-block-height (- start-block-next-cycle withdraw-offset)) (< burn-block-height start-block-next-cycle))</code></p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-03: Excessive <code>unwrap-panic</code> usage in aggregation</h3>
+<p><strong>Location:</strong> <code>aggregation</code> function</p>
+<p><strong>Description:</strong> The aggregation function calls <code>(unwrap-panic (get pox-addr signer-info))</code> and similar patterns on fields of <code>signer-info</code> that is already validated as <code>(is-some)</code>. While safe (the unwrap will never panic given the prior assert), using <code>unwrap-panic</code> is a code smell — if the logic is ever refactored and the assert is moved, the contract could abort entire transactions.</p>
+<p><strong>Recommendation:</strong> Use <code>unwrap!</code> with explicit error codes for defense-in-depth: <code>(unwrap! (get pox-addr signer-info) (err ERR_MISSING_SIGNER_INFO))</code></p>
+</div>
+
+<h2>Positive Patterns</h2>
+<ul>
+<li><strong>Clean PoX wrapper layer:</strong> All PoX-4 interactions are wrapped in private functions with consistent error conversion (<code>to-uint</code>), making the contract easy to audit and upgrade.</li>
+<li><strong>Consistent access control:</strong> Every admin and public function uses the same three-way OR pattern, reducing the risk of missing an auth check.</li>
+<li><strong>Delegation amount zero-check:</strong> The <code>delegation</code> function correctly handles the case where a delegate has no active delegation, avoiding unnecessary PoX calls.</li>
+<li><strong>Extend-before-increase ordering:</strong> For already-stacking delegates, the contract correctly extends first (to ensure the stacker is active for the next cycle) before increasing the locked amount.</li>
+<li><strong>Aggregation commit vs increase:</strong> Correctly uses <code>stack-aggregation-commit-indexed</code> for first-time commits and <code>stack-aggregation-increase</code> for subsequent additions, tracking the reward index per cycle.</li>
+</ul>
+
+<h2>Trust Assumptions</h2>
+<ul>
+<li><code>.dao</code> — DAO governance contract determines which contracts are "active" and authorized. Compromise of the DAO grants full control over this contract.</li>
+<li><code>.data-pools-v1</code> — Provides the delegate list. A corrupted delegate list could cause delegation to wrong principals.</li>
+<li><code>.data-core-v1</code> — Provides the withdraw offset timing parameter. An incorrect offset could prevent or premature-trigger preparation.</li>
+<li><code>pool-owner</code> — Single key with full admin access. Key compromise = full control.</li>
+</ul>
+
+<p style="margin-top:3rem;color:var(--text-muted);font-size:.85rem">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+  <a href="/clarity-audit/">Full audit portfolio</a> ·
+  Not a professional security audit — see <a href="https://github.com/cocoa007/clarity-audit">repo</a> for methodology
+</p>
+</body>
+</html>

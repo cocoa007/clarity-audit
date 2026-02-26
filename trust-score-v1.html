@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Score v1 Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Trust Score v1 — On-Chain Reputation System</h1>
+<p class="subtitle">
+  <a href="https://explorer.hiro.so/txid/SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.trust-score-v1?chain=mainnet">SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.trust-score-v1</a> ·
+  Reputation · February 24, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Contract</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">~30</div>
+    <div class="label">Lines</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">5</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Critical</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>A minimal on-chain reputation/trust scoring contract deployed on Stacks mainnet. The contract allows reading, increasing, and decreasing reputation scores for any principal, plus a self-reported action tracker.</p>
+<p><strong>Source:</strong> Fetched on-chain via Hiro API (immutable, canonical).</p>
+<p><strong>Clarity version:</strong> Not specified (pre-Clarity 4). <strong>-0.5 penalty applied.</strong></p>
+<p><strong>Audit confidence:</strong> 🟢 HIGH — contract is trivially small and all findings verified directly against source.</p>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>0 (no tokens/STX)</td><td>3</td><td>0</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>0 (&lt;50 lines)</td><td>2</td><td>0</td></tr>
+  <tr><td>User exposure</td><td>0 (unknown)</td><td>1.5</td><td>0</td></tr>
+  <tr><td>Novelty</td><td>1 (similar to CurateChain)</td><td>1.5</td><td>1.5</td></tr>
+  <tr><th colspan="3">Total</th><td><strong>0.75</strong> (below 1.8 threshold)</td></tr>
+</table>
+<p><em>Note: This contract scores below the normal audit threshold (0.75 &lt; 1.8). Audited by explicit request. No financial risk but critical design flaws make the reputation system meaningless.</em></p>
+
+<h2>Full Source</h2>
+<pre><code>;; Reputation system contract
+(define-map reputation principal uint)
+(define-map user-history {user: principal, action: (string-ascii 32)} uint)
+
+(define-read-only (get-reputation (user principal))
+  (default-to u0 (map-get? reputation user))
+)
+
+(define-public (increase-reputation (user principal) (amount uint))
+  (let ((current (get-reputation user)))
+    (begin
+      (asserts! (> amount u0) (err u1))
+      (ok (map-set reputation user (+ current amount)))
+    )
+  )
+)
+
+(define-public (decrease-reputation (user principal) (amount uint))
+  (let ((current (get-reputation user)))
+    (begin
+      (asserts! (>= current amount) (err u2))
+      (ok (map-set reputation user (- current amount)))
+    )
+  )
+)
+
+(define-public (track-action (action (string-ascii 32)))
+  (let ((count (default-to u0 (map-get? user-history {user: tx-sender, action: action}))))
+    (ok (map-set user-history {user: tx-sender, action: action} (+ count u1)))
+  )
+)</code></pre>
+
+<h2>Findings Summary</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>No access control — anyone can set any user's reputation</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>Reputation overflow can brick a user's score</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>track-action disconnected from reputation — no on-chain integration</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>No event emission for reputation changes</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Pre-Clarity 4 — no clarity_version specified</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding" style="border-left-color: var(--red);">
+<h3><span class="severity critical">CRITICAL</span> C-01: No access control — anyone can set any user's reputation</h3>
+<p><strong>Location:</strong> <code>increase-reputation</code>, <code>decrease-reputation</code></p>
+<p><strong>Description:</strong> Both <code>increase-reputation</code> and <code>decrease-reputation</code> are fully permissionless. Any caller can arbitrarily inflate or zero out any user's reputation score. There is no owner check, no role-based access, no oracle requirement — nothing prevents a random wallet from calling <code>(increase-reputation 'SPVICTIM u999999999)</code> or <code>(decrease-reputation 'SPVICTIM (get-reputation 'SPVICTIM))</code>.</p>
+<pre><code>;; Anyone can call this with any principal and any amount
+(define-public (increase-reputation (user principal) (amount uint))
+  (let ((current (get-reputation user)))
+    (begin
+      (asserts! (> amount u0) (err u1))
+      (ok (map-set reputation user (+ current amount)))  ;; no access control
+    )
+  )
+)</code></pre>
+<p><strong>Impact:</strong> The reputation system is completely meaningless. Any user can give themselves max reputation or destroy anyone else's score. If any system relies on these scores for trust decisions, it can be trivially gamed.</p>
+<p><strong>Recommendation:</strong> Add access control. Options:</p>
+<ul>
+  <li><strong>Admin-only:</strong> <code>(define-constant admin tx-sender)</code> at deploy time + <code>(asserts! (is-eq tx-sender admin) (err u403))</code></li>
+  <li><strong>Allowlisted callers:</strong> A map of authorized contracts/principals that can modify scores</li>
+  <li><strong>Peer attestation:</strong> Users can only rate others (not themselves), with rate-limiting</li>
+</ul>
+
+<h4>Exploit Test</h4>
+<pre><code>;; Exploit test for C-01: Anyone can manipulate any reputation
+(define-public (test-exploit-c01-reputation-manipulation)
+  (begin
+    ;; Attacker inflates own reputation
+    (try! (increase-reputation tx-sender u999999999))
+    ;; Attacker zeros out victim
+    (let ((victim-rep (get-reputation 'SP000000000000000000002Q6VF78)))
+      (if (> victim-rep u0)
+        (try! (decrease-reputation 'SP000000000000000000002Q6VF78 victim-rep))
+        true
+      )
+    )
+    (asserts! (>= (get-reputation tx-sender) u999999999) (err u100))
+    (ok true)
+  )
+)</code></pre>
+</div>
+
+<div class="finding" style="border-left-color: #da3633;">
+<h3><span class="severity high">HIGH</span> H-01: Reputation overflow can brick a user's score</h3>
+<p><strong>Location:</strong> <code>increase-reputation</code></p>
+<p><strong>Description:</strong> The addition <code>(+ current amount)</code> has no upper bound check. While Clarity's uint arithmetic will abort on overflow (exceeding <code>u340282366920938463463374607431768211455</code>), an attacker could repeatedly call <code>increase-reputation</code> to push a user's score so high that any further increase reverts. More practically, since there's no access control (C-01), an attacker can set any value they want — but if C-01 is fixed with rate-limited peer attestation, the lack of bounds becomes relevant.</p>
+<p><strong>Impact:</strong> Griefing vector — inflate a victim's score to near-max so legitimate updates revert on overflow.</p>
+<p><strong>Recommendation:</strong> Add a maximum reputation cap: <code>(asserts! (&lt;= (+ current amount) MAX-REPUTATION) (err u3))</code></p>
+</div>
+
+<div class="finding" style="border-left-color: var(--yellow);">
+<h3><span class="severity medium">MEDIUM</span> M-01: track-action disconnected from reputation</h3>
+<p><strong>Location:</strong> <code>track-action</code></p>
+<p><strong>Description:</strong> The <code>track-action</code> function records self-reported action counts per user but has no connection to the reputation system. Actions don't affect reputation, and reputation doesn't depend on actions. The two systems are completely independent, making the action tracker dead weight in a "trust score" contract.</p>
+<p><strong>Impact:</strong> Misleading architecture — the contract name suggests actions build trust, but they don't. Action counts are self-reported and can be freely inflated by calling <code>track-action</code> repeatedly.</p>
+<p><strong>Recommendation:</strong> Either integrate actions into reputation scoring (e.g., verified actions earn reputation via an oracle) or remove the function to reduce contract surface area.</p>
+</div>
+
+<div class="finding" style="border-left-color: var(--blue);">
+<h3><span class="severity low">LOW</span> L-01: No event emission for reputation changes</h3>
+<p><strong>Location:</strong> <code>increase-reputation</code>, <code>decrease-reputation</code></p>
+<p><strong>Description:</strong> Neither function emits a <code>print</code> event when reputation changes. Off-chain indexers and UIs cannot efficiently track reputation updates without scanning every transaction.</p>
+<p><strong>Recommendation:</strong> Add <code>(print {event: "reputation-change", user: user, old: current, new: (+ current amount), caller: tx-sender})</code> to both functions.</p>
+</div>
+
+<div class="finding" style="border-left-color: var(--text-muted);">
+<h3><span class="severity info">INFO</span> I-01: Pre-Clarity 4 — no clarity_version specified</h3>
+<p><strong>Description:</strong> The contract does not specify a Clarity version, defaulting to pre-Clarity 4. While this contract has no token transfers (so <code>as-contract?</code> with asset allowances isn't relevant), specifying the Clarity version is best practice for deployment reproducibility.</p>
+</div>
+
+<h2>Architecture Assessment</h2>
+<p>This is a minimal reputation primitive with a fundamental design flaw: <strong>permissionless write access makes the entire scoring system meaningless.</strong> The contract is effectively a public key-value store where anyone can write any value for any key.</p>
+<p>No funds are at risk (no token transfers of any kind), but any system that relies on these scores for trust or access decisions would be trivially exploitable.</p>
+<p><strong>Positive notes:</strong></p>
+<ul>
+  <li><code>track-action</code> correctly uses <code>tx-sender</code> for self-reporting (can't fake caller identity)</li>
+  <li><code>decrease-reputation</code> properly checks for underflow</li>
+  <li>Clean, readable code with no unnecessary complexity</li>
+</ul>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a></p>
+</footer>
+
+</body>
+</html>

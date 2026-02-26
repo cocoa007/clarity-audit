@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP-010 Fungible Token Trait — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.info { background: var(--blue); color: #fff; }
+.badge.green { background: var(--green); color: #000; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="https://github.com/cocoa007/clarity-audit">GitHub</a>
+</nav>
+
+<h1>SIP-010 Fungible Token Trait</h1>
+<p class="subtitle">
+  Informational Review — 2026-02-25<br>
+  Contract: <code>SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard</code><br>
+  Source: <a href="https://explorer.hiro.so/txid/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard?chain=mainnet">Stacks Explorer</a> |
+  <a href="https://api.hiro.so/v2/contracts/source/SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE/sip-010-trait-ft-standard">Hiro API</a><br>
+  Type: <span class="badge info">INFORMATIONAL — Trait Definition (No Executable Logic)</span>
+</p>
+
+<h2>Overview</h2>
+
+<p>This is <strong>not a security audit</strong> — SIP-010 is a <strong>trait definition</strong> with zero executable logic. There is nothing to exploit, no state to corrupt, and no funds at risk in this contract. This page exists as a reference document explaining what SIP-010 defines and why it matters to the Stacks ecosystem.</p>
+
+<h2>What is SIP-010?</h2>
+
+<p>SIP-010 is the <strong>canonical fungible token standard</strong> for the Stacks blockchain, analogous to ERC-20 on Ethereum. Deployed at block height 16,733, it defines the interface that every compliant fungible token must implement. Virtually every token on Stacks — STX wrappers, stablecoins, governance tokens, LP tokens — references this trait.</p>
+
+<h2>The Trait Definition</h2>
+
+<pre><code>(define-trait sip-010-trait
+  (
+    ;; Transfer from the caller to a new principal
+    (transfer (uint principal principal (optional (buff 34))) (response bool uint))
+
+    ;; the human readable name of the token
+    (get-name () (response (string-ascii 32) uint))
+
+    ;; the ticker symbol, or empty if none
+    (get-symbol () (response (string-ascii 32) uint))
+
+    ;; the number of decimals used, e.g. 6 would mean 1_000_000 represents 1 token
+    (get-decimals () (response uint uint))
+
+    ;; the balance of the passed principal
+    (get-balance (principal) (response uint uint))
+
+    ;; the current total supply (which does not need to be a constant)
+    (get-total-supply () (response uint uint))
+
+    ;; an optional URI that represents metadata of this token
+    (get-token-uri () (response (optional (string-utf8 256)) uint))
+  )
+)
+</code></pre>
+
+<h2>Required Functions</h2>
+
+<table>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th><th>Purpose</th></tr>
+<tr><td><code>transfer</code></td><td><code>uint, principal, principal, (optional (buff 34))</code></td><td><code>(response bool uint)</code></td><td>Transfer tokens from caller to recipient. The optional memo field allows attaching a short message (up to 34 bytes).</td></tr>
+<tr><td><code>get-name</code></td><td>none</td><td><code>(response (string-ascii 32) uint)</code></td><td>Human-readable token name</td></tr>
+<tr><td><code>get-symbol</code></td><td>none</td><td><code>(response (string-ascii 32) uint)</code></td><td>Ticker symbol</td></tr>
+<tr><td><code>get-decimals</code></td><td>none</td><td><code>(response uint uint)</code></td><td>Decimal precision (e.g. 6 = 1,000,000 units per token)</td></tr>
+<tr><td><code>get-balance</code></td><td><code>principal</code></td><td><code>(response uint uint)</code></td><td>Balance of a given address</td></tr>
+<tr><td><code>get-total-supply</code></td><td>none</td><td><code>(response uint uint)</code></td><td>Current circulating supply</td></tr>
+<tr><td><code>get-token-uri</code></td><td>none</td><td><code>(response (optional (string-utf8 256)) uint)</code></td><td>Optional metadata URI</td></tr>
+</table>
+
+<h2>Why It Matters</h2>
+
+<div class="info-box">
+<h3>🔑 Ecosystem Foundation</h3>
+<p>SIP-010 is the most referenced contract on Stacks. Every DEX (StackSwap, ALEX, Velar, Bitflow), every lending protocol (Arkadiko, Zest), and every token launcher uses <code>impl-trait</code> against this definition. Breaking or replacing it would require migrating the entire ecosystem.</p>
+</div>
+
+<div class="info-box">
+<h3>🔒 Security Implications for Implementors</h3>
+<p>While the trait itself has no vulnerabilities, <strong>implementations</strong> commonly introduce bugs:</p>
+<ul>
+<li><strong>Missing <code>tx-sender</code> check in <code>transfer</code></strong> — allows anyone to move anyone's tokens</li>
+<li><strong>Unlimited mint functions</strong> — no access control on minting</li>
+<li><strong>No max supply on <code>define-fungible-token</code></strong> — infinite supply unless capped</li>
+<li><strong>Malicious <code>transfer</code> implementations</strong> — contracts passed as trait parameters can execute arbitrary logic (relevant for DEX routers using <code>as-contract</code>)</li>
+</ul>
+</div>
+
+<div class="info-box">
+<h3>📋 Audit Checklist for SIP-010 Implementations</h3>
+<p>When auditing any token that implements SIP-010, verify:</p>
+<ol>
+<li><code>transfer</code> checks <code>(is-eq from tx-sender)</code> — caller must be the sender</li>
+<li>Mint/burn functions have proper access control</li>
+<li><code>define-fungible-token</code> has an explicit max supply if intended to be finite</li>
+<li><code>get-total-supply</code> returns <code>ft-get-supply</code> (not a stale variable)</li>
+<li>Memo is printed (not silently dropped) for indexer compatibility</li>
+</ol>
+</div>
+
+<h2>Conclusion</h2>
+
+<p>SIP-010 is a clean, minimal trait definition with no security concerns of its own. Its value is as an interface standard — the security risk lives entirely in how individual tokens <strong>implement</strong> it. See our other audits for examples of SIP-010 implementation vulnerabilities in real deployed contracts.</p>
+
+<p style="margin-top: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+  Informational review by <a href="https://github.com/cocoa007">cocoa007.btc</a> —
+  <a href="index.html">Full audit portfolio</a>
+</p>
+
+</body>
+</html>

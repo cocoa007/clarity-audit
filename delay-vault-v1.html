@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: delay-vault-v1 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>delay-vault-v1</h1>
+<p class="subtitle">Timelock contract for scheduling and executing delayed operations on Stacks</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.delay-vault-v1?chain=mainnet">SP2CXN6W7WDEHVWDC07BPP1RPY2Z07BR7Z689WAX3.delay-vault-v1</a></code></td></tr>
+  <tr><td>Protocol</td><td>Independent — delay/timelock vault</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>1 (pre-Clarity 4)</td></tr>
+  <tr><td>Lines of Code</td><td>25</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — simple contract, fully reviewed, all findings verified against source</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>This is a minimal timelock contract that allows anyone to schedule an operation (an opaque 256-byte buffer) with a block delay, then execute it after the timelock expires. The contract stores operations in a map indexed by an auto-incrementing counter.</p>
+
+<p><strong>Key observation:</strong> The contract stores data but never actually <em>does</em> anything with it — <code>execute-operation</code> just marks the operation as claimed. There are no token transfers, no contract calls, no side effects. This means the contract is essentially a timestamped registry with a delay check, not a true timelock executor.</p>
+
+<h2>Full Source</h2>
+<pre><code>;; Time-lock contract for delayed execution
+(define-map locked-operations {id: uint} {data: (buff 256), unlock-time: uint, claimed: bool})
+(define-data-var operation-counter uint u0)
+
+(define-read-only (get-operation (id uint))
+  (map-get? locked-operations {id: id})
+)
+
+(define-public (schedule-operation (data (buff 256)) (delay uint))
+  (let ((id (var-get operation-counter)) (unlock-time (+ burn-block-height delay)))
+    (begin
+      (map-set locked-operations {id: id} {data: data, unlock-time: unlock-time, claimed: false})
+      (ok (var-set operation-counter (+ id u1)))
+    )
+  )
+)
+
+(define-public (execute-operation (id uint))
+  (let ((op (unwrap! (map-get? locked-operations {id: id}) (err u1))))
+    (begin
+      (asserts! (&gt;= burn-block-height (get unlock-time op)) (err u2))
+      (asserts! (not (get claimed op)) (err u3))
+      (map-set locked-operations {id: id} (merge op {claimed: true}))
+      (ok true)
+    )
+  )
+)</code></pre>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: No Access Control — Anyone Can Schedule and Execute Operations</h3>
+  </div>
+  <p><strong>Location:</strong> <code>schedule-operation</code>, <code>execute-operation</code></p>
+  <p><strong>Description:</strong> Neither function checks <code>tx-sender</code> or <code>contract-caller</code>. Any address can schedule an operation, and — critically — any address can execute (claim) any operation once its timelock expires. There is no concept of an "owner" for a scheduled operation.</p>
+  <p>For a timelock contract, this is a fundamental design flaw. If the contract were extended to perform actions on execution (e.g., transfer tokens, call other contracts), the lack of sender validation would allow anyone to trigger those actions.</p>
+  <pre><code>;; No sender check — anyone can schedule
+(define-public (schedule-operation (data (buff 256)) (delay uint))
+  (let ((id (var-get operation-counter)) ...))
+
+;; No sender check — anyone can execute any operation
+(define-public (execute-operation (id uint))
+  (let ((op (unwrap! (map-get? locked-operations {id: id}) (err u1)))))</code></pre>
+  <p><strong>Impact:</strong> In the current form (no side effects), the impact is limited to state pollution and front-running of <code>execute-operation</code>. If the contract is extended to perform real actions, this becomes critical — any user could trigger any scheduled operation.</p>
+  <p><strong>Recommendation:</strong> Store the scheduler's principal in the operation map and enforce that only the scheduler (or an authorized party) can execute:</p>
+  <pre><code>(define-map locked-operations {id: uint}
+  {data: (buff 256), unlock-time: uint, claimed: bool, owner: principal})
+
+(define-public (execute-operation (id uint))
+  (let ((op (unwrap! (map-get? locked-operations {id: id}) (err u1))))
+    (asserts! (is-eq tx-sender (get owner op)) (err u4))
+    ;; ... rest of logic
+  )
+)</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Zero Delay Bypass — Timelock Can Be Set to u0</h3>
+  </div>
+  <p><strong>Location:</strong> <code>schedule-operation</code></p>
+  <p><strong>Description:</strong> There is no minimum delay enforcement. A caller can pass <code>delay = u0</code>, making the unlock-time equal to the current <code>burn-block-height</code>. Since the execute check uses <code>&gt;=</code>, the operation can be scheduled and executed in the same block, completely bypassing the intended timelock protection.</p>
+  <pre><code>;; delay = u0 means unlock-time = burn-block-height (immediately executable)
+(let ((unlock-time (+ burn-block-height delay))))</code></pre>
+  <p><strong>Impact:</strong> Defeats the purpose of a timelock contract. Any governance or security assumption built on "operations require a waiting period" is invalid.</p>
+  <p><strong>Recommendation:</strong> Enforce a minimum delay constant:</p>
+  <pre><code>(define-constant MIN-DELAY u144) ;; ~1 day in Bitcoin blocks
+(asserts! (&gt;= delay MIN-DELAY) (err u5))</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: No Cancellation Mechanism</h3>
+  </div>
+  <p><strong>Location:</strong> Contract-wide</p>
+  <p><strong>Description:</strong> Once an operation is scheduled, there is no way to cancel it. In real timelock systems (e.g., OpenZeppelin TimelockController), cancellation is a critical safety feature — it allows stopping a malicious or erroneous operation during the waiting period.</p>
+  <p><strong>Impact:</strong> If a scheduled operation contains an error or the circumstances change, there is no way to prevent its eventual execution. This removes a key safety net that timelock patterns are designed to provide.</p>
+  <p><strong>Recommendation:</strong> Add a <code>cancel-operation</code> function restricted to the operation owner:</p>
+  <pre><code>(define-public (cancel-operation (id uint))
+  (let ((op (unwrap! (map-get? locked-operations {id: id}) (err u1))))
+    (asserts! (is-eq tx-sender (get owner op)) (err u4))
+    (asserts! (not (get claimed op)) (err u3))
+    (map-delete locked-operations {id: id})
+    (ok true)
+  )
+)</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Execute Has No Side Effects — Contract Is a No-Op Registry</h3>
+  </div>
+  <p><strong>Location:</strong> <code>execute-operation</code></p>
+  <p><strong>Description:</strong> The <code>execute-operation</code> function only sets <code>claimed: true</code> in the map. It does not process the stored <code>data</code> buffer in any way — no token transfers, no contract calls, no state changes beyond the claimed flag. The contract name suggests "delayed execution" but nothing is actually executed.</p>
+  <p><strong>Impact:</strong> The contract provides no real timelock functionality. It is essentially a timestamped key-value store. Any system relying on this for governance timelock or delayed execution would need to build all the actual logic externally and trust that the "claimed" flag is checked.</p>
+  <p><strong>Recommendation:</strong> If this is intended as a building block, document clearly that execution logic must be implemented by a separate contract that reads the operation state. Consider using traits or callbacks for actual execution.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: No Event Emission</h3>
+  </div>
+  <p><strong>Location:</strong> <code>schedule-operation</code>, <code>execute-operation</code></p>
+  <p><strong>Description:</strong> Neither function emits <code>print</code> events. Off-chain indexers and monitoring tools cannot track scheduled or executed operations without scanning every transaction to this contract.</p>
+  <p><strong>Recommendation:</strong> Add print statements with structured data:</p>
+  <pre><code>(print {event: "schedule", id: id, unlock-time: unlock-time, sender: tx-sender})
+(print {event: "execute", id: id, sender: tx-sender})</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: schedule-operation Returns bool Instead of Operation ID</h3>
+  </div>
+  <p><strong>Location:</strong> <code>schedule-operation</code></p>
+  <p><strong>Description:</strong> The function returns <code>(ok true)</code> (the result of <code>var-set</code>) instead of the newly created operation ID. Callers have no way to know which ID was assigned to their operation without reading the counter beforehand, which is vulnerable to race conditions in the same block.</p>
+  <pre><code>;; Returns (ok true) — the bool from var-set, not the operation ID
+(ok (var-set operation-counter (+ id u1)))</code></pre>
+  <p><strong>Recommendation:</strong> Return the operation ID:</p>
+  <pre><code>(var-set operation-counter (+ id u1))
+(ok id)</code></pre>
+</div>
+
+<h2>Summary</h2>
+
+<p>This is a minimal, incomplete timelock contract. At 25 lines, it implements the bare skeleton of a delay vault but lacks the access control, cancellation, minimum delay enforcement, and actual execution logic needed for a production timelock system. In its current form it is a no-op registry — operations are stored and flagged as "claimed" but nothing happens on execution.</p>
+
+<p>The most significant issue is the complete absence of access control (H-01), which means any address can schedule or execute any operation. Combined with the zero-delay bypass (M-01), the timelock guarantee is effectively nonexistent.</p>
+
+<p><strong>Verdict:</strong> Not suitable for production use without significant additions. Should be treated as a prototype or learning exercise.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← All Audits</a> · cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a></p>
+</footer>
+
+</body>
+</html>

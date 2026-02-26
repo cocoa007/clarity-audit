@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: arkadiko-freddie-v1-1 — cocoa007</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.15rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);background:var(--surface);padding:.15em .4em;border-radius:4px;font-size:.9em}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-size:.85em;line-height:1.5}
+pre code{background:none;padding:0}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0}
+.finding h3{margin-top:0}
+.severity-high{border-left:4px solid #f85149}
+.severity-medium{border-left:4px solid #d29922}
+.severity-low{border-left:4px solid #58a6ff}
+.severity-info{border-left:4px solid #8b949e}
+.tag{display:inline-block;padding:.15em .5em;border-radius:4px;font-size:.8em;font-weight:600;margin-right:.5em}
+.tag-high{background:rgba(248,81,73,.15);color:#f85149}
+.tag-medium{background:rgba(210,153,34,.15);color:#d29922}
+.tag-low{background:rgba(88,166,255,.15);color:#58a6ff}
+.tag-info{background:rgba(139,148,158,.15);color:#8b949e}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{padding:.6rem .8rem;border:1px solid var(--border);text-align:left;font-size:.9em}
+th{background:var(--surface);font-weight:600}
+.back-link{display:inline-block;margin-bottom:1.5rem;color:var(--text-muted)}
+.summary-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;margin:1rem 0}
+.summary-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+.summary-item .count{font-size:2rem;font-weight:700}
+.summary-item .label{color:var(--text-muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all audits</a>
+
+<h1>🔍 Arkadiko Freddie v1-1</h1>
+<p class="subtitle">Vault Manager — Stablecoin Collateral/Debt Management</p>
+
+<table>
+<tr><th>Contract</th><td><code>SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-freddie-v1-1</code></td></tr>
+<tr><th>Source</th><td><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-freddie-v1-1?chain=mainnet">Stacks Explorer</a> · <a href="https://api.hiro.so/v2/contracts/source/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR/arkadiko-freddie-v1-1">Hiro API (on-chain)</a></td></tr>
+<tr><th>Lines of Code</th><td>1,060</td></tr>
+<tr><th>Clarity Version</th><td>1 (pre-Clarity 4) ⚠️</td></tr>
+<tr><th>Auditor</th><td>cocoa007.btc</td></tr>
+<tr><th>Date</th><td>2026-02-24</td></tr>
+<tr><th>Confidence</th><td>Medium — complex multi-contract system, some cross-contract interactions unverifiable without full DAO source</td></tr>
+</table>
+
+<h2>📊 Summary</h2>
+
+<div class="summary-box">
+<div class="summary-item"><div class="count" style="color:var(--red)">0</div><div class="label">Critical</div></div>
+<div class="summary-item"><div class="count" style="color:#f85149">2</div><div class="label">High</div></div>
+<div class="summary-item"><div class="count" style="color:var(--yellow)">2</div><div class="label">Medium</div></div>
+<div class="summary-item"><div class="count" style="color:var(--blue)">2</div><div class="label">Low</div></div>
+<div class="summary-item"><div class="count" style="color:var(--text-muted)">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>📝 Overview</h2>
+<p>Arkadiko Freddie is the vault manager for the Arkadiko protocol — a MakerDAO-style stablecoin system on Stacks. Users deposit STX (or SIP-010 tokens) as collateral to mint USDA stablecoins. The contract manages vault lifecycle: creation, collateral deposits/withdrawals, debt minting/burning, stability fee accrual, liquidation, and post-liquidation settlement.</p>
+<p>The contract interacts extensively with the Arkadiko DAO registry for access control, external reserves for custody, an oracle for pricing, and collateral-type configuration. This multi-contract architecture provides modularity but expands the trust surface considerably.</p>
+
+<h3>Priority Score</h3>
+<table>
+<tr><th>Metric</th><th>Score</th><th>Weighted</th></tr>
+<tr><td>Financial risk</td><td>3 (DeFi lending/staking)</td><td>9</td></tr>
+<tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>6</td></tr>
+<tr><td>Code complexity</td><td>3 (1060 lines, multi-contract)</td><td>6</td></tr>
+<tr><td>User exposure</td><td>3 (well-known Stacks DeFi protocol)</td><td>4.5</td></tr>
+<tr><td>Novelty</td><td>1 (DeFi vault — similar category)</td><td>1.5</td></tr>
+<tr><td colspan="2"><strong>Total</strong></td><td><strong>2.7</strong> (−0.5 Clarity 1 penalty = <strong>2.2</strong>) ✅</td></tr>
+</table>
+
+<h3>Documented Limitations</h3>
+<ul>
+<li>The contract header notes it's an "abstraction layer" — collateral reserves should not be called directly by clients. This is a design intent, not enforced by the contract itself.</li>
+<li>Version 1 — the protocol has since shipped updated versions (freddie-v2, etc.), so some issues may be mitigated in later deployments.</li>
+</ul>
+
+<h2>🔴 High Findings</h2>
+
+<div class="finding severity-high">
+<h3><span class="tag tag-high">HIGH</span> H-01: close-vault Bypasses Stability Fee Payment</h3>
+<p><strong>Location:</strong> <code>close-vault</code> (line ~520)</p>
+<p><strong>Description:</strong> The <code>close-vault</code> function burns the vault's debt and returns collateral but <strong>does not call <code>pay-stability-fee</code></strong>. By contrast, the <code>burn</code> function (line ~470) explicitly calls <code>(try! (pay-stability-fee vault-id coll-type))</code> before burning debt. A vault owner can avoid all accrued stability fees by calling <code>close-vault</code> instead of <code>burn</code> followed by collateral withdrawal.</p>
+<pre><code>;; close-vault — burns debt directly, no fee payment
+(if (is-eq (get debt vault) u0)
+  true
+  (try! (contract-call? .arkadiko-dao burn-token .usda-token (get debt vault) (get owner vault)))
+)
+(try! (contract-call? reserve burn ft (get owner vault) (get collateral vault)))
+;; ^^^ stability fee never collected!</code></pre>
+<p><strong>Impact:</strong> Loss of protocol revenue. Vault owners can systematically avoid stability fees by closing and re-opening vaults, undermining the protocol's economic model. For high-debt vaults, this could represent significant uncollected fees.</p>
+<p><strong>Recommendation:</strong> Add <code>(try! (pay-stability-fee vault-id coll-type))</code> before burning debt in <code>close-vault</code>, matching the pattern in <code>burn</code>.</p>
+</div>
+
+<div class="finding severity-high">
+<h3><span class="tag tag-high">HIGH</span> H-02: redeem-tokens Has No Caller Restriction</h3>
+<p><strong>Location:</strong> <code>redeem-tokens</code> (line ~940)</p>
+<p><strong>Description:</strong> The <code>redeem-tokens</code> function transfers USDA and DIKO held by the contract to the DAO payout address. The only guard is a 31-day cooldown check — <strong>anyone can call it</strong>. While funds go to the DAO payout address (not the caller), this gives any user the power to trigger treasury operations.</p>
+<pre><code>(define-public (redeem-tokens (usda-amount uint) (diko-amount uint))
+  (begin
+    ;; Only checks time, not caller identity
+    (asserts! (> (- block-height (var-get block-height-last-paid)) (* BLOCKS-PER-DAY u31)) (err ERR-NOT-AUTHORIZED))
+    (var-set block-height-last-paid block-height)
+    ;; ... transfers to payout address</code></pre>
+<p><strong>Impact:</strong> A griefing attack could repeatedly trigger small payouts (e.g., 1 micro-USDA) to reset the 31-day timer, preventing the DAO from making a meaningful withdrawal. The attacker specifies the <code>usda-amount</code> and <code>diko-amount</code> parameters.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (is-eq tx-sender (contract-call? .arkadiko-dao get-dao-owner)) (err ERR-NOT-AUTHORIZED))</code> or restrict to guardian address.</p>
+</div>
+
+<h2>🟡 Medium Findings</h2>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-01: Linear Stability Fee Calculation (Not Compounding)</h3>
+<p><strong>Location:</strong> <code>stability-fee-helper</code> (line ~750)</p>
+<p><strong>Description:</strong> Stability fees are calculated as simple linear multiplication: <code>(* number-of-blocks interest)</code>. Standard DeFi protocols use compound interest. This means fees grow linearly with time rather than exponentially, resulting in systematically lower-than-expected fee collection.</p>
+<pre><code>(let (
+  (number-of-blocks (- block-height stability-fee-last-accrued))
+  (fee (get stability-fee collateral-type))
+  (decimals (get stability-fee-decimals collateral-type))
+  (interest (/ (* debt fee) (pow u10 decimals)))
+)
+  (ok (* number-of-blocks interest))  ;; linear, not compound
+)</code></pre>
+<p><strong>Impact:</strong> Protocol collects less revenue than expected. For long-lived vaults (months/years), the difference between linear and compound interest grows substantially. This is arguably a design decision but deviates from DeFi norms and could mislead users expecting standard compounding behavior.</p>
+<p><strong>Recommendation:</strong> Document this behavior clearly. If compounding is desired, implement per-block compounding or periodic accrual checkpoints.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-02: Blanket <code>as-contract</code> Authority (Pre-Clarity 4)</h3>
+<p><strong>Location:</strong> Multiple — lines ~310, ~940, ~960, ~975, ~990</p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> (Clarity 1) which grants blanket authority over all assets the contract holds. Any function that runs code under <code>as-contract</code> can transfer any token the contract owns. In Clarity 4, <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-stx</code>, etc.) enforces at the language level which assets can move.</p>
+<p><strong>Impact:</strong> If any of the external contracts called under <code>as-contract</code> (like <code>.usda-token transfer</code>, <code>.arkadiko-token transfer</code>) were compromised or if the DAO registry were manipulated to point to malicious implementations, the attacker could drain all assets held by this contract.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code> / <code>with-stx</code> allowances for each <code>as-contract</code> block. This is the single most impactful safety upgrade available.</p>
+</div>
+
+<h2>🔵 Low Findings</h2>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-01: release-stacked-stx Has No Access Control</h3>
+<p><strong>Location:</strong> <code>release-stacked-stx</code> (line ~225)</p>
+<p><strong>Description:</strong> Despite the comment "method that can only be called by deployer (contract owner)", the function has <strong>no caller check</strong>. Anyone can call it for any liquidated xSTX vault once the burn height is reached. The function adds the stacked tokens to the redeemable pool.</p>
+<pre><code>;; method that can only be called by deployer (contract owner)
+;; ^^^ comment is incorrect — no tx-sender check exists
+(define-public (release-stacked-stx (vault-id uint))
+  (let ((vault (get-vault-by-id vault-id)))
+    ;; checks: shutdown, xSTX token, is-liquidated, stacked > 0, burn-height reached
+    ;; NO caller check
+    (try! (add-stx-redeemable (get stacked-tokens vault)))
+    ...</code></pre>
+<p><strong>Impact:</strong> Low — the function is likely designed as a public good (anyone can trigger the release once conditions are met). However, the misleading comment suggests the developer intended access control. If early release timing matters for the protocol, this could be exploited.</p>
+<p><strong>Recommendation:</strong> Either add the deployer check implied by the comment, or correct the comment to document the intentional public access.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-02: subtract-stx-redeemable Potential Underflow</h3>
+<p><strong>Location:</strong> <code>subtract-stx-redeemable</code> (line ~60)</p>
+<p><strong>Description:</strong> The function performs unchecked subtraction: <code>(- (var-get stx-redeemable) token-amount)</code>. In Clarity, unsigned integer underflow causes a runtime panic that aborts the transaction. The caller (<code>redeem-stx</code>) uses <code>min-of</code> to cap the amount, which currently prevents underflow. However, if any future caller omits this guard, transactions will fail silently.</p>
+<p><strong>Impact:</strong> Low — currently mitigated by <code>min-of</code> in <code>redeem-stx</code>. A defensive check would be more robust.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (>= (var-get stx-redeemable) token-amount) (err ERR-INSUFFICIENT-COLLATERAL))</code> before the subtraction.</p>
+</div>
+
+<h2>ℹ️ Informational Findings</h2>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-01: Extensive unwrap-panic Usage</h3>
+<p><strong>Location:</strong> Throughout (30+ instances)</p>
+<p><strong>Description:</strong> The contract uses <code>unwrap-panic</code> extensively for DAO registry lookups, vault data reads, and collateral type queries. Each <code>unwrap-panic</code> on a <code>none</code> result aborts the entire transaction with no descriptive error. If any external contract returns unexpected <code>none</code> (e.g., due to migration, data corruption, or misconfiguration), affected functions become uncallable.</p>
+<p><strong>Recommendation:</strong> Replace critical <code>unwrap-panic</code> calls with <code>unwrap!</code> and descriptive error codes to aid debugging and provide graceful failure.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-02: Hardcoded Stacker Names Limit Scalability</h3>
+<p><strong>Location:</strong> <code>set-stacking-unlock-burn-height</code> (line ~72) and initialization (line ~1050)</p>
+<p><strong>Description:</strong> The contract hardcodes exactly 4 stacker names ("stacker", "stacker-2", "stacker-3", "stacker-4") in both the authorization check and the initialization block. Adding more stackers requires deploying a new version of the contract.</p>
+<p><strong>Recommendation:</strong> Use a map-based allowlist that can be updated via governance, or accept this as a known limitation of v1.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-03: Collateral-to-Debt Ratio Precision Loss</h3>
+<p><strong>Location:</strong> <code>calculate-current-collateral-to-debt-ratio</code> (line ~110)</p>
+<p><strong>Description:</strong> The ratio calculation uses nested integer division which can lose precision:
+<code>(/ (/ (* collateral price) debt) (/ decimals u100))</code>. Integer division truncates, and performing it twice compounds the precision loss. For vaults near the liquidation threshold, this could cause the ratio to appear slightly lower than actual, potentially triggering premature liquidation or preventing valid operations.</p>
+<p><strong>Recommendation:</strong> Restructure to minimize division steps: <code>(/ (* collateral price 100) (* debt decimals))</code>.</p>
+</div>
+
+<h2>🏗️ Architecture Notes</h2>
+<ul>
+<li><strong>DAO Registry Pattern:</strong> Access control is delegated to <code>arkadiko-dao</code> via <code>get-qualified-name-by-name</code>. This is powerful (contracts are upgradeable) but creates a single point of trust — if the DAO owner is compromised, all registered contracts can be swapped for malicious versions.</li>
+<li><strong>Trait-based Extensibility:</strong> The use of traits (<code>vault-trait</code>, <code>ft-trait</code>, <code>oracle-trait</code>, etc.) allows flexible composition but requires careful validation of each trait implementor. The contract correctly validates trait contracts against the DAO registry in most functions.</li>
+<li><strong>Emergency Shutdown:</strong> Two-layer shutdown (DAO-level + freddie-level) provides defense-in-depth. The guardian address can toggle <code>freddie-shutdown-activated</code> independently.</li>
+<li><strong>Migration Support:</strong> <code>migrate-funds</code> and <code>migrate-state</code> functions enable smooth upgrades but are powerful — restricted to DAO owner only.</li>
+</ul>
+
+<h2>✅ Positive Observations</h2>
+<ul>
+<li>Consistent shutdown checks across all state-modifying functions</li>
+<li>Proper owner checks on vault operations (deposit, withdraw, mint, burn, toggle-stacking)</li>
+<li>Trait contract validation against DAO registry in most functions</li>
+<li>Stacking-in-progress guards prevent withdrawal of locked collateral</li>
+<li>Maximum debt caps per collateral type prevent unbounded minting</li>
+<li>Liquidation penalty split (30% extra debt / 70% discount) is a reasonable mechanism</li>
+</ul>
+
+<p style="margin-top:3rem;color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--border);padding-top:1rem">
+Audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="index.html">Full audit portfolio</a> · Source verified on-chain via Hiro API
+</p>
+</body>
+</html>

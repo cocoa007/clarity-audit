@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Charismatic Flow Hold-to-Earn — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #fff; }
+.badge.info { background: var(--text-muted); color: var(--bg); }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.summary-card .count { font-size: 2rem; font-weight: 700; }
+.summary-card .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+.confidence { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; }
+.confidence.medium { background: var(--yellow); color: #000; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="patterns.html">Patterns</a>
+  <a href="anti-patterns.html">Anti-Patterns</a>
+</div>
+
+<h1>Charismatic Flow Hold-to-Earn Engine</h1>
+<p class="subtitle">Independent security audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> — 2026-02-25</p>
+
+<h2>Overview</h2>
+<table>
+<tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/0x281b1688dd98a86d885bc12bbe8bafc554d925ac534afd8dd95169905271fa0c?chain=mainnet">SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ.charismatic-flow-hold-to-earn</a></code></td></tr>
+<tr><td>Deployer</td><td><code>SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ</code></td></tr>
+<tr><td>Block Height</td><td>469,555</td></tr>
+<tr><td>Clarity Version</td><td>3 (pre-Clarity 4)</td></tr>
+<tr><td>Source</td><td><a href="https://api.hiro.so/v2/contracts/source/SP2D5BGGJ956A635JG7CJQ59FTRFRB0893514EZPJ/charismatic-flow-hold-to-earn">Hiro API (on-chain)</a></td></tr>
+<tr><td>Lines of Code</td><td>180</td></tr>
+<tr><td>Confidence</td><td><span class="confidence medium">Medium</span> — single-contract audit; external dependencies (<code>engine-coordinator</code>, <code>charisma-rulebook-v0</code>) not fully inspected</td></tr>
+</table>
+
+<p><strong>Description:</strong> A hold-to-earn mechanism for the Charismatic Flow LP token. It rewards long-term holders by computing the integral of their token balance over time using the trapezoidal rule (numerical integration with 2–39 sample points). Users call <code>tap</code> to claim "energy" proportional to their balance-over-time, scaled by an incentive score and inverse to total supply.</p>
+
+<h3>Documented Limitations</h3>
+<ul>
+<li>The contract relies on external <code>engine-coordinator</code> for sample point generation and threshold configuration.</li>
+<li>Energy minting goes through <code>charisma-rulebook-v0.energize</code> — access control and caps are external to this contract.</li>
+</ul>
+
+<h2>Findings Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="count" style="color:var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="summary-card"><div class="count" style="color:#da3633">1</div><div class="label">High</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<table>
+<tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+<tr><td>H-01</td><td><span class="badge high">High</span></td><td>Discrete Balance Sampling Allows Inter-Sample Manipulation</td></tr>
+<tr><td>M-01</td><td><span class="badge medium">Medium</span></td><td>Division-by-Zero Panic if Total Supply Reaches Zero</td></tr>
+<tr><td>M-02</td><td><span class="badge medium">Medium</span></td><td>Integer Division Truncation Causes Precision Loss</td></tr>
+<tr><td>L-01</td><td><span class="badge low">Low</span></td><td>No Minimum Tap Interval</td></tr>
+<tr><td>I-01</td><td><span class="badge info">Info</span></td><td>Pre-Clarity 4 Contract — No <code>as-contract?</code> Safety</td></tr>
+<tr><td>I-02</td><td><span class="badge info">Info</span></td><td>Hardcoded External Contract References</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge high">High</span>
+  <strong>H-01: Discrete Balance Sampling Allows Inter-Sample Manipulation</strong>
+</div>
+<p><strong>Location:</strong> <code>get-balance</code>, <code>calculate-balance-integral-*</code></p>
+<p><strong>Description:</strong> The balance integral is computed by sampling the user's token balance at discrete block heights (2–39 points over the claim period) using the trapezoidal rule. The contract only observes balance at these specific sample blocks — it has no visibility into balances at intermediate blocks.</p>
+<p>An attacker can exploit this by:</p>
+<ol>
+<li>Acquiring a large number of Charismatic Flow tokens shortly <em>before</em> a sample point block</li>
+<li>Having the inflated balance measured at the sample point</li>
+<li>Selling the tokens immediately after the sample block</li>
+</ol>
+<p>With only 39 sample points spread over potentially thousands of blocks, the contract measures a high balance at each sample while the attacker only held tokens for a fraction of the period. The trapezoidal areas between samples assume linear interpolation, so a spike at a sample point inflates the area for two adjacent trapezoids.</p>
+<pre><code>;; Only 39 discrete samples over the entire claim period
+(define-private (calculate-balance-integral-39 (address principal) (start-block uint) (end-block uint))
+    (let (
+        (sample-points (contract-call? 'SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.engine-coordinator
+            generate-sample-points-39 address start-block end-block))
+        (balances (map get-balance sample-points))
+        ...))</code></pre>
+<p><strong>Impact:</strong> An attacker who can predict sample block heights (they are deterministic based on start/end blocks) can amplify their energy rewards far beyond what their actual holding duration warrants. The economic damage scales with the incentive score and the attacker's ability to borrow tokens (e.g., via DEX flash-trades or coordinated timing).</p>
+<p><strong>Recommendation:</strong> Consider: (1) using a commit-reveal scheme where the sample blocks are unpredictable; (2) increasing the minimum sample density; (3) adding a minimum hold duration between token transfers and tap eligibility; or (4) using a time-weighted average balance tracked on every transfer event rather than retrospective sampling.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">Medium</span>
+  <strong>M-01: Division-by-Zero Panic if Total Supply Reaches Zero</strong>
+</div>
+<p><strong>Location:</strong> <code>tap</code> function</p>
+<p><strong>Description:</strong> The <code>tap</code> function computes <code>potential-energy</code> by dividing by the total supply of Charismatic Flow tokens. If the total supply is ever zero (all tokens burned or not yet minted), this division panics and aborts the transaction.</p>
+<pre><code>(supply (unwrap-panic (contract-call? 'SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charismatic-flow get-total-supply)))
+(potential-energy (/ (* balance-integral incentive-score) supply))</code></pre>
+<p><strong>Impact:</strong> If supply reaches zero, the <code>tap</code> function becomes permanently unusable until supply is restored. No funds are at risk, but the contract is bricked. In practice, supply reaching zero is unlikely for an active LP token, but the lack of a guard is a design weakness.</p>
+<p><strong>Recommendation:</strong> Add a zero-supply guard: <code>(asserts! (> supply u0) (err u0))</code> to return a clean error instead of panicking.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">Medium</span>
+  <strong>M-02: Integer Division Truncation Causes Precision Loss</strong>
+</div>
+<p><strong>Location:</strong> <code>calculate-balance-integral-*</code> functions</p>
+<p><strong>Description:</strong> The step size <code>dx</code> is computed as <code>(/ (- end-block start-block) u38)</code> (or u18, u8, u4, u1 for smaller variants). Clarity integer division truncates toward zero. For small block ranges, this truncation loses a significant fraction of the measured period.</p>
+<p>Example: If the block difference is 40 and using 39-point sampling, <code>dx = 40 / 38 = 1</code> (truncated from 1.05). The total measured span becomes <code>38 × 1 = 38</code> blocks, losing 2 blocks (5%). For a 39-block difference: <code>dx = 39 / 38 = 1</code>, total measured = 38, losing 1 block. The threshold system mitigates this by routing small ranges to fewer sample points, but edge cases near thresholds still have notable truncation.</p>
+<pre><code>(dx (/ (- end-block start-block) u38))
+;; For block-difference = 45: dx = 1, total measured = 38, losing 7 blocks (15.6%)</code></pre>
+<p><strong>Impact:</strong> Users consistently receive slightly less energy than they mathematically should. The truncation error favors the protocol (underpayment). Not exploitable, but systematically unfair to users, especially those tapping near threshold boundaries.</p>
+<p><strong>Recommendation:</strong> Scale up by a precision factor before dividing: e.g., compute <code>dx * 1e6</code> and divide the final result by <code>1e6</code> to preserve precision. Alternatively, compute trapezoid areas as <code>(b1 + b2) * (end - start) / (2 * N)</code> directly without a separate <code>dx</code> step.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge low">Low</span>
+  <strong>L-01: No Minimum Tap Interval</strong>
+</div>
+<p><strong>Location:</strong> <code>tap</code> function</p>
+<p><strong>Description:</strong> Users can call <code>tap</code> every single block. For very short intervals (1–2 blocks), the contract runs the full integration machinery (fetching historical balances via <code>at-block</code>, external contract calls) to produce negligible energy rewards. There is no minimum cooldown period.</p>
+<p><strong>Impact:</strong> Low. While this creates unnecessary chain load and costs the caller transaction fees, it doesn't produce excess rewards — the integral over a tiny period is proportionally small. The main concern is gas waste and unnecessary <code>at-block</code> lookups.</p>
+<p><strong>Recommendation:</strong> Add a minimum block difference check: <code>(asserts! (>= (- end-block start-block) u10) (err u1))</code>.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">Info</span>
+  <strong>I-01: Pre-Clarity 4 Contract — No <code>as-contract?</code> Safety</strong>
+</div>
+<p><strong>Location:</strong> Contract-wide</p>
+<p><strong>Description:</strong> This contract is deployed with Clarity version 3. While the contract itself does not use <code>as-contract</code>, it calls into <code>charisma-rulebook-v0.energize</code> which likely does. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-ft</code>, <code>with-nft</code>, <code>with-stx</code>), providing language-level guarantees about which assets a contract can move.</p>
+<p><strong>Recommendation:</strong> When upgrading the hold-to-earn engine, deploy on Clarity 4 and leverage <code>as-contract?</code> in any downstream contracts for stricter asset safety.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">Info</span>
+  <strong>I-02: Hardcoded External Contract References</strong>
+</div>
+<p><strong>Location:</strong> Contract-wide</p>
+<p><strong>Description:</strong> All external contract calls reference hardcoded principals (<code>SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.charismatic-flow</code>, <code>.engine-coordinator</code>, <code>.charisma-rulebook-v0</code>). This is standard for deployed Clarity contracts and provides safety (no dynamic dispatch), but means any upgrade to the referenced contracts requires redeploying the hold-to-earn engine.</p>
+<p><strong>Recommendation:</strong> Informational only. This is the expected pattern for Clarity contracts on Stacks.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+
+<h3>Trapezoidal Integration Design</h3>
+<p>The contract implements a creative approach to hold-to-earn: rather than tracking deposits/withdrawals in real-time, it retrospectively computes the area under the balance curve using the <a href="https://en.wikipedia.org/wiki/Trapezoidal_rule">trapezoidal rule</a>. This is mathematically sound and avoids the gas cost of per-transfer bookkeeping, but the discrete sampling introduces the vulnerability described in H-01.</p>
+
+<h3>Adaptive Sample Density</h3>
+<p>The contract adapts its sample count (2, 5, 9, 19, or 39 points) based on the block range, using thresholds from <code>engine-coordinator</code>. This is a good design — it avoids wasting gas on too many <code>at-block</code> lookups for short periods while providing reasonable accuracy for long periods.</p>
+
+<h3>Checks-Effects-Interactions Pattern</h3>
+<p>The contract correctly updates <code>last-tap-block</code> (effect) before calling the external <code>energize</code> function (interaction), following the checks-effects-interactions pattern to prevent reentrancy.</p>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><strong>Novel mechanism:</strong> Using numerical integration of historical balances is a creative alternative to deposit/lock staking patterns</li>
+<li><strong>Correct CEI ordering:</strong> State is updated before external calls</li>
+<li><strong>Permissionless claiming:</strong> Users claim their own rewards directly via <code>tap</code> — no admin intermediary</li>
+<li><strong>Adaptive precision:</strong> Sample count scales with claim period length</li>
+<li><strong>Clean event logging:</strong> The <code>print</code> statement in <code>handle-success</code> provides useful on-chain analytics data</li>
+</ul>
+
+<footer>
+<p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="index.html">Full audit portfolio</a></p>
+<p>This audit is provided as-is with no guarantees. It represents a best-effort review at a point in time and should not be considered a comprehensive security certification.</p>
+</footer>
+
+</body>
+</html>

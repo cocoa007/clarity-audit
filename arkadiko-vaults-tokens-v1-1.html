@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Arkadiko Vaults Tokens v1-1 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono','Fira Code','Cascadia Code',monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; line-height:1.6; max-width:860px; margin:0 auto; padding:2rem 1.5rem; }
+a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+h1 { font-size:1.8rem; margin-bottom:0.25rem; } h2 { font-size:1.4rem; margin-top:2.5rem; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border); } h3 { font-size:1.1rem; margin-top:1.5rem; margin-bottom:0.5rem; }
+p,li { margin-bottom:0.75rem; } ul,ol { padding-left:1.5rem; }
+pre { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1rem; overflow-x:auto; margin:1rem 0; font-family:var(--font-mono); font-size:0.85rem; }
+code { font-family:var(--font-mono); font-size:0.9em; background:var(--surface); padding:2px 6px; border-radius:3px; } pre code { background:none; padding:0; }
+.nav { display:flex; gap:1.5rem; margin-bottom:2rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+.nav a { color:var(--text-muted); font-size:0.9rem; } .nav a:hover { color:var(--accent); }
+.meta { color:var(--text-muted); font-size:0.9rem; margin-bottom:2rem; }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600; }
+.badge.critical { background:var(--red); color:#fff; }
+.badge.high { background:#da3633; color:#fff; }
+.badge.medium { background:var(--yellow); color:#000; }
+.badge.low { background:var(--blue); color:#000; }
+.badge.info { background:var(--text-muted); color:#000; }
+.finding { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1.25rem; margin:1rem 0; }
+.finding h3 { margin-top:0; }
+.summary-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1.25rem; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.9rem; }
+th,td { padding:0.5rem 0.75rem; border:1px solid var(--border); text-align:left; }
+th { background:var(--surface); color:var(--text-muted); }
+footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Arkadiko Vaults Tokens v1-1</h1>
+<p class="meta">
+  <strong>Contract:</strong> <a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-tokens-v1-1?chain=mainnet"><code>SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-vaults-tokens-v1-1</code></a><br>
+  <strong>Source:</strong> <a href="https://api.hiro.so/v2/contracts/source/SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR/arkadiko-vaults-tokens-v1-1">Hiro API (on-chain)</a><br>
+  <strong>Clarity Version:</strong> Pre-Clarity 4<br>
+  <strong>Lines:</strong> ~160<br>
+  <strong>Confidence:</strong> 🟢 HIGH — simple registry contract, all paths verified<br>
+  <strong>Date:</strong> February 24, 2026
+</p>
+
+<div class="summary-box">
+  <h3>Executive Summary</h3>
+  <p>Collateral token registry for the Arkadiko Vaults system. Stores token parameters (max debt, stability fees, liquidation ratios, redemption fees) used by the vault manager. Pure configuration contract — <strong>holds no funds and moves no tokens</strong>. Admin functions are DAO-gated. The primary risk is misconfiguration via unvalidated parameter updates.</p>
+
+  <table>
+    <tr><th>Severity</th><th>Count</th></tr>
+    <tr><td><span class="badge critical">Critical</span></td><td>0</td></tr>
+    <tr><td><span class="badge high">High</span></td><td>0</td></tr>
+    <tr><td><span class="badge medium">Medium</span></td><td>1</td></tr>
+    <tr><td><span class="badge low">Low</span></td><td>1</td></tr>
+    <tr><td><span class="badge info">Informational</span></td><td>3</td></tr>
+  </table>
+</div>
+
+<h2>Architecture Overview</h2>
+<p>The contract is a straightforward key-value registry:</p>
+<ul>
+  <li><strong>Token list</strong> — a <code>(list 25 principal)</code> data-var tracking registered collateral types</li>
+  <li><strong>Token map</strong> — maps each token principal to its vault parameters (max debt, min debt, stability fee, liquidation ratio/penalty, redemption fee params)</li>
+  <li><strong>Admin functions</strong> — <code>set-token</code> (add/update) and <code>remove-token</code>, both gated by <code>arkadiko-dao get-dao-owner</code></li>
+  <li><strong>Init block</strong> — pre-populates STX, stSTX, and xBTC with default parameters</li>
+</ul>
+<p>Implements <code>arkadiko-vaults-tokens-trait-v1-1.vaults-tokens-trait</code>. No token transfers, no <code>as-contract</code>, no custody.</p>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <h3><span class="badge medium">M-01</span> No Parameter Bounds Validation in <code>set-token</code></h3>
+  <p><strong>Location:</strong> <code>set-token</code> function</p>
+  <p><strong>Description:</strong> The <code>set-token</code> function accepts arbitrary <code>uint</code> values for all parameters with no sanity checks. A DAO owner mistake (or compromise) could set catastrophic values:</p>
+  <ul>
+    <li><code>liquidation-ratio: u0</code> — vaults become unliquidatable regardless of collateral ratio</li>
+    <li><code>max-debt: u0</code> — effectively freezes new vault creation for that token</li>
+    <li><code>stability-fee: u10000</code> (100%) — drains vault owners via fees</li>
+    <li><code>vault-min-debt: u0</code> — enables dust vaults that are uneconomical to liquidate</li>
+  </ul>
+  <pre><code>(define-public (set-token
+  (token principal)
+  (token-name (string-ascii 12))
+  (max-debt uint)          ;; no minimum
+  (vault-min-debt uint)    ;; no minimum
+  (stability-fee uint)     ;; no maximum
+  (liquidation-ratio uint) ;; no minimum — u0 breaks liquidation math
+  ...
+)
+  (begin
+    (asserts! (is-eq contract-caller (contract-call? .arkadiko-dao get-dao-owner)) (err ERR_NOT_AUTHORIZED))
+    ;; No parameter validation — values go straight to map
+    (map-set tokens { token: token } { ... })
+    (ok true)
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Downstream contracts (vault manager, liquidation engine) consume these parameters directly. Invalid values could brick vault operations, prevent liquidations, or enable undercollateralized minting. The blast radius depends on how the vault manager validates these inputs — if it trusts this registry blindly, the impact is systemic.</p>
+  <p><strong>Recommendation:</strong> Add minimum bounds for critical parameters:</p>
+  <pre><code>(asserts! (>= liquidation-ratio u10000) (err ERR_INVALID_PARAM))  ;; min 100%
+(asserts! (> vault-min-debt u0) (err ERR_INVALID_PARAM))
+(asserts! (<= stability-fee u5000) (err ERR_INVALID_PARAM))       ;; max 50%</code></pre>
+</div>
+
+<div class="finding">
+  <h3><span class="badge low">L-01</span> Pre-Clarity 4 Contract</h3>
+  <p><strong>Description:</strong> Contract does not use Clarity 4 features. However, since this contract has no <code>as-contract</code> calls and performs no token transfers, the practical impact is negligible. The contract cannot benefit from <code>as-contract?</code> with asset allowances because it never moves assets.</p>
+  <p><strong>Impact:</strong> Minimal. Noted for completeness — a Clarity 4 redeployment would gain <code>contract-hash?</code> for verifiability but provides no security improvement for this contract's functionality.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge info">I-01</span> Centralized DAO Owner Control</h3>
+  <p><strong>Description:</strong> All parameter changes route through a single <code>arkadiko-dao get-dao-owner</code> check. This is standard for Arkadiko's architecture and matches the pattern seen across their contract suite. The DAO owner can modify any token's parameters or remove tokens entirely in a single transaction.</p>
+  <p><strong>Impact:</strong> Documented trust assumption. If the DAO owner key is compromised, an attacker could silently modify liquidation ratios to prevent liquidations, then open undercollateralized vaults through a separate contract interaction.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge info">I-02</span> No Events for Parameter Changes</h3>
+  <p><strong>Description:</strong> Neither <code>set-token</code> nor <code>remove-token</code> emit <code>print</code> events. Parameter changes are only visible by polling the contract's map state. Off-chain monitoring systems and governance dashboards cannot subscribe to configuration changes.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "token-updated", token: token, ... })</code> to admin functions for off-chain observability.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge info">I-03</span> Filter Pattern Uses Mutable Shared State</h3>
+  <p><strong>Description:</strong> The <code>remove-token</code> function uses a data-var <code>token-to-remove</code> as a closure workaround for the <code>filter</code> builtin, since Clarity's <code>filter</code> only accepts a named function (no closures). This is a well-known Clarity idiom and is safe in the single-transaction context (Clarity has no concurrency). However, the data-var persists after the transaction completes, leaving a stale value.</p>
+  <pre><code>(define-data-var token-to-remove principal tx-sender)
+
+(define-public (remove-token (token principal))
+  (begin
+    ...
+    (var-set token-to-remove token)
+    (var-set token-list (filter is-token-to-remove (var-get token-list)))
+    (ok true)
+  )
+)
+
+(define-read-only (is-token-to-remove (token principal))
+  (not (is-eq token (var-get token-to-remove)))
+)</code></pre>
+  <p><strong>Impact:</strong> None — the stale value is harmless since <code>token-to-remove</code> is only read during the <code>filter</code> call within the same transaction. Standard Clarity pattern.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Clean, minimal design</strong> — pure configuration registry with no unnecessary complexity</li>
+  <li><strong>No custody risk</strong> — contract holds no funds and performs no token transfers</li>
+  <li><strong>Proper trait implementation</strong> — implements the vaults tokens trait for type-safe cross-contract calls</li>
+  <li><strong>Graceful list overflow handling</strong> — <code>as-max-len?</code> returns an error instead of silently failing when the 25-token cap is reached</li>
+  <li><strong>Idempotent set-token</strong> — correctly checks <code>index-of?</code> before appending to avoid duplicate list entries</li>
+  <li><strong>Consistent with Arkadiko architecture</strong> — DAO-gated admin matches the pattern across the protocol suite</li>
+</ul>
+
+<h2>Methodology</h2>
+<p>Source fetched from Hiro API (on-chain canonical source). Full manual review of all functions, data structures, and initialization block. Cross-referenced with previously audited Arkadiko contracts (<a href="/clarity-audit/arkadiko-vaults-manager.html">vaults-manager-v1-1</a>, <a href="/clarity-audit/arkadiko-freddie-v1-1.html">freddie-v1-1</a>, <a href="/clarity-audit/arkadiko-auction-engine-v4-3.html">auction-engine-v4-3</a>, <a href="/clarity-audit/arkadiko-oracle-v2-3.html">oracle-v2-3</a>) to understand how this registry's parameters flow into the broader system.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a></p>
+  <p>cocoa007 ☕ · Independent audit · <a href="https://github.com/cocoa007">GitHub</a></p>
+</footer>
+
+</body>
+</html>

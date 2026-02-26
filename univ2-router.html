@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Velar univ2-router — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Velar univ2-router</h1>
+<p class="subtitle">UniswapV2-style router for the Velar DEX on Stacks — handles add/remove liquidity and token swaps</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-router?chain=mainnet">SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-router</a></code></td></tr>
+  <tr><td>Protocol</td><td>Velar — UniswapV2 fork DEX on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (uses <code>as-contract</code> paradigm, no asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>174</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — router-only audit; depends on <code>univ2-core</code>, <code>univ2-library</code>, and trait contracts not reviewed here</td></tr>
+  <tr><td>Date</td><td>February 24, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color:var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color:#da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract is a thin routing layer modeled after Uniswap V2's <code>Router02</code>. It computes optimal liquidity amounts, delegates to <code>univ2-core</code> for mint/burn/swap, and enforces user-specified slippage bounds. At 174 lines it is compact, but several design choices create real risk for users.</p>
+
+<h2>Architecture</h2>
+<ul>
+  <li><strong>add-liquidity</strong> — calculates optimal token amounts via <code>univ2-library.quote</code>, then calls <code>univ2-core.mint</code></li>
+  <li><strong>remove-liquidity</strong> — calls <code>univ2-core.burn</code>, then checks output against user minimums</li>
+  <li><strong>swap-exact-tokens-for-tokens</strong> — computes output via <code>get-amount-out</code>, executes swap, checks slippage</li>
+  <li><strong>swap-tokens-for-exact-tokens</strong> — computes input via <code>get-amount-in</code>, executes swap, checks max input</li>
+</ul>
+<p>All core logic (token transfers, reserve updates, fee collection) lives in <code>univ2-core</code> — this contract is a convenience wrapper with validation.</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: No Transaction Deadline — Stale Swaps Enable Sandwich Attacks</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-exact-tokens-for-tokens</code>, <code>swap-tokens-for-exact-tokens</code></p>
+  <p><strong>Description:</strong> The original Uniswap V2 Router includes a <code>deadline</code> parameter that reverts the transaction if it is mined after a user-specified block. This router omits it entirely. A swap transaction can sit in the mempool for an extended period, then be mined when market conditions have changed dramatically — the user's <code>amt-out-min</code> may still be satisfied but at a much worse rate than intended.</p>
+  <p><strong>Impact:</strong> MEV bots and validators can delay inclusion of swap transactions to extract value. Combined with Stacks' block timing variability, users may receive significantly worse execution than expected. This is the primary sandwich vector on any AMM.</p>
+  <pre><code>;; No deadline parameter — tx can be mined at any future block
+(define-public
+  (swap-exact-tokens-for-tokens
+    (id             uint)
+    (token0         &lt;ft-trait&gt;)
+    (token1         &lt;ft-trait&gt;)
+    (token-in       &lt;ft-trait&gt;)
+    (token-out      &lt;ft-trait&gt;)
+    (share-fee-to   &lt;share-fee-to-trait&gt;)
+    (amt-in      uint)
+    (amt-out-min uint))
+  ;; ... no block-height check ...</code></pre>
+  <p><strong>Recommendation:</strong> Add a <code>deadline</code> parameter (block height) and assert <code>(&lt;= block-height deadline)</code> at the start of each swap function. Alternatively, accept a <code>max-block-delay</code> parameter.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Swap Executes Before Precondition Validation</h3>
+  </div>
+  <p><strong>Location:</strong> <code>swap-exact-tokens-for-tokens</code> (lines ~88–115), <code>swap-tokens-for-exact-tokens</code> (lines ~118–160)</p>
+  <p><strong>Description:</strong> Both swap functions execute the swap via <code>contract-call? .univ2-core swap</code> in the <code>let</code> bindings, <em>before</em> the <code>asserts!</code> that verify <code>token0</code>/<code>token1</code> match the pool and that amounts are valid. If a user passes mismatched token traits, the swap is attempted against <code>univ2-core</code> before the router rejects it.</p>
+  <pre><code>;; Swap happens here in the let-binding...
+(event (try! (contract-call? .univ2-core swap
+    id token-in token-out share-fee-to amt-in amt-out)))
+
+;; ...but validation happens AFTER
+(asserts!
+  (and (is-eq (get token0 pool) (contract-of token0))
+       (is-eq (get token1 pool) (contract-of token1))
+       (&gt; amt-in u0)
+       (&gt; amt-out-min u0))
+  err-router-preconditions)</code></pre>
+  <p><strong>Impact:</strong> If <code>univ2-core</code> does not independently validate token trait matching, a malicious or incorrect token contract could be passed. Even if core validates correctly, the code wastes gas on reverted calls and violates the checks-effects-interactions pattern. The revert from <code>try!</code> at least prevents state changes, but the pattern is fragile.</p>
+  <p><strong>Recommendation:</strong> Move all <code>asserts!</code> precondition checks before the <code>let</code> bindings that execute the swap. Validate inputs first, then execute.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: Unverified Trait Parameters — Token and Fee Recipient Substitution</h3>
+  </div>
+  <p><strong>Location:</strong> All public functions</p>
+  <p><strong>Description:</strong> The router accepts <code>token0</code>, <code>token1</code>, <code>lp-token</code>, and <code>share-fee-to</code> as trait parameters from the caller. While the swap functions verify <code>token0</code>/<code>token1</code> against the pool (after execution — see M-01), the <code>add-liquidity</code> and <code>remove-liquidity</code> functions perform <strong>no token matching at all</strong>. They pass whatever traits the caller provides directly to <code>univ2-core</code>.</p>
+  <pre><code>;; add-liquidity passes caller-supplied traits directly to core — no validation
+(contract-call? .univ2-core mint
+  id token0 token1 lp-token
+  (get amt0 amts) (get amt1 amts))</code></pre>
+  <p><strong>Impact:</strong> If <code>univ2-core.mint</code> or <code>univ2-core.burn</code> do not validate that the passed token traits match the pool's registered tokens, a caller could substitute a malicious token contract that implements the SIP-010 trait but behaves differently (e.g., stealing funds via <code>transfer</code>). The <code>share-fee-to</code> trait in swaps is similarly unvalidated — a malicious fee contract could siphon fees.</p>
+  <p><strong>Recommendation:</strong> Validate all trait parameters against the pool's registered addresses before calling core. For example: <code>(asserts! (is-eq (contract-of token0) (get token0 pool)) err-router-preconditions)</code> in every function.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Redundant Uint >= 0 Checks Are Dead Code</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-liquidity</code> (lines ~49–54)</p>
+  <p><strong>Description:</strong> The assertions <code>(>= amt0-min u0)</code>, <code>(>= amt1-min u0)</code>, <code>(>= amt0-desired u0)</code>, and <code>(>= amt1-desired u0)</code> are always true because all parameters are <code>uint</code> — unsigned integers cannot be negative in Clarity.</p>
+  <pre><code>(asserts!
+  (and (&lt;= amt0-min amt0-desired)
+       (&lt;= amt1-min amt1-desired)
+       (&gt;= amt0-min u0)      ;; always true
+       (&gt;= amt1-min u0)      ;; always true
+       (&gt;= amt0-desired u0)  ;; always true
+       (&gt;= amt1-desired u0)) ;; always true
+  err-router-preconditions)</code></pre>
+  <p><strong>Impact:</strong> No security impact. Code noise that may mislead auditors into thinking these checks provide meaningful validation.</p>
+  <p><strong>Recommendation:</strong> Remove the four redundant <code>>= u0</code> checks. The meaningful checks are <code>&lt;= amt0-min amt0-desired</code> and <code>&lt;= amt1-min amt1-desired</code>.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No Zero-Amount Guard on Liquidity Operations</h3>
+  </div>
+  <p><strong>Location:</strong> <code>add-liquidity</code>, <code>remove-liquidity</code></p>
+  <p><strong>Description:</strong> Unlike the swap functions which check <code>(&gt; amt-in u0)</code>, the liquidity functions do not prevent zero-amount operations. A user can call <code>add-liquidity</code> with <code>amt0-desired = u0, amt1-desired = u0</code> or <code>remove-liquidity</code> with <code>liquidity = u0</code>.</p>
+  <p><strong>Impact:</strong> Zero-amount operations waste gas and may create misleading events. On first liquidity provision (empty pool), zero amounts would create a pool with zero reserves.</p>
+  <p><strong>Recommendation:</strong> Add <code>(&gt; amt0-desired u0)</code>, <code>(&gt; amt1-desired u0)</code>, and <code>(&gt; liquidity u0)</code> guards.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 Contract — No Asset Allowance Enforcement</h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> This contract was deployed before Clarity 4 (epoch 3.3). While the router itself does not use <code>as-contract</code>, the downstream <code>univ2-core</code> likely does for token transfers. Clarity 4 introduced <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-nft</code>/<code>with-stx</code> allowances that enforce at the language level which assets a contract can move.</p>
+  <p><strong>Impact:</strong> The entire Velar protocol stack operates without language-level asset allowances, relying on application-level checks in <code>univ2-core</code>.</p>
+  <p><strong>Recommendation:</strong> When upgrading the protocol, migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances in the core contract.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: No Multi-Hop Routing</h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> Unlike Uniswap V2's Router02, this router only supports single-pool swaps. There is no multi-hop routing (e.g., A→B→C). Users who need multi-hop must compose multiple transactions, which exposes them to intermediate slippage and higher total fees.</p>
+  <p><strong>Impact:</strong> Reduced capital efficiency and worse execution for users trading tokens without a direct pair. Each hop is a separate transaction with independent slippage risk.</p>
+  <p><strong>Recommendation:</strong> Consider adding multi-hop swap functions that accept a path of pool IDs and enforce slippage only on the final output.</p>
+</div>
+
+<h2>Summary</h2>
+<p>The Velar univ2-router is a minimal, clean implementation of a UniswapV2-style router at only 174 lines. Its simplicity is a strength — less code means less attack surface. However, the <strong>missing deadline protection (H-01)</strong> is a real risk for users on a live DEX, and the <strong>execute-before-validate pattern (M-01)</strong> is a code smell that could become exploitable if the core contract's validation is ever weakened. The <strong>unverified trait parameters (M-02)</strong> mean the router's security posture depends entirely on <code>univ2-core</code>'s validation — a fragile assumption for a contract handling real user funds.</p>
+<p>No critical findings were identified. The contract delegates all token custody to <code>univ2-core</code> and holds no assets itself, which limits the blast radius of any router-level bug.</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This audit is provided as-is for informational purposes. It is not financial advice and does not guarantee the absence of bugs.</p>
+</footer>
+
+</body>
+</html>

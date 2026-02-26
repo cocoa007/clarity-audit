@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Dungeon Crawler RC6 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Dungeon Crawler RC6</h1>
+<p class="subtitle">Charisma protocol's primary user-facing router — batches up to 8 interaction contract calls into a single transaction with best-effort error handling</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/0xaf79d2c230004afbc98da996c4f9591136bc6f794b1fca214fb40bf7cd87167b?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dungeon-crawler-rc6</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://charisma.rocks">Charisma</a> — gamified DeFi on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API (<code>/v2/contracts/source</code>)</td></tr>
+  <tr><td>Clarity Version</td><td>Clarity 2 (pre-Clarity 4 — no <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Block Height</td><td>170,992</td></tr>
+  <tr><td>Lines of Code</td><td>74</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>&#128994; HIGH — simple contract, fully reviewed; security depends on downstream interaction contracts (not in scope)</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">1</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>The Dungeon Crawler RC6 is the primary user-facing entry point for the Charisma protocol. It's a lightweight router that dispatches calls to "interaction" contracts — any contract implementing <code>interaction-trait</code> from <code>.dao-traits-v7</code>. The trait requires a single function: <code>(execute (action (string-ascii 32)))</code>.</p>
+
+<p>The contract provides two public functions:</p>
+<ul>
+  <li><strong><code>interact</code></strong> — executes a single interaction, propagating errors to the caller</li>
+  <li><strong><code>explore</code></strong> — batches up to 8 interactions in one transaction with best-effort execution (errors are swallowed per-interaction)</li>
+</ul>
+
+<p>The contract holds no state, no funds, and has no access controls. All security is delegated to the interaction contracts it calls, which are verified through the Charisma Rulebook's allowlist system. This is a deliberate architectural choice — the Dungeon Crawler is a thin, non-privileged dispatcher.</p>
+
+<h2>Architecture</h2>
+
+<p>The Charisma protocol uses a layered security model:</p>
+<ol>
+  <li><strong>Dungeon Crawler</strong> (this contract) — unprivileged router, anyone can call</li>
+  <li><strong>Interaction Contracts</strong> — implement game logic, must be verified by the Rulebook</li>
+  <li><strong>Rulebook</strong> — central authorization hub, whitelists interactions and enforces limits</li>
+  <li><strong>Token Contracts</strong> — XP, Energy, DMG, Charisma — only callable via Rulebook</li>
+</ol>
+
+<p>The Dungeon Crawler's <code>explore</code> function enables "multi-action turns" where a user can farm, swap, stake, and claim in a single transaction.</p>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: <code>explore</code> Panics on Partial Input Despite Optional Parameters</h3>
+  </div>
+
+  <p><strong>Location:</strong> <code>explore</code> function, output tuple construction (lines 63-72)</p>
+
+  <p><strong>Description:</strong> The <code>explore</code> function accepts 8 optional interaction/action pairs, suggesting callers can provide fewer than 8. The execution logic correctly checks <code>(is-some action-N)</code> before calling <code>interact</code>. However, the output tuple at the end unconditionally calls <code>(unwrap-panic interaction-N)</code> and <code>(unwrap-panic action-N)</code> for <strong>all 8 slots</strong>, regardless of whether they were provided.</p>
+
+  <p>If a caller provides <code>none</code> for any interaction or action slot, the entire transaction aborts with a runtime panic — even if the interaction execution itself was safely skipped.</p>
+
+  <pre><code>;; Execution correctly guards with is-some:
+(response-1 (if (is-some action-1) (match (interact ...) ...) ""))
+
+;; But output ALWAYS unwraps — panics if none:
+(output {
+  i1: {i: (unwrap-panic interaction-1),   ;; &lt;-- panics if none
+       a: (unwrap-panic action-1),         ;; &lt;-- panics if none
+       r: response-1},
+  ;; ... same for all 8 slots
+})</code></pre>
+
+  <p><strong>Impact:</strong> The <code>explore</code> function is unusable with fewer than 8 interactions. Callers MUST provide all 8 interaction/action pairs, even if they only want to execute 1-7 actions. The optional type signature is misleading and creates a false sense of flexibility. Users who attempt to use it as designed (with some <code>none</code> slots) will have their transactions revert, wasting fees.</p>
+
+  <p><strong>Recommendation:</strong> Replace the unconditional <code>unwrap-panic</code> in the output with conditional handling:</p>
+  <pre><code>;; Option A: Use default values for none slots
+i1: {i: (default-to 'SP000000000000000000002Q6VF78.none interaction-1),
+     a: (default-to "" action-1),
+     r: response-1}
+
+;; Option B: Return a simpler output with just response strings
+(ok {r1: response-1, r2: response-2, ... r8: response-8})</code></pre>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: Silent Error Swallowing Prevents Failure Detection</h3>
+  </div>
+
+  <p><strong>Location:</strong> <code>explore</code> function, response bindings (lines 56-63)</p>
+
+  <p><strong>Description:</strong> The <code>explore</code> function uses <code>match</code> to convert both success and error responses into the same type (<code>(string-ascii ...)</code>). Both branches bind to a variable and return it as-is, making it impossible to distinguish a successful interaction from a failed one in the output.</p>
+
+  <pre><code>(response-1 (if (is-some action-1)
+  (match (interact (unwrap-panic interaction-1) (unwrap-panic action-1))
+    success success    ;; success response string
+    error error)       ;; error response string — same type!
+  ""))</code></pre>
+
+  <p><strong>Impact:</strong> Callers and off-chain indexers cannot reliably determine which interactions succeeded and which failed. A user might believe all 8 actions completed when some silently failed. This is especially problematic for DeFi operations where partial execution could leave a user in an unintended state (e.g., energy burned but reward not received).</p>
+
+  <p><strong>Recommendation:</strong> Return structured results that distinguish success from failure:</p>
+  <pre><code>;; Return optional — none means failure
+(response-1 (if (is-some action-1)
+  (match (interact ...)
+    success (some success)
+    error none)
+  none))</code></pre>
+  <p>Alternatively, the <code>print</code> statement at the end provides some observability, but this is only available to off-chain readers and requires parsing event logs.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Unrestricted Interaction Dispatch — Security Fully Delegated</h3>
+  </div>
+
+  <p><strong>Location:</strong> <code>interact</code> function (line 46)</p>
+
+  <p><strong>Description:</strong> Anyone can call <code>interact</code> or <code>explore</code> with any contract that implements <code>interaction-trait</code>. The Dungeon Crawler performs no verification of whether the interaction contract is authorized by the protocol.</p>
+
+  <p><strong>Impact:</strong> If a malicious contract implements <code>interaction-trait</code>, it can be called through the Dungeon Crawler. However, the actual risk is minimal because:</p>
+  <ul>
+    <li>The Dungeon Crawler has no special privileges — it's just a pass-through</li>
+    <li>The Rulebook verifies interactions at the next layer</li>
+    <li>The malicious contract would execute with <code>contract-caller</code> = Dungeon Crawler, not the user's principal, so it cannot impersonate the user for privileged operations</li>
+  </ul>
+  <p>This is an architectural observation rather than a vulnerability — the security model deliberately places authorization at the Rulebook layer.</p>
+
+  <p><strong>Recommendation:</strong> Consider adding an optional allowlist at the Dungeon Crawler level for defense-in-depth. This would catch unauthorized interactions before they reach downstream contracts, reducing gas waste on obviously invalid calls.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Clarity 2 — Missing Clarity 4 Safety Features</h3>
+  </div>
+
+  <p><strong>Description:</strong> This contract uses Clarity 2. While the Dungeon Crawler itself doesn't use <code>as-contract</code>, the broader Charisma ecosystem would benefit from Clarity 4's <code>as-contract?</code> with explicit asset allowances. A future version (rc7+) deployed with Clarity 4 would be able to use <code>restrict-assets?</code> to limit what interaction contracts can do when called through this router.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Good Practice — Event Logging via Print</h3>
+  </div>
+
+  <p><strong>Description:</strong> The <code>explore</code> function emits a <code>print</code> with the full output tuple including all interaction addresses, actions, and responses. This provides good observability for off-chain indexers and is a positive pattern. The <code>interact</code> function does not emit its own print (relying on the interaction contract to do so).</p>
+</div>
+
+<h2>Summary</h2>
+
+<p>The Dungeon Crawler RC6 is a minimal, well-scoped router contract. Its primary vulnerability is the <strong>broken optional parameter handling</strong> in <code>explore</code> (H-01), which forces callers to always provide all 8 interaction slots. Combined with silent error swallowing (M-01), this creates a poor developer experience but does not directly endanger user funds.</p>
+
+<p>The contract's security model is sound in principle — it deliberately avoids holding state or privileges, delegating all authorization to the Rulebook layer. The main risk is at the ecosystem level: if the Rulebook or interaction contracts have vulnerabilities, the Dungeon Crawler will faithfully route exploits through. This is out of scope for this audit but noted for completeness.</p>
+
+<p>Given RC6 in the contract name, this appears to be an iterative release. The <code>explore</code> output bug (H-01) should be fixed in RC7.</p>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> &#x2615; — <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>Published 2026-02-25 &bull; Methodology: source-verified on-chain via Hiro API</p>
+</footer>
+
+</body>
+</html>

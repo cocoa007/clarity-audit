@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stableswap Swap Helper v1.5 Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+.finding h3 { margin-top: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Stableswap Swap Helper v1.5 — Security Audit</h1>
+<p class="subtitle">
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-swap-helper-v-1-5?chain=mainnet">SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-swap-helper-v-1-5</a></code> ·
+  ~280 lines ·
+  Clarity 2 ·
+  Audited: February 24, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>The <strong>stableswap-swap-helper-v-1-5</strong> contract is a multi-hop swap router for Charisma DEX's stableswap pools. It provides functions to swap tokens through 1 to 5 consecutive stableswap pools, with matching quote (read-only-equivalent) functions. Each swap deducts an aggregator fee before routing through <code>stableswap-core-v-1-4</code>.</p>
+
+<p>The contract is <strong>stateless</strong> — it holds no data vars, no maps, no stored balances. It acts purely as a routing layer, delegating all actual swaps to the core stableswap contract and all fee logic to <code>aggregator-core-v-1-1</code>. This is a good architectural pattern that minimizes the helper's attack surface.</p>
+
+<p><strong>Confidence: 🟡 MEDIUM</strong> — Source verified on-chain. Some findings depend on behavior of external contracts (<code>stableswap-core-v-1-4</code>, <code>aggregator-core-v-1-1</code>) which were not audited here.</p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>M-01</td><td><span class="severity medium">Medium</span></td><td>Intermediate swaps use hardcoded <code>u1</code> min-amount — sandwich vector</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">Medium</span></td><td>Pre-Clarity 4 <code>as-contract</code> gives blanket asset authority</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">Low</span></td><td>Quote functions are <code>define-public</code> instead of <code>define-read-only</code></td></tr>
+  <tr><td>L-02</td><td><span class="severity low">Low</span></td><td><code>unwrap-panic</code> in path detection aborts with no error code</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">Info</span></td><td>Clarity 2 — recommend migration to Clarity 4</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">Info</span></td><td>Repetitive code structure across swap helpers</td></tr>
+  <tr><td>I-03</td><td><span class="severity info">Info</span></td><td>Good: stateless custody-free design</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity medium">Medium</span> M-01: Intermediate swaps use hardcoded <code>u1</code> min-amount — sandwich vector</h3>
+<p><strong>Location:</strong> <code>stableswap-sa</code> (private function)</p>
+<p><strong>Description:</strong> Every individual swap call to <code>stableswap-core-v-1-4</code> passes <code>u1</code> as the minimum output amount. While the final output is checked against the user's <code>min-received</code> parameter, intermediate hops in multi-pool swaps (swap-helper-b through swap-helper-e) have effectively zero slippage protection.</p>
+<pre><code>;; In stableswap-sa:
+(swap-a (if (is-eq is-reversed false)
+            (try! (contract-call?
+                  .stableswap-core-v-1-4 swap-x-for-y
+                  pool
+                  token-in token-out
+                  amount u1))          ;; &lt;-- hardcoded u1
+            (try! (contract-call?
+                  .stableswap-core-v-1-4 swap-y-for-x
+                  pool
+                  token-out token-in
+                  amount u1))))        ;; &lt;-- hardcoded u1</code></pre>
+<p><strong>Impact:</strong> A sandwich attacker can manipulate intermediate pool prices between hops. On a 5-hop swap, the attacker gets 4 opportunities to extract value from intermediate pools. The final <code>min-received</code> check catches the total damage but doesn't prevent it at each step — this makes the economics worse for the swapper than necessary.</p>
+<p><strong>Recommendation:</strong> This is a known trade-off in multi-hop routers — computing per-hop minimums requires knowing each pool's state. The final slippage check is the practical mitigation. Users should set tight <code>min-received</code> values, especially on multi-hop routes. Consider exposing per-hop min-amounts as parameters for advanced users.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">Medium</span> M-02: Pre-Clarity 4 <code>as-contract</code> gives blanket asset authority</h3>
+<p><strong>Location:</strong> <code>get-aggregator-fees</code> and <code>transfer-aggregator-fees</code> (private functions)</p>
+<p><strong>Description:</strong> The contract uses <code>(as-contract tx-sender)</code> to pass its own principal to the aggregator core. In Clarity 2, <code>as-contract</code> gives the enclosed expression unrestricted authority to move any asset the contract holds. While this contract is stateless and shouldn't hold assets, any tokens accidentally sent to it could be moved by the aggregator call.</p>
+<pre><code>(define-private (transfer-aggregator-fees (token &lt;stableswap-ft-trait&gt;) (provider (optional principal)) (amount uint))
+  (let (
+    (call-a (try! (contract-call?
+                  'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.aggregator-core-v-1-1 transfer-aggregator-fees
+                  token (as-contract tx-sender) provider amount)))
+                  ;; ^^^ blanket as-contract authority
+    (amount-after-fees (- amount (get amount-fees-total call-a)))
+  )
+    (ok amount-after-fees)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> Low in practice because the contract is stateless. However, if any tokens are sent to this contract by mistake, the aggregator (or any contract it calls) could potentially move them under <code>as-contract</code> authority.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code> allowances to restrict which assets can be moved. This would make the contract provably safe even if it accidentally holds assets.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">Low</span> L-01: Quote functions are <code>define-public</code> instead of <code>define-read-only</code></h3>
+<p><strong>Location:</strong> <code>get-quote-a</code> through <code>get-quote-e</code></p>
+<p><strong>Description:</strong> All five quote functions are defined as <code>define-public</code> despite performing no state mutations. They only call <code>get-aggregator-fees</code> (which calls a read function on the aggregator) and <code>stableswap-qa</code> (which calls <code>get-dy</code>/<code>get-dx</code> read functions on the core).</p>
+<p><strong>Impact:</strong> Callers pay unnecessary gas when using quote functions. They also cannot be called from <code>define-read-only</code> contexts in other contracts.</p>
+<p><strong>Recommendation:</strong> Change to <code>define-read-only</code> if the downstream calls (<code>get-aggregator-fees</code>, <code>get-dy</code>, <code>get-dx</code>) are also read-only. If any downstream call is <code>define-public</code>, this is a Clarity limitation and the current approach is correct. Note: <code>get-aggregator-fees</code> in this contract is private and calls a public function on the aggregator core — if that function is truly read-only but defined as public, this propagates unnecessarily.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">Low</span> L-02: <code>unwrap-panic</code> in path detection aborts with no error code</h3>
+<p><strong>Location:</strong> <code>is-stableswap-path-reversed</code></p>
+<p><strong>Description:</strong> The path detection function uses <code>unwrap-panic</code> to extract pool data. If <code>get-pool</code> fails (e.g., invalid pool contract passed), the entire transaction aborts with a runtime error rather than returning a meaningful error code.</p>
+<pre><code>(define-private (is-stableswap-path-reversed
+    (token-in &lt;stableswap-ft-trait&gt;) (token-out &lt;stableswap-ft-trait&gt;)
+    (pool-contract &lt;stableswap-pool-trait&gt;)
+  )
+  (let (
+    (pool-data (unwrap-panic (contract-call? pool-contract get-pool)))
+    ;; ^^^ panics if get-pool fails
+  )
+    (not 
+      (and 
+        (is-eq (contract-of token-in) (get x-token pool-data))
+        (is-eq (contract-of token-out) (get y-token pool-data))
+      )
+    )
+  )
+)</code></pre>
+<p><strong>Impact:</strong> Users passing an invalid pool contract get an opaque runtime error instead of a descriptive error code. This makes debugging harder but doesn't create a security vulnerability.</p>
+<p><strong>Recommendation:</strong> Refactor to return a <code>(response bool uint)</code> and propagate the error, or use <code>unwrap!</code> with a descriptive error constant like <code>ERR_INVALID_POOL</code>. Note: since this is a private function called from both <code>stableswap-qa</code> and <code>stableswap-sa</code>, both callers would need to handle the new response type.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">Info</span> I-01: Clarity 2 — recommend migration to Clarity 4</h3>
+<p><strong>Description:</strong> The contract uses Clarity 2. Clarity 4 (epoch 3.3) introduced <code>as-contract?</code> with explicit asset allowances, <code>contract-hash?</code> for deployment verification, and other safety improvements. Migrating would address M-02 and improve overall security posture.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">Info</span> I-02: Repetitive code structure across swap helpers</h3>
+<p><strong>Description:</strong> The five swap helpers (a through e) and five quote functions follow an identical pattern, differing only in the number of hops. This is ~280 lines of largely duplicated code. While Clarity's lack of loops/recursion makes this necessary, it increases maintenance burden and the risk of inconsistency between variants.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">Info</span> I-03: Good — stateless custody-free design</h3>
+<p><strong>Description:</strong> The contract holds no state variables, maps, or persistent data. It acts as a pure routing layer, delegating all swaps to <code>stableswap-core-v-1-4</code> and fees to <code>aggregator-core-v-1-1</code>. This is an excellent pattern: the helper cannot be drained because it never holds funds, and there's no admin functionality to compromise. The only attack surface is through the external contract calls it makes.</p>
+</div>
+
+<h2>Architecture</h2>
+<p>The contract's dependency graph:</p>
+<pre><code>User
+ └─→ stableswap-swap-helper-v-1-5 (this contract)
+      ├─→ aggregator-core-v-1-1          (fee calculation &amp; transfer)
+      ├─→ stableswap-core-v-1-4          (actual swaps: swap-x-for-y, swap-y-for-x)
+      ├─→ stableswap-pool-trait-v-1-4    (pool interface: get-pool)
+      └─→ sip-010-trait-ft-standard-v-1-1 (token interface)
+</code></pre>
+<p>The helper detects token path direction via <code>is-stableswap-path-reversed</code>, which checks whether <code>token-in</code> matches the pool's x-token. If reversed, it calls <code>swap-y-for-x</code> / <code>get-dx</code> instead of <code>swap-x-for-y</code> / <code>get-dy</code>. This bidirectional routing is correct and well-implemented.</p>
+
+<h2>Conclusion</h2>
+<p>This is a <strong>low-risk helper contract</strong> with solid design. The stateless architecture means there are no fund custody risks. The two medium findings (intermediate slippage and pre-Clarity 4 <code>as-contract</code>) are common patterns across the Charisma DEX ecosystem and represent known trade-offs rather than exploitable bugs. The final <code>min-received</code> check on each swap helper provides adequate end-to-end slippage protection for users who set appropriate values.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">← All Audits</a></p>
+</footer>
+
+</body>
+</html>

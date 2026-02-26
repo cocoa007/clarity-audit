@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zest Protocol borrow-helper-v2-1-7 — Audit | cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --text-muted: #8b949e; --accent: #f7931a;
+  --red: #f85149; --yellow: #d29922; --green: #3fb950; --blue: #58a6ff;
+  --font-mono: 'SF Mono','Fira Code','Cascadia Code',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:1.8rem;margin-bottom:0.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem}
+h2{font-size:1.3rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:0.5rem}
+p,li{margin-bottom:0.75rem}
+ul,ol{padding-left:1.5rem}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;margin:1rem 0;font-family:var(--font-mono);font-size:0.82rem}
+code{font-family:var(--font-mono);font-size:0.88em;background:var(--surface);padding:2px 6px;border-radius:3px}
+pre code{background:none;padding:0}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 2rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;font-size:0.9rem}
+.meta-grid dt{color:var(--text-muted);font-weight:600}.meta-grid dd{margin:0}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1rem 0}
+.finding-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem}
+.finding-header h3{margin:0}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700}
+.badge.medium{background:var(--yellow);color:#000}
+.badge.low{background:var(--blue);color:#000}
+.badge.info{background:var(--text-muted);color:#000}
+.finding-field{margin-bottom:0.5rem}.finding-field strong{color:var(--text-muted);font-size:0.85rem}
+.nav{display:flex;gap:1.5rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.nav a{color:var(--text-muted);font-size:0.9rem}.nav a:hover{color:var(--accent)}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;margin:1rem 0}
+.summary-cell{text-align:center;padding:0.5rem;border-radius:6px;font-weight:700;font-size:0.9rem}
+.summary-cell.c{background:#f8514933;color:var(--red)}.summary-cell.h{background:#da363333;color:#da3633}
+.summary-cell.m{background:#d2992233;color:var(--yellow)}.summary-cell.l{background:#58a6ff33;color:var(--blue)}
+.summary-cell.i{background:#8b949e33;color:var(--text-muted)}
+.summary-label{font-size:0.7rem;font-weight:400;display:block}
+footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:0.85rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.88rem}
+th,td{padding:0.4rem 0.6rem;border:1px solid var(--border);text-align:left}
+th{background:var(--surface);color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Zest Protocol borrow-helper-v2-1-7</h1>
+<p class="subtitle">Lending Helper / Router Contract — Independent Security Audit</p>
+
+<dl class="meta-grid">
+  <dt>Contract</dt>
+  <dd><code>SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.borrow-helper-v2-1-7</code></dd>
+  <dt>Source</dt>
+  <dd><a href="https://explorer.hiro.so/txid/SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.borrow-helper-v2-1-7?chain=mainnet">On-chain (Hiro Explorer)</a></dd>
+  <dt>Clarity Version</dt>
+  <dd>Pre-Clarity 4 (−0.5 penalty noted; however no <code>as-contract</code> usage)</dd>
+  <dt>Lines of Code</dt>
+  <dd>~370</dd>
+  <dt>Audit Date</dt>
+  <dd>February 24, 2026</dd>
+  <dt>Auditor</dt>
+  <dd><a href="https://github.com/cocoa007">cocoa007</a></dd>
+  <dt>Confidence</dt>
+  <dd>🟡 MEDIUM — thin helper; security depends on unaudited <code>pool-borrow-v2-4</code></dd>
+  <dt>Priority Score</dt>
+  <dd>2.5 / 3.0 (Financial=3, Deploy=3, Complexity=2, Exposure=3, Novelty=1)</dd>
+</dl>
+
+<h2>Findings Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-cell c">0<span class="summary-label">Critical</span></div>
+  <div class="summary-cell h">0<span class="summary-label">High</span></div>
+  <div class="summary-cell m">1<span class="summary-label">Medium</span></div>
+  <div class="summary-cell l">2<span class="summary-label">Low</span></div>
+  <div class="summary-cell i">3<span class="summary-label">Info</span></div>
+</div>
+
+<h2>Overview</h2>
+<p><code>borrow-helper-v2-1-7</code> is a <strong>thin helper/router contract</strong> for the Zest Protocol lending platform on Stacks mainnet. It wraps the core <code>pool-borrow-v2-4</code> contract, adding:</p>
+<ul>
+  <li>Pyth oracle price feed updates (via <code>write-feed</code>) before price-sensitive operations</li>
+  <li>Incentive/rewards claiming before supply and withdraw operations</li>
+  <li>Detailed event emission (print statements) for off-chain indexing</li>
+  <li>A convenience <code>supply-all</code> function for batch multi-asset supply</li>
+</ul>
+<p>The contract holds <strong>no state and no funds</strong>. All token transfers and access control are delegated to downstream contracts. This is an inherently low-risk architecture — the helper itself cannot lose funds. The primary risk surface is incorrect event data misleading off-chain systems.</p>
+
+<h2>Architecture</h2>
+<table>
+  <tr><th>Function</th><th>Delegates To</th><th>Extra Logic</th></tr>
+  <tr><td><code>supply</code></td><td><code>pool-borrow-v2-4.supply</code></td><td>Claims incentive rewards first</td></tr>
+  <tr><td><code>supply-all</code></td><td><code>supply</code> (×10 assets)</td><td>Batch convenience wrapper</td></tr>
+  <tr><td><code>borrow</code></td><td><code>pool-borrow-v2-4.borrow</code></td><td>Pyth feed update</td></tr>
+  <tr><td><code>repay</code></td><td><code>pool-borrow-v2-4.repay</code></td><td>Event logging</td></tr>
+  <tr><td><code>withdraw</code></td><td><code>pool-borrow-v2-4.withdraw</code></td><td>Pyth feed + incentive claim</td></tr>
+  <tr><td><code>claim-rewards</code></td><td><code>incentives.claim-rewards</code></td><td>Rewards contract validation</td></tr>
+  <tr><td><code>liquidation-call</code></td><td><code>pool-borrow-v2-4.liquidation-call</code></td><td>Pyth feed update</td></tr>
+  <tr><td><code>set-e-mode</code></td><td><code>pool-borrow-v2-4.set-e-mode</code></td><td>Pyth feed update</td></tr>
+  <tr><td><code>set-user-use-reserve-as-collateral</code></td><td><code>pool-borrow-v2-4.set-user-use-reserve-as-collateral</code></td><td>Pyth feed update</td></tr>
+</table>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Consistent <code>tx-sender == contract-caller</code> check</strong> on every public function — prevents smart-contract-mediated calls and reentrancy vectors</li>
+  <li><strong>No <code>as-contract</code> usage</strong> — despite being pre-Clarity 4, the contract never assumes contract identity for token operations</li>
+  <li><strong>Rewards contract validation</strong> — <code>is-rewards-contract</code> checks the incentives trait against a stored whitelist, preventing malicious incentives contracts</li>
+  <li><strong>Stateless, custody-free design</strong> — no maps, no data-vars (beyond constants), no stored funds</li>
+  <li><strong>Pyth oracle integration</strong> — price feeds updated atomically before price-sensitive operations (borrow, withdraw, liquidation, collateral toggle, e-mode)</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>M-01: Incorrect Reserve State in Liquidation Event</h3>
+    <span class="badge medium">MEDIUM</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>liquidation-call</code> — print statement</div>
+  <div class="finding-field"><strong>Description:</strong> The <code>collateral-reserve-state</code> field in the liquidation event log queries <code>debt-asset-principal</code> instead of <code>collateral-asset-principal</code>. This emits the debt reserve state twice and never emits the actual collateral reserve state.</div>
+<pre><code>;; BUG: uses debt-asset-principal instead of collateral-asset-principal
+collateral-reserve-state: (try! (contract-call? .pool-0-reserve-v2-0
+  get-reserve-state debt-asset-principal)),
+;;                        ^^^^^^^^^^^^^^^^^^^
+;; Should be: collateral-asset-principal</code></pre>
+  <div class="finding-field"><strong>Impact:</strong> Off-chain indexers, liquidation bots, and dashboards consuming this event will receive <strong>incorrect collateral reserve data</strong>. Liquidation bots that rely on this event to calculate collateral values or liquidation profitability could make incorrect decisions — either missing profitable liquidations or attempting unprofitable ones. In a fast-moving market, stale/wrong reserve data could delay liquidations and increase protocol bad debt.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Deploy a new helper version with the corrected field:
+<pre><code>collateral-reserve-state: (try! (contract-call? .pool-0-reserve-v2-0
+  get-reserve-state collateral-asset-principal)),</code></pre></div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>L-01: Owner Parameter Not Validated Against tx-sender</h3>
+    <span class="badge low">LOW</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>supply</code>, <code>borrow</code>, <code>withdraw</code>, <code>claim-rewards</code>, <code>set-user-use-reserve-as-collateral</code>, <code>set-e-mode</code></div>
+  <div class="finding-field"><strong>Description:</strong> Multiple functions accept an <code>owner</code> (or <code>who</code>/<code>user</code>) parameter without verifying it equals <code>tx-sender</code>. The contract checks <code>(is-eq tx-sender contract-caller)</code> but not <code>(is-eq tx-sender owner)</code>. Whether this is exploitable depends entirely on the downstream <code>pool-borrow-v2-4</code> access control.</div>
+  <div class="finding-field"><strong>Impact:</strong> If <code>pool-borrow-v2-4</code> does not independently verify ownership:
+    <ul>
+      <li><code>supply</code>: Caller pays tokens, credit goes to arbitrary <code>owner</code> — likely intentional (supply on behalf of)</li>
+      <li><code>borrow</code>: Could potentially borrow against someone else's collateral</li>
+      <li><code>withdraw</code>: Could potentially withdraw someone else's supplied assets</li>
+      <li><code>claim-rewards</code>: Could claim someone else's rewards</li>
+    </ul>
+  </div>
+  <div class="finding-field"><strong>Recommendation:</strong> Either add <code>(asserts! (is-eq tx-sender owner) ERR_UNAUTHORIZED)</code> to functions where owner must equal caller, or document explicitly that <code>pool-borrow-v2-4</code> enforces this. The "supply on behalf of" pattern should use a separate function.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>L-02: No Transaction Deadline on Price-Sensitive Operations</h3>
+    <span class="badge low">LOW</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>borrow</code>, <code>liquidation-call</code>, <code>withdraw</code></div>
+  <div class="finding-field"><strong>Description:</strong> Price-sensitive operations (borrow, liquidation, withdraw) have no block-height deadline parameter. A transaction sitting in the mempool for many blocks could execute at a stale price even though Pyth feeds are updated inline — the Pyth data itself was fresh when the transaction was submitted but the market may have moved.</div>
+  <div class="finding-field"><strong>Impact:</strong> In high-congestion periods, delayed transactions could execute at unfavorable prices. This is partially mitigated by Pyth's staleness checks, but a deadline would provide stronger user protection.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Add an optional <code>deadline</code> parameter:
+<pre><code>(asserts! (< stacks-block-height deadline) (err u9999))</code></pre></div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-01: liquidation-call Returns Hardcoded (ok u0)</h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>liquidation-call</code></div>
+  <div class="finding-field"><strong>Description:</strong> The function discards the return value from <code>pool-borrow-v2-4.liquidation-call</code> and returns <code>(ok u0)</code>. All other functions return <code>(ok true)</code>. The inconsistency means callers cannot distinguish between different liquidation outcomes.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> Propagate the underlying result or return <code>(ok true)</code> for consistency.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-02: Hardcoded Token Addresses in supply-all</h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> <code>supply-all</code></div>
+  <div class="finding-field"><strong>Description:</strong> The <code>supply-all</code> function hardcodes 10 specific token contract addresses (ststx, aeusdc, wstx, diko, usdh, susdt, usda, sbtc, ststxbtc, alex) and their corresponding z-token LP contracts. Adding or removing supported assets requires deploying a new helper version.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> This is an acceptable trade-off for Clarity's static dispatch model. Document the asset list in protocol docs so users know which version supports which assets.</div>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <h3>I-03: Pre-Clarity 4 Contract</h3>
+    <span class="badge info">INFO</span>
+  </div>
+  <div class="finding-field"><strong>Location:</strong> Entire contract</div>
+  <div class="finding-field"><strong>Description:</strong> The contract does not use Clarity 4 features. However, since this contract never uses <code>as-contract</code> and holds no assets, the practical impact is zero. Clarity 4's <code>as-contract?</code> with explicit allowances would be relevant if the contract ever needed to act with its own authority.</div>
+  <div class="finding-field"><strong>Recommendation:</strong> No action needed for this specific contract. Future helper versions should adopt Clarity 4 if they introduce any <code>as-contract</code> patterns.</div>
+</div>
+
+<h2>Trust Assumptions</h2>
+<p>This contract's security is <strong>almost entirely dependent on downstream contracts</strong>. The helper is a pass-through — it cannot independently lose funds. Key trust boundaries:</p>
+<ul>
+  <li><strong><code>pool-borrow-v2-4</code></strong> — must enforce ownership checks on borrow, withdraw, collateral toggle, and e-mode changes. All financial logic lives here.</li>
+  <li><strong><code>pool-0-reserve-v2-0</code></strong> — must correctly track reserve and user state. Used only for read-only event data in this contract.</li>
+  <li><strong>Pyth Oracle (<code>pyth-oracle-v4</code>)</strong> — price feed integrity depends on Wormhole guardian signatures. The helper correctly passes through caller-provided bytes for on-chain verification.</li>
+  <li><strong>Incentives trait contracts</strong> — validated against <code>rewards-data</code> whitelist before use. Trust is in the whitelist management.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>This is a <strong>well-structured, low-risk helper contract</strong>. It follows the common Aave-style "helper" pattern — a thin routing layer that bundles oracle updates, incentive claims, and event emission around core protocol calls. The one material finding (M-01) is a copy-paste bug in the liquidation event log that could mislead off-chain systems. The architectural decision to keep the helper stateless and custody-free is sound and limits the blast radius of any bugs in this layer.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: ExecutorDAO — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>ExecutorDAO</h1>
+<p class="subtitle">The foundational modular DAO framework for Stacks — proposals as smart contracts, extensions as plugins, single-address ownership via sending context. Widely forked across the ecosystem.</p>
+
+<table class="meta-table">
+  <tr><td>Contracts</td><td>
+    <code>executor-dao.clar</code> (core) + <code>dao-traits-v4</code> (trait definitions)<br>
+    On-chain traits: <code><a href="https://explorer.hiro.so/txid/SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dao-traits-v4?chain=mainnet">SP2ZNGJ85ENDY6QRHQ5P2D4FXKGZWCKTB2T0Z55KS.dao-traits-v4</a></code>
+  </td></tr>
+  <tr><td>Author</td><td><a href="https://github.com/MarvinJanssen">Marvin Janssen</a></td></tr>
+  <tr><td>Source</td><td><a href="https://github.com/MarvinJanssen/executor-dao/tree/4676718828455a694a6593d251cb2e968f346c8c">GitHub commit 4676718</a> (2022-07-11) · Traits verified on-chain via Hiro API</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4 (Clarity 1 — no <code>as-contract?</code> asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>68 (core) + 86 (traits) = 154 total</td></tr>
+  <tr><td>Audit Date</td><td>2026-02-25</td></tr>
+  <tr><td>Confidence</td><td>🟢 HIGH — compact codebase fully reviewed; all findings verified against source; no ambiguous external dependencies in core</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted)">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+
+<p>ExecutorDAO is the most influential DAO framework on Stacks, forked and deployed by ALEX, Charisma, Megapont, aibtcdev, and dozens of other projects. The design is elegantly minimal: a single core contract that executes proposals (which are themselves smart contracts) and manages a registry of extensions. Extensions are plugin contracts that add governance tokens, voting, treasuries, etc.</p>
+
+<p>The core contract is only 68 lines — a testament to Clarity's expressiveness. The three key design principles are:</p>
+<ul>
+  <li><strong>Proposals are smart contracts</strong> — any Clarity code can be a proposal, making the DAO arbitrarily programmable</li>
+  <li><strong>The core executes, extensions give form</strong> — the core has no features; everything is added via extension contracts</li>
+  <li><strong>Ownership via sending context</strong> — <code>as-contract</code> makes the DAO the <code>tx-sender</code>, so external ownable contracts can be governed by the DAO</li>
+</ul>
+
+<p>The traits contract (<code>dao-traits-v4</code>) defines 10 traits covering SIP-010 tokens, proposals, extensions, governance tokens, NFTs, liquid FTs, CDK/EDK (land game mechanics), and fee-sharing.</p>
+
+<h3>Documented Limitations</h3>
+<ul>
+  <li>README states "This is an early release. More information, design specifics, and unit tests coming soon." (still the case as of 2026)</li>
+  <li>The framework intentionally has no built-in governance token, voting, or treasury — these are left to extensions</li>
+  <li>The <code>construct</code> function is a one-time bootstrap that permanently transfers executive control to the contract itself</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Blanket <code>as-contract</code> Grants Unlimited Asset Authority to Proposals and Extensions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>execute</code> (line 52), <code>construct</code> (line 60), <code>request-extension-callback</code> (line 67)</p>
+  <p><strong>Description:</strong> The core contract uses <code>as-contract</code> in three places to execute proposals, bootstrap, and handle extension callbacks. In pre-Clarity 4, <code>as-contract</code> grants blanket authority over <em>all</em> assets held by the DAO contract — STX, fungible tokens, NFTs, everything. Any proposal or extension that runs under <code>as-contract</code> can move any asset the DAO holds, with no language-level restriction on which assets it can touch.</p>
+  <pre><code>;; Proposal gets blanket asset authority via as-contract
+(define-public (execute (proposal &lt;proposal-trait&gt;) (sender principal))
+  (begin
+    (try! (is-self-or-extension))
+    (asserts! (map-insert executed-proposals (contract-of proposal) block-height) err-already-executed)
+    (print {event: "execute", proposal: proposal})
+    (as-contract (contract-call? proposal execute sender))  ;; &lt;-- blanket authority
+  )
+)
+
+;; Extension callback also gets blanket authority
+(define-public (request-extension-callback (extension &lt;extension-trait&gt;) (memo (buff 34)))
+  (let ((sender tx-sender))
+    (asserts! (is-extension contract-caller) err-invalid-extension)
+    (asserts! (is-eq contract-caller (contract-of extension)) err-invalid-extension)
+    (as-contract (contract-call? extension callback sender memo))  ;; &lt;-- blanket authority
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> A malicious or compromised proposal/extension can drain the entire DAO treasury in a single transaction. Since proposals are arbitrary smart contracts, a governance attack (e.g., flash-loan voting in a fork that uses token-weighted voting) could pass a proposal that steals all funds. The risk is amplified by the fact that most forks hold significant treasury assets.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4 and replace <code>as-contract</code> with <code>as-contract?</code> using explicit asset allowances. For example, a treasury management proposal should use <code>(as-contract? (with-stx (with-ft .governance-token) ...))</code> to limit which assets the proposal can move. This provides defense-in-depth even if governance is compromised — a voting proposal can't touch treasury funds if it only has <code>with-ft .governance-token</code> allowance.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: No Emergency Shutdown or Pause Mechanism</h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract architecture</p>
+  <p><strong>Description:</strong> Once bootstrapped, the only way to modify the DAO is through proposals executed by extensions. If a critical vulnerability is discovered in an extension, there is no way to pause the DAO, disable all extensions atomically, or prevent malicious proposals from being executed while a fix is prepared. The only recourse is to rush a counter-proposal through whatever voting mechanism the fork has implemented.</p>
+  <p><strong>Impact:</strong> In an active exploit scenario, the time between detection and a fix proposal being voted on and executed could allow an attacker to drain the DAO. Many DAOs have multi-day voting periods, during which the exploit would be unstoppable.</p>
+  <p><strong>Recommendation:</strong> Add an emergency guardian pattern: a designated principal (multisig or timelock) that can pause all proposal execution and extension calls. The guardian should be removable by governance to prevent centralization. Example: <code>(define-data-var paused bool false)</code> checked at the top of <code>execute</code> and <code>set-extension</code>.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-02: <code>sender</code> Parameter in <code>execute</code> Is Caller-Controlled and Unverified</h3>
+  </div>
+  <p><strong>Location:</strong> <code>execute</code> function (line 49)</p>
+  <p><strong>Description:</strong> The <code>execute</code> function takes a <code>sender</code> parameter that is passed to the proposal's <code>execute</code> function. This parameter is provided by the calling extension and is <strong>not validated</strong> against <code>tx-sender</code> or <code>contract-caller</code>. A malicious or buggy extension could pass an arbitrary principal as the <code>sender</code>, potentially impersonating another user to a proposal.</p>
+  <pre><code>;; sender is caller-supplied, not verified
+(define-public (execute (proposal &lt;proposal-trait&gt;) (sender principal))
+  (begin
+    (try! (is-self-or-extension))
+    (asserts! (map-insert executed-proposals (contract-of proposal) block-height) err-already-executed)
+    (print {event: "execute", proposal: proposal})
+    (as-contract (contract-call? proposal execute sender))  ;; proposal trusts sender
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> If a proposal uses the <code>sender</code> parameter for authorization decisions (e.g., "only admin X can trigger this proposal"), a compromised extension could spoof that identity. The severity depends on how downstream proposals use the <code>sender</code> value — in many forks, it's used purely for logging, making this low-impact. But in forks where proposals check sender identity, this is exploitable.</p>
+  <p><strong>Recommendation:</strong> Either validate that <code>sender</code> equals <code>tx-sender</code> (or <code>contract-caller</code>) inside the core, or document clearly that proposals must NOT trust the <code>sender</code> parameter for authorization. The <code>construct</code> function correctly captures <code>tx-sender</code> in a local binding — <code>execute</code> should do the same.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>construct</code> Has No Replay Protection Across Forks</h3>
+  </div>
+  <p><strong>Location:</strong> <code>construct</code> function (line 56)</p>
+  <p><strong>Description:</strong> The <code>construct</code> function checks that <code>tx-sender</code> equals the <code>executive</code> variable (set to the deployer at deploy time). After execution, it sets <code>executive</code> to the contract's own principal, preventing re-invocation. However, if the same deployer key is used across multiple chain forks or testnet deployments, the bootstrap proposal could be front-run or replayed if the deployer's key is compromised before <code>construct</code> is called.</p>
+  <pre><code>(define-public (construct (proposal &lt;proposal-trait&gt;))
+  (let ((sender tx-sender))
+    (asserts! (is-eq sender (var-get executive)) err-unauthorised)
+    (var-set executive (as-contract tx-sender))  ;; one-time lock
+    (as-contract (execute proposal sender))
+  )
+)</code></pre>
+  <p><strong>Impact:</strong> Low — requires compromising the deployer key in the window between deployment and <code>construct</code> call. In practice, deployers typically call <code>construct</code> in the same block or shortly after deployment.</p>
+  <p><strong>Recommendation:</strong> Call <code>construct</code> in the same transaction as deployment when possible. Document that the deployer key should be rotated or secured after bootstrap.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Pre-Clarity 4 — Migrate to <code>as-contract?</code> for Language-Level Asset Safety</h3>
+  </div>
+  <p><strong>Location:</strong> Entire contract</p>
+  <p><strong>Description:</strong> This contract was written for Clarity 1 (epoch 2.05). Clarity 4 (epoch 3.3, activated at Bitcoin block 923,222) introduced <code>as-contract?</code> with explicit asset allowances. This is the single most impactful improvement available to ExecutorDAO forks. Instead of granting blanket authority, each <code>as-contract?</code> call explicitly declares which assets (STX, specific FTs, specific NFTs) the enclosed code can move. This directly mitigates H-01.</p>
+  <p><strong>Recommendation:</strong> All new forks should use Clarity 4. The core <code>execute</code> function should use <code>as-contract?</code> with the minimum required asset allowances per proposal type. Consider a proposal categorization system where treasury proposals get <code>with-stx</code>/<code>with-ft</code> while governance proposals get no asset allowances.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Traits Contract Bundles Unrelated Concerns</h3>
+  </div>
+  <p><strong>Location:</strong> <code>dao-traits-v4</code></p>
+  <p><strong>Description:</strong> The traits contract defines 10 traits in a single file, mixing core DAO concerns (proposal-trait, extension-trait, governance-token-trait) with domain-specific traits (cdk-trait, edk-trait for land games, liquid-ft-trait, share-fee-to-trait). This creates an unnecessary coupling: any contract that needs the proposal trait must deploy a contract that also contains game mechanics traits.</p>
+  <p><strong>Impact:</strong> No security impact. This is a code organization concern that increases deployment costs and reduces modularity.</p>
+  <p><strong>Recommendation:</strong> Split traits into separate contracts: core DAO traits (proposal, extension, governance-token), token traits (sip010, nft, liquid-ft, ft-plus), and domain-specific traits (cdk, edk, share-fee-to).</p>
+</div>
+
+<!-- I-03 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-03: <code>governance-token-trait</code> Uses Non-Standard <code>dmg-</code> Prefixed Functions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>dao-traits-v4</code> — <code>governance-token-trait</code></p>
+  <p><strong>Description:</strong> The governance token trait defines functions with a <code>dmg-</code> prefix (e.g., <code>dmg-get-balance</code>, <code>dmg-transfer</code>, <code>dmg-mint</code>). "DMG" appears to be a specific token name (possibly "Dungeon Master's Gold" from the Megapont ecosystem). This naming couples the generic DAO framework to a specific project's naming convention, making it confusing for forks that use different governance token names.</p>
+  <p><strong>Impact:</strong> No security impact. Forks must implement functions named <code>dmg-*</code> even if their token has nothing to do with DMG.</p>
+  <p><strong>Recommendation:</strong> Use generic names: <code>gov-get-balance</code>, <code>gov-transfer</code>, <code>gov-mint</code>, <code>gov-burn</code>, <code>gov-lock</code>, <code>gov-unlock</code>, <code>gov-get-locked</code>, <code>gov-has-percentage-balance</code>.</p>
+</div>
+
+<h2>Architecture Analysis</h2>
+
+<h3>Strengths</h3>
+<ul>
+  <li><strong>Minimal core:</strong> 68 lines with a clear single responsibility — no feature bloat to audit</li>
+  <li><strong>Elegant authorization:</strong> <code>is-self-or-extension</code> uses <code>tx-sender == as-contract tx-sender</code> for self-calls and <code>contract-caller</code> for extension checks — correct and concise</li>
+  <li><strong>Replay protection:</strong> <code>map-insert</code> on <code>executed-proposals</code> ensures proposals can only execute once — idempotency by design</li>
+  <li><strong>One-time bootstrap:</strong> <code>construct</code> permanently transfers executive control, preventing re-initialization</li>
+  <li><strong>Extension callback pattern:</strong> <code>request-extension-callback</code> validates both that the caller is an enabled extension AND that it matches the extension being called — prevents spoofing</li>
+  <li><strong>Clean event emission:</strong> All state changes emit structured print events for off-chain indexing</li>
+</ul>
+
+<h3>Trust Assumptions</h3>
+<ul>
+  <li>Proposals executed by the DAO are assumed to be vetted through whatever voting mechanism the fork implements — the core has no opinion on how proposals are approved</li>
+  <li>Extensions are trusted with full DAO authority once enabled — a single malicious extension can compromise the entire DAO</li>
+  <li>The deployer is trusted to call <code>construct</code> with a legitimate bootstrap proposal before the key is compromised</li>
+  <li>Downstream forks must implement their own access control for who can call <code>execute</code> — the core only checks that the caller is self or an extension</li>
+</ul>
+
+<h3>Fork Guidance</h3>
+<p>ExecutorDAO's security is only as strong as its extensions. Forks should:</p>
+<ul>
+  <li>Use Clarity 4 with <code>as-contract?</code> and explicit asset allowances (mitigates H-01)</li>
+  <li>Implement timelock delays on proposal execution to allow community review</li>
+  <li>Add an emergency pause mechanism (mitigates M-01)</li>
+  <li>Validate the <code>sender</code> parameter or document that proposals must not trust it (mitigates M-02)</li>
+  <li>Use post-conditions on all treasury transactions as a defense-in-depth layer</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>2 — manages extensions that control assets</td><td>3</td><td>6</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — deployed on mainnet, widely forked</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>2 — 154 lines, multi-contract framework</td><td>2</td><td>4</td></tr>
+  <tr><td>User Exposure</td><td>3 — most forked DAO framework on Stacks</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>3 — foundational pattern, first audit of original</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td colspan="3"><strong>Total (pre-penalty)</strong></td><td><strong>2.5 / 3.0</strong></td></tr>
+  <tr><td colspan="3">Clarity version penalty (pre-Clarity 4)</td><td>−0.5</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.0 / 3.0 ✅ AUDIT</strong></td></tr>
+</table>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+  <p>This is an independent security review, not a formal audit engagement. Always verify findings against the on-chain source.</p>
+</footer>
+
+</body>
+</html>

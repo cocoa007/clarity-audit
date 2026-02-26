@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>stSTX Token (StackingDAO) — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.info-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.info { background: var(--blue); color: #fff; }
+.badge.green { background: var(--green); color: #000; }
+.badge.yellow { background: var(--yellow); color: #000; }
+.badge.red { background: var(--red); color: #fff; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">&larr; All Audits</a>
+  <a href="https://github.com/cocoa007/clarity-audit">GitHub</a>
+</nav>
+
+<h1>stSTX Token (StackingDAO)</h1>
+<p class="subtitle">
+  Security Audit &mdash; February 25, 2026<br>
+  Contract: <code>SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token</code><br>
+  Source: <a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token?chain=mainnet">Stacks Explorer</a> |
+  <a href="https://api.hiro.so/v2/contracts/source/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG/ststx-token">Hiro API</a><br>
+  Deployed: Block 132,118 &bull; Clarity 2 (pre-Clarity 4)<br>
+  Confidence: <span class="badge green">HIGH</span> &mdash; Simple contract, all paths reviewed
+</p>
+
+<h2>Overview</h2>
+
+<p>This is the <strong>stSTX fungible token contract</strong> &mdash; the liquid staking token issued by <a href="https://www.stackingdao.com">StackingDAO</a>. When users deposit STX into the StackingDAO protocol, they receive stSTX representing their staked position. The token implements the SIP-010 standard and delegates all access control to StackingDAO's DAO contract (<code>.dao</code>).</p>
+
+<p>At ~80 lines, this is a straightforward SIP-010 token with DAO-gated minting, burning, and metadata updates. The contract itself holds no funds &mdash; it is a token ledger only. The security surface is primarily about <strong>who can mint/burn</strong> and whether the authorization checks are consistent.</p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>M-01</td><td><span class="badge yellow">MEDIUM</span></td><td>Inconsistent auth: <code>set-token-uri</code> uses <code>tx-sender</code> while mint/burn use <code>contract-caller</code></td></tr>
+  <tr><td>L-01</td><td><span class="badge info">LOW</span></td><td><code>burn-for-protocol</code> can burn from arbitrary addresses</td></tr>
+  <tr><td>I-01</td><td><span class="badge green">INFO</span></td><td>No max supply defined on fungible token</td></tr>
+  <tr><td>I-02</td><td><span class="badge green">INFO</span></td><td>Pre-Clarity 4 deployment</td></tr>
+  <tr><td>I-03</td><td><span class="badge green">INFO</span></td><td>No event emission on mint/burn</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3>M-01: Inconsistent authorization &mdash; <code>set-token-uri</code> uses <code>tx-sender</code> while mint/burn use <code>contract-caller</code></h3>
+<p><strong>Severity:</strong> <span class="badge yellow">MEDIUM</span> &bull; <strong>Location:</strong> <code>set-token-uri</code>, <code>mint-for-protocol</code>, <code>burn-for-protocol</code></p>
+
+<p><strong>Description:</strong> The three DAO-gated functions use different principals for authorization:</p>
+
+<pre><code>;; set-token-uri checks tx-sender
+(define-public (set-token-uri (value (string-utf8 256)))
+  (begin
+    (try! (contract-call? .dao check-is-protocol tx-sender))  ;; &lt;-- tx-sender
+    (ok (var-set token-uri value))
+  )
+)
+
+;; mint/burn check contract-caller
+(define-public (mint-for-protocol (amount uint) (recipient principal))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))  ;; &lt;-- contract-caller
+    (ft-mint? ststx amount recipient)
+  )
+)</code></pre>
+
+<p><strong>Impact:</strong> If a DAO-registered protocol contract calls <code>set-token-uri</code>, the check uses <code>tx-sender</code> (the original transaction signer), not <code>contract-caller</code> (the calling contract). This means:</p>
+<ul>
+  <li>A registered protocol contract calling <code>set-token-uri</code> will <strong>fail</strong> if the end user isn't themselves a registered protocol &mdash; the check validates the user, not the calling contract.</li>
+  <li>Conversely, any user who is directly registered as a protocol can call <code>set-token-uri</code> even through unregistered intermediary contracts.</li>
+</ul>
+<p>This inconsistency doesn't create a direct exploit path (it's a metadata field, not funds), but it indicates a design inconsistency that could cause unexpected behavior if the DAO registry changes.</p>
+
+<p><strong>Recommendation:</strong> Use <code>contract-caller</code> consistently across all DAO-gated functions, or use <code>tx-sender</code> consistently. The mint/burn pattern (<code>contract-caller</code>) is generally safer for inter-contract calls.</p>
+</div>
+
+<div class="finding">
+<h3>L-01: <code>burn-for-protocol</code> can burn from arbitrary addresses</h3>
+<p><strong>Severity:</strong> <span class="badge info">LOW</span> &bull; <strong>Location:</strong> <code>burn-for-protocol</code></p>
+
+<pre><code>(define-public (burn-for-protocol (amount uint) (sender principal))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    (ft-burn? ststx amount sender)  ;; burns from any 'sender' address
+  )
+)</code></pre>
+
+<p><strong>Description:</strong> Any contract registered in the DAO as a "protocol" can burn stSTX from <strong>any</strong> address. There is no check that <code>sender</code> consented to the burn. This is by design for the staking withdrawal flow (burn stSTX to redeem STX), but it means the security of every stSTX holder's balance depends entirely on the trustworthiness of every DAO-registered protocol contract.</p>
+
+<p><strong>Impact:</strong> A malicious or buggy protocol contract added to the DAO registry could burn stSTX from any holder without their consent. The blast radius of a single compromised protocol contract extends to all stSTX balances.</p>
+
+<p><strong>Recommendation:</strong> This is a known trust assumption of the StackingDAO architecture. Consider documenting the invariant that protocol contracts must only burn from consenting parties. Post-conditions at the transaction level can mitigate this for individual users.</p>
+</div>
+
+<div class="finding">
+<h3>I-01: No max supply defined</h3>
+<p><strong>Severity:</strong> <span class="badge green">INFO</span> &bull; <strong>Location:</strong> <code>define-fungible-token</code></p>
+
+<pre><code>(define-fungible-token ststx)  ;; no max supply parameter</code></pre>
+
+<p><strong>Description:</strong> The <code>define-fungible-token</code> call does not specify a max supply. This means any registered protocol contract can mint unlimited stSTX via <code>mint-for-protocol</code>. For a liquid staking token, this is expected (supply tracks staked STX), but there is no on-chain supply cap as a safety backstop.</p>
+
+<p><strong>Impact:</strong> Informational. The supply is effectively unbounded and controlled entirely by protocol logic.</p>
+</div>
+
+<div class="finding">
+<h3>I-02: Pre-Clarity 4 deployment</h3>
+<p><strong>Severity:</strong> <span class="badge green">INFO</span></p>
+
+<p><strong>Description:</strong> This contract is deployed on Clarity 2 (block 132,118, pre-Clarity 4). While the contract does not use <code>as-contract</code> itself, future upgrades or replacement contracts should target Clarity 4 to benefit from <code>as-contract?</code> with explicit asset allowances and other safety builtins.</p>
+</div>
+
+<div class="finding">
+<h3>I-03: No event emission on mint/burn</h3>
+<p><strong>Severity:</strong> <span class="badge green">INFO</span></p>
+
+<p><strong>Description:</strong> The <code>transfer</code> function emits a <code>print</code> event with action, sender, recipient, amount, and block-height. However, <code>mint-for-protocol</code> and <code>burn-for-protocol</code> do not emit any events. This makes off-chain tracking of supply changes harder.</p>
+
+<p><strong>Recommendation:</strong> Add <code>print</code> statements to mint and burn functions for indexer compatibility.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+
+<div class="info-box">
+<h3>Trust Model</h3>
+<p>The contract delegates <strong>all</strong> access control to <code>.dao check-is-protocol</code>. This is a clean separation of concerns, but it means the security of stSTX depends entirely on:</p>
+<ul>
+  <li>The DAO contract's registry being correctly maintained</li>
+  <li>Every registered protocol contract being non-malicious and bug-free</li>
+  <li>The DAO governance process for adding/removing protocols</li>
+</ul>
+<p>This is the standard pattern for StackingDAO &mdash; all their contracts share this DAO-gated architecture. The token contract itself is a thin wrapper; the real attack surface is in the protocol contracts that call it.</p>
+</div>
+
+<div class="info-box">
+<h3>Comparison with Other StackingDAO Contracts</h3>
+<p>See also: <a href="stacking-dao-core-v2.html">StackingDAO Core v2</a> | <a href="stacking-dao-core-v3.html">StackingDAO Core v3</a> &mdash; the core contracts that call <code>mint-for-protocol</code> and <code>burn-for-protocol</code> on this token.</p>
+</div>
+
+<h2>Full Source</h2>
+
+<pre><code>(impl-trait .sip-010-trait-ft-standard.sip-010-trait)
+
+;; Defines the Stacked STX according to the SIP010 Standard
+(define-fungible-token ststx)
+
+(define-constant ERR_NOT_AUTHORIZED u1401)
+
+;;-------------------------------------
+;; Variables
+;;-------------------------------------
+
+(define-data-var token-uri (string-utf8 256) u"")
+
+;;-------------------------------------
+;; SIP-010 
+;;-------------------------------------
+
+(define-read-only (get-total-supply)
+  (ok (ft-get-supply ststx))
+)
+
+(define-read-only (get-name)
+  (ok "Stacked STX Token")
+)
+
+(define-read-only (get-symbol)
+  (ok "stSTX")
+)
+
+(define-read-only (get-decimals)
+  (ok u6)
+)
+
+(define-read-only (get-balance (account principal))
+  (ok (ft-get-balance ststx account))
+)
+
+(define-read-only (get-token-uri)
+  (ok (some (var-get token-uri)))
+)
+
+(define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
+  (begin
+    (asserts! (is-eq tx-sender sender) (err ERR_NOT_AUTHORIZED))
+
+    (match (ft-transfer? ststx amount sender recipient)
+      response (begin
+        (print memo)
+        (print { action: "transfer", data: { sender: tx-sender, recipient: recipient, amount: amount, block-height: block-height } })
+        (ok response)
+      )
+      error (err error)
+    )
+  )
+)
+
+;;-------------------------------------
+;; Admin
+;;-------------------------------------
+
+(define-public (set-token-uri (value (string-utf8 256)))
+  (begin
+    (try! (contract-call? .dao check-is-protocol tx-sender))
+    (ok (var-set token-uri value))
+  )
+)
+
+;;-------------------------------------
+;; Mint / Burn
+;;-------------------------------------
+
+;; Mint method
+(define-public (mint-for-protocol (amount uint) (recipient principal))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    (ft-mint? ststx amount recipient)
+  )
+)
+
+;; Burn method
+(define-public (burn-for-protocol (amount uint) (sender principal))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    (ft-burn? ststx amount sender)
+  )
+)
+
+;; Burn external
+(define-public (burn (amount uint))
+  (begin
+    (ft-burn? ststx amount tx-sender)
+  )
+)</code></pre>
+
+<footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem;">
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> &bull; <a href="index.html">Full audit portfolio</a></p>
+</footer>
+
+</body>
+</html>
