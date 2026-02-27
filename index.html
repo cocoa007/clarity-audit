@@ -789,6 +789,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/arkadiko-governance-v4-3.html">Arkadiko Governance v4-3 — DAO Governance</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1.arkadiko-governance-v4-3?chain=mainnet">SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">1H</span> <span class="m">1M</span> <span class="l">3L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">DAO governance contract for Arkadiko Protocol (proposals, voting, execution). <strong>Critical: proposal-ids list capped at 100 entries — after 100 proposals, governance is permanently bricked (unwrap-panic on as-max-len?).</strong> Silent partial failure in multi-contract proposal execution.</p>
+  <p class="date">February 27, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/arkadiko-stacker-v3-1.html">Arkadiko Stacker v3-1 — PoX Stacking Manager</a>
     <span class="confidence">🟢 HIGH</span>
   </div>
