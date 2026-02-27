@@ -206,7 +206,7 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">44</div>
+    <div class="num">45</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
@@ -421,6 +421,19 @@ footer {
   </div>
   <p class="summary">Collateral token parameter registry for Arkadiko Vaults. <strong>No funds at risk — pure configuration contract.</strong> Missing parameter bounds validation in <code>set-token</code> could allow DAO owner misconfiguration to brick vault operations. Clean minimal design with proper list management.</p>
   <p class="date">February 24, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/arkadiko-swap-v2-1.html">Arkadiko Swap v2-1 — DEX AMM</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1.arkadiko-swap-v2-1?chain=mainnet">SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1</a></span>
+    <span class="findings-compact"><span class="c">1C</span> <span class="h">2H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Constant-product AMM for Arkadiko DEX. <strong>Critical: protocol fee collection permanently overstates pool reserves</strong> — collected fees reduce actual token holdings but balance tracking is never decremented, causing gradual LP fund loss. Fee collection reverts when only one token has fees. No minimum liquidity lock enables first-depositor donation attack.</p>
+  <p class="date">February 27, 2026</p>
 </div>
 
 <div class="audit-card">
@@ -915,6 +928,19 @@ footer {
   </div>
   <p class="summary">Never calls stx-transfer? — entire insurance mechanism is pure bookkeeping with no real funds. Withdrawal math is identity function.</p>
   <p class="date">February 21, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/sbtc-deposit.html">sBTC Deposit Contract</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://raw.githubusercontent.com/boomcrypto/clarity-deployed-contracts/main/contracts/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4/sbtc-deposit.clar">SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">No guard against maxFee ≥ amount causes permanently stuck BTC with no reclaim path. Batch deposit failure aborts all subsequent deposits. No per-deposit amount cap.</p>
+  <p class="date">February 27, 2026</p>
 </div>
 
 <div class="audit-card">
