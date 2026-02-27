@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: game-wager-v1 — cocoa007</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);font-size:.875em;background:var(--code-bg);padding:.15em .4em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{border:none;padding:0;font-size:.85em}
+.meta{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:2rem}
+.meta p{margin-bottom:.4rem}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.5rem 0}
+.finding h3{margin-top:0}
+.severity{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.8rem;font-weight:600;margin-right:.5rem}
+.severity.critical{background:#8b1a1a;color:#ff6b6b}
+.severity.high{background:#6b3a1a;color:#f7931a}
+.severity.medium{background:#5a4a1a;color:#d29922}
+.severity.low{background:#1a3a2a;color:#3fb950}
+.severity.info{background:#1a2a3a;color:#58a6ff}
+.summary-table{width:100%;border-collapse:collapse;margin:1rem 0}
+.summary-table th,.summary-table td{padding:.5rem;text-align:left;border-bottom:1px solid var(--border)}
+.summary-table th{color:var(--text-muted);font-weight:600}
+.back{display:inline-block;margin-bottom:1rem;color:var(--text-muted)}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--text-muted);font-size:.875rem}
+</style>
+</head>
+<body>
+
+<a href="/clarity-audit/" class="back">← Back to index</a>
+
+<h1>🔍 game-wager-v1</h1>
+<p class="subtitle">P2P Game Wagering Contract — Independent Security Audit</p>
+
+<div class="meta">
+  <p><strong>Contract:</strong> <code>SP28MP1HQDJWQAFSQJN2HBAXBVP7H7THD1W2NYZVK.game-wager-v1</code></p>
+  <p><strong>Source:</strong> <a href="https://explorer.hiro.so/txid/0xa4d9b54b2a3ba620c9643b4f391b119f89d7c95e6aa92e02e5a4d4e2aebfb434?chain=mainnet">On-chain (Stacks Mainnet, block 6810361)</a></p>
+  <p><strong>Deploy TX:</strong> <code>0xa4d9b54b2a3ba620c9643b4f391b119f89d7c95e6aa92e02e5a4d4e2aebfb434</code></p>
+  <p><strong>Clarity Version:</strong> 4 (epoch 3.3) ✅</p>
+  <p><strong>Lines of Code:</strong> 370</p>
+  <p><strong>Dependencies:</strong> <code>SP28MP1HQDJWQAFSQJN2HBAXBVP7H7THD1W2NYZVK.auth-v7</code> (SIP-018 signature hashing)</p>
+  <p><strong>Audit Date:</strong> 2026-02-27</p>
+  <p><strong>Auditor:</strong> cocoa007.btc</p>
+  <p><strong>Confidence:</strong> 🟡 MEDIUM — source verified on-chain, auth-v7 reviewed, but economic model assumptions apply</p>
+</div>
+
+<h2>Summary</h2>
+
+<table class="summary-table">
+  <tr><th>Severity</th><th>Count</th></tr>
+  <tr><td><span class="severity critical">CRITICAL</span></td><td>0</td></tr>
+  <tr><td><span class="severity high">HIGH</span></td><td>1</td></tr>
+  <tr><td><span class="severity medium">MEDIUM</span></td><td>2</td></tr>
+  <tr><td><span class="severity low">LOW</span></td><td>2</td></tr>
+  <tr><td><span class="severity info">INFO</span></td><td>2</td></tr>
+</table>
+
+<p>This is a well-structured P2P wagering contract using Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code> allowances. Signature authentication follows SIP-018 structured data with proper domain separation via auth-v7. The main risks are centralization around the oracle role and fee extraction via cancellation.</p>
+
+<h2>Architecture Overview</h2>
+
+<p>The contract implements a custodial P2P wagering system:</p>
+<ol>
+  <li><strong>Deposit:</strong> Users transfer SIP-010 tokens into the contract, credited to their secp256k1 pubkey</li>
+  <li><strong>Create Game:</strong> Oracle submits both players' signed wager commitments, debiting their balances</li>
+  <li><strong>Resolve:</strong> Oracle declares the winner, who receives the pot minus fees</li>
+  <li><strong>Withdraw:</strong> Users withdraw to their registered wallet (or a specified recipient) via signed request</li>
+  <li><strong>Cancel:</strong> Oracle or anyone (after timeout) can cancel, refunding both players minus fees</li>
+</ol>
+
+<h2>Positive Findings</h2>
+<ul>
+  <li>✅ Uses Clarity 4 <code>as-contract?</code> with explicit <code>with-ft</code> allowances — eliminates blanket asset access</li>
+  <li>✅ SIP-018 structured data hashing with chain-id and contract address in domain — proper cross-chain/cross-contract replay protection</li>
+  <li>✅ Signature nonce tracking via <code>used-signatures</code> map prevents replay attacks</li>
+  <li>✅ Token whitelist prevents malicious token contract interactions</li>
+  <li>✅ Fee rates capped (wager: 20%, withdraw: 10%)</li>
+  <li>✅ GAME_TIMEOUT safety valve (144 blocks ≈ 24h) prevents permanent fund lockup</li>
+  <li>✅ Same-player check prevents self-wagering</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+  <h3><span class="severity high">HIGH</span> H-01: Oracle has unilateral control over game outcomes</h3>
+  <p><strong>Location:</strong> <code>resolve-game</code>, <code>cancel-game</code></p>
+  <p><strong>Description:</strong> The oracle principal has unchecked power to resolve any game in favor of either player. There is no dispute mechanism, no timelock on resolution, no multi-oracle quorum, and no on-chain game state verification. A compromised or malicious oracle can systematically resolve games in favor of a colluding player.</p>
+  <pre><code>(define-public (resolve-game (game-id uint) (winner (buff 33)))
+  (let (...)
+    (asserts! (is-eq tx-sender (var-get oracle)) err-not-oracle)
+    ;; Oracle picks any player as winner — no verification of actual game outcome
+    (asserts!
+      (or (is-eq winner (get player-a game))
+          (is-eq winner (get player-b game)))
+      err-invalid-winner)
+    (credit-balance winner token payout)
+    ...))</code></pre>
+  <p><strong>Impact:</strong> Total loss of wagered funds for all users if oracle is compromised. The oracle can also <code>cancel-game</code> at any time (no timeout required for oracle), extracting fees from both players.</p>
+  <p><strong>Recommendation:</strong></p>
+  <ul>
+    <li>Implement a multi-oracle or threshold signature scheme for game resolution</li>
+    <li>Add a dispute window after resolution where players can challenge (with bond)</li>
+    <li>Consider committing game results on-chain (e.g., hash of game state) before resolution</li>
+    <li>At minimum, add a timelock on resolution to allow monitoring</li>
+  </ul>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-01: Oracle cancel griefing extracts fees from players</h3>
+  <p><strong>Location:</strong> <code>cancel-game</code></p>
+  <p><strong>Description:</strong> The oracle can cancel any active game without waiting for the timeout. Cancellation charges <code>withdraw-fee-rate</code> to both players. A malicious oracle could let users create games, then cancel them instead of resolving, farming fees.</p>
+  <pre><code>(define-public (cancel-game (game-id uint))
+  (let (...)
+    (asserts!
+      (or (is-eq tx-sender (var-get oracle))  ;; Oracle can cancel immediately
+          (> burn-block-height (+ (get created-at game) GAME_TIMEOUT)))
+      err-game-not-expired)
+    ;; Both players lose fee
+    (credit-balance (get player-a game) tokn refund)  ;; refund = wager - fee
+    ...))</code></pre>
+  <p><strong>Impact:</strong> At current <code>withdraw-fee-rate</code> of 1% (u100), the oracle could extract 1% of every wager by cancelling instead of resolving. With maximum fee rate (10%), this becomes significant.</p>
+  <p><strong>Recommendation:</strong> Oracle-initiated cancellations should refund the full wager (no fee), or require a minimum number of blocks before oracle can cancel.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+  <h3><span class="severity medium">MEDIUM</span> M-02: Deployer can rug via fee rate + treasury changes</h3>
+  <p><strong>Location:</strong> <code>set-fee-rate</code>, <code>set-withdraw-fee-rate</code>, <code>set-treasury</code></p>
+  <p><strong>Description:</strong> The deployer can change fee rates up to 20% (wager) and 10% (withdraw) at any time, and redirect the treasury to any address. These changes apply immediately to all future game resolutions and withdrawals, with no timelock or user notification.</p>
+  <pre><code>(define-public (set-fee-rate (new-fee-rate uint))
+  (begin
+    (asserts! (is-eq tx-sender DEPLOYER) err-not-deployer)
+    (asserts! (<= new-fee-rate u2000) err-invalid-amount)  ;; Up to 20%
+    (var-set fee-rate new-fee-rate)
+    (ok true)))</code></pre>
+  <p><strong>Impact:</strong> Users who deposited under one fee regime may have their funds subject to significantly higher fees. Combined with treasury redirect, this is a rug vector.</p>
+  <p><strong>Recommendation:</strong></p>
+  <ul>
+    <li>Add timelock (e.g., 144 blocks) before fee changes take effect</li>
+    <li>Emit events for all admin changes (see L-02)</li>
+    <li>Consider snapshot-based fees: lock fee rate at game creation time</li>
+  </ul>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-01: No draw resolution mechanism</h3>
+  <p><strong>Location:</strong> <code>resolve-game</code></p>
+  <p><strong>Description:</strong> Games can only be resolved with a winner or cancelled. There is no draw mechanism that returns full wagers without charging fees. If a game ends in a draw, the only option is <code>cancel-game</code> which charges <code>withdraw-fee-rate</code> to both players.</p>
+  <p><strong>Impact:</strong> Players lose funds to fees on legitimate draws. For games with frequent draws, this creates an unfair cost.</p>
+  <p><strong>Recommendation:</strong> Add a <code>draw-game</code> function that returns full wagers with no fee, callable by oracle only.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <h3><span class="severity low">LOW</span> L-02: Admin functions lack event emission</h3>
+  <p><strong>Location:</strong> <code>set-oracle</code>, <code>set-fee-rate</code>, <code>set-withdraw-fee-rate</code>, <code>set-treasury</code></p>
+  <p><strong>Description:</strong> All admin configuration changes execute silently with no <code>print</code> events. This makes it difficult for users and monitoring systems to detect changes to critical parameters like oracle address, fee rates, and treasury.</p>
+  <p><strong>Impact:</strong> Reduced transparency. Fee changes or oracle swaps could go unnoticed by users.</p>
+  <p><strong>Recommendation:</strong> Add <code>(print { event: "oracle-updated", ... })</code> to all admin functions, consistent with existing event patterns in <code>deposit</code>, <code>withdraw</code>, etc.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-01: Double fee on winning — wager fee + withdrawal fee</h3>
+  <p><strong>Location:</strong> <code>resolve-game</code>, <code>withdraw</code></p>
+  <p><strong>Description:</strong> When a game is resolved, the winner's payout already has the wager fee deducted (up to 5% of pot). When the winner later withdraws, they pay an additional withdrawal fee (up to 1%). This results in a cumulative fee that may not be obvious to users.</p>
+  <p><strong>Impact:</strong> At default rates: 5% wager fee + 1% withdrawal fee = ~5.95% effective fee. At maximum rates: 20% + 10% = ~28% effective fee.</p>
+  <p><strong>Recommendation:</strong> Clearly document the fee structure for users. Consider waiving withdrawal fees on game payouts.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <h3><span class="severity info">INFO</span> I-02: Deposit to arbitrary pubkey without ownership proof</h3>
+  <p><strong>Location:</strong> <code>deposit</code></p>
+  <p><strong>Description:</strong> Anyone can deposit tokens to any pubkey without proving ownership of that pubkey. While likely by design (allowing deposits on behalf of others), this means an attacker could create many small deposits to arbitrary pubkeys, polluting the state.</p>
+  <p><strong>Impact:</strong> Minimal — state pollution only. The funds are still accessible by the pubkey owner.</p>
+  <p><strong>Recommendation:</strong> Consider minimum deposit amounts or requiring signature auth for deposits (similar to the <code>build-wager-deposit-hash</code> that exists in auth-v7 but is unused in game-wager-v1).</p>
+</div>
+
+<h2>Documented Limitations</h2>
+<ul>
+  <li>The system is inherently custodial — all token balances are held by the contract</li>
+  <li>Oracle trust is a fundamental design assumption — users must trust the game server to report honest outcomes</li>
+  <li>auth-v7 is hardcoded to this specific contract deployment — not upgradeable</li>
+</ul>
+
+<h2>auth-v7 Review</h2>
+<p>The companion contract <code>SP28MP1HQDJWQAFSQJN2HBAXBVP7H7THD1W2NYZVK.auth-v7</code> was reviewed for signature security:</p>
+<ul>
+  <li>✅ Uses SIP-018 structured data prefix (<code>0x534950303138</code>)</li>
+  <li>✅ Domain hash includes <code>chain-id</code> and the specific contract principal — prevents cross-chain and cross-contract replay</li>
+  <li>✅ Each message type includes a <code>topic</code> field — prevents cross-function replay</li>
+  <li>✅ <code>auth-id</code> in every message provides a nonce mechanism (combined with <code>used-signatures</code> map in game-wager-v1)</li>
+  <li>ℹ️ Note: auth-v7 has an unused <code>build-wager-deposit-hash</code> function, suggesting a planned signed-deposit feature not yet implemented</li>
+</ul>
+
+<footer>
+  <p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="/clarity-audit/">Full audit portfolio</a></p>
+</footer>
+
+</body>
+</html>
