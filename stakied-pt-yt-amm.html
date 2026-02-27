@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Stakied PT/YT AMM — cocoa007.btc</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:900px;margin:0 auto;padding:2rem;background:#0d1117;color:#c9d1d9;line-height:1.6}
+h1{color:#58a6ff;border-bottom:1px solid #30363d;padding-bottom:.5rem}
+h2{color:#79c0ff;margin-top:2rem}
+h3{color:#d2a8ff}
+.finding{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.5rem;margin:1rem 0}
+.critical{border-left:4px solid #f85149}
+.high{border-left:4px solid #f0883e}
+.medium{border-left:4px solid #d29922}
+.low{border-left:4px solid #3fb950}
+.info{border-left:4px solid #58a6ff}
+.severity{font-weight:bold;text-transform:uppercase;font-size:.85rem;letter-spacing:.05em}
+.severity.critical-text{color:#f85149}
+.severity.high-text{color:#f0883e}
+.severity.medium-text{color:#d29922}
+.severity.low-text{color:#3fb950}
+.severity.info-text{color:#58a6ff}
+code{background:#1f2937;padding:.15rem .4rem;border-radius:4px;font-size:.9em}
+pre{background:#1f2937;padding:1rem;border-radius:8px;overflow-x:auto}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #30363d;padding:.5rem 1rem;text-align:left}
+th{background:#161b22}
+a{color:#58a6ff}
+.meta{color:#8b949e;font-size:.9rem}
+.summary-table td:first-child{font-weight:bold}
+</style>
+</head>
+<body>
+<h1>🔍 Security Audit: Stakied PT/YT AMM</h1>
+<p class="meta">
+<strong>Date:</strong> 2026-02-27 &nbsp;|&nbsp;
+<strong>Auditor:</strong> cocoa007.btc &nbsp;|&nbsp;
+<strong>Confidence:</strong> Medium
+</p>
+<p class="meta">
+<strong>Source:</strong> <a href="https://github.com/Yusufolosun/stakied">github.com/Yusufolosun/stakied</a> &nbsp;|&nbsp;
+<strong>Commit:</strong> <code>7f19f1e</code> &nbsp;|&nbsp;
+<strong>Contract:</strong> stakied-pt-yt-amm.clar (441 lines)
+</p>
+
+<h2>Overview</h2>
+<p>Stakied is a yield tokenization protocol for Stacks, inspired by Pendle Finance. The AMM contract enables trading Principal Tokens (PT) against Standardized Yield (SY) tokens. The protocol splits yield-bearing assets into PT (fixed yield) and YT (variable yield), with this AMM providing PT/SY trading liquidity.</p>
+
+<h2>Findings Summary</h2>
+<table class="summary-table">
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="severity critical-text">Critical</span></td><td>0</td></tr>
+<tr><td><span class="severity high-text">High</span></td><td>1</td></tr>
+<tr><td><span class="severity medium-text">Medium</span></td><td>3</td></tr>
+<tr><td><span class="severity low-text">Low</span></td><td>3</td></tr>
+<tr><td><span class="severity info-text">Informational</span></td><td>3</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding high">
+<h3>H-01: Time-Decay Curve Not Applied to Swap Pricing</h3>
+<p><span class="severity high-text">HIGH</span> &nbsp;|&nbsp; <code>swap-pt-for-sy</code>, <code>swap-sy-for-pt</code></p>
+<p>The contract advertises a "Time-Decay Curve" AMM but swap functions use a standard constant-product (x·y=k) formula with no time-weighting. The <code>calculate-time-factor</code> function exists as read-only but is never referenced in any swap calculation.</p>
+<p>In a yield tokenization AMM (like Pendle), the pricing curve must incorporate time-to-maturity so that PT price converges to 1:1 with SY at maturity. Without this, the AMM fails at its core purpose.</p>
+<pre><code>;; Swap formula used (standard constant-product, no time factor):
+(sy-out (/ (* sy-reserve pt-after-fee) (+ pt-reserve pt-after-fee)))</code></pre>
+<p><strong>Impact:</strong> PT will not converge to face value at maturity. The AMM functions as a generic constant-product DEX, not a yield tokenization AMM. Users trading near maturity get incorrect prices.</p>
+<p><strong>Recommendation:</strong> Implement a time-weighted invariant curve. Apply <code>calculate-time-factor</code> to bias pricing toward 1:1 as maturity approaches (e.g., Pendle-style <code>x^(1-t) + y^(1-t) = k</code>).</p>
+</div>
+
+<div class="finding medium">
+<h3>M-01: No Maturity Validation in Pool Initialization</h3>
+<p><span class="severity medium-text">MEDIUM</span> &nbsp;|&nbsp; <code>initialize-pool</code></p>
+<p>The function does not validate that <code>maturity &gt; block-height</code>. Pools can be created for already-passed maturities.</p>
+<pre><code>;; Missing check:
+;; (asserts! (&gt; maturity block-height) err-invalid-maturity)</code></pre>
+<p><strong>Impact:</strong> Expired-maturity pools waste gas and clutter state. If PT tokens for that maturity exist, trades occur that shouldn't.</p>
+<p><strong>Recommendation:</strong> Add <code>(asserts! (&gt; maturity block-height) err-invalid-maturity)</code>.</p>
+</div>
+
+<div class="finding medium">
+<h3>M-02: Dead Pool After Full Liquidity Removal</h3>
+<p><span class="severity medium-text">MEDIUM</span> &nbsp;|&nbsp; <code>remove-liquidity</code>, <code>initialize-pool</code></p>
+<p>When all liquidity is removed, the pool entry persists with zero reserves/LP. Re-initialization is blocked by <code>is-none</code> check. <code>add-liquidity</code> would divide by zero (<code>total-lp = 0</code>), making the pool permanently unusable.</p>
+<p><strong>Impact:</strong> Maturity slots permanently locked after full withdrawal.</p>
+<p><strong>Recommendation:</strong> Delete pool entry when <code>total-lp-supply</code> reaches 0, or allow re-initialization when reserves are zero.</p>
+</div>
+
+<div class="finding medium">
+<h3>M-03: Uses <code>as-contract</code> Instead of Clarity 4 <code>as-contract?</code></h3>
+<p><span class="severity medium-text">MEDIUM</span> &nbsp;|&nbsp; Throughout contract</p>
+<p>The contract uses pre-Clarity 4 <code>as-contract</code> which grants blanket asset access. Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances is strictly safer.</p>
+<p><strong>Impact:</strong> A malicious token contract called under <code>as-contract</code> scope could drain any assets held by the AMM.</p>
+<p><strong>Recommendation:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances.</p>
+</div>
+
+<div class="finding low">
+<h3>L-01: LP Tokens Not Transferable</h3>
+<p><span class="severity low-text">LOW</span> &nbsp;|&nbsp; <code>lp-balances</code> map</p>
+<p>LP positions stored in a map with no transfer function. Holders cannot sell, transfer, or compose positions.</p>
+<p><strong>Recommendation:</strong> Add a <code>transfer-lp</code> function.</p>
+</div>
+
+<div class="finding low">
+<h3>L-02: No Post-Maturity Pool Settlement</h3>
+<p><span class="severity low-text">LOW</span> &nbsp;|&nbsp; Entire contract</p>
+<p>After maturity, swaps continue with constant-product pricing. No mechanism converts PT reserves to SY or settles the pool.</p>
+<p><strong>Recommendation:</strong> Add a <code>settle-pool</code> function that redeems PT→SY after maturity.</p>
+</div>
+
+<div class="finding low">
+<h3>L-03: Oracle Contract Not Integrated</h3>
+<p><span class="severity low-text">LOW</span> &nbsp;|&nbsp; Entire contract</p>
+<p>The <code>stakied-oracle</code> contract exists but the AMM never references it. No price bounds or manipulation protection.</p>
+<p><strong>Recommendation:</strong> Integrate oracle price bounds as a circuit breaker for swaps.</p>
+</div>
+
+<div class="finding info">
+<h3>I-01: Time Factor Uses Genesis-Relative Calculation</h3>
+<p><span class="severity info-text">INFORMATIONAL</span> &nbsp;|&nbsp; <code>calculate-time-factor</code></p>
+<p>Computes <code>block-height / maturity</code> — progress from genesis rather than pool creation time.</p>
+</div>
+
+<div class="finding info">
+<h3>I-02: sqrt-i Limited to 8 Iterations</h3>
+<p><span class="severity info-text">INFORMATIONAL</span> &nbsp;|&nbsp; <code>sqrt-i</code></p>
+<p>Newton's method with 8 unrolled iterations. Adequate for realistic AMM values but may not converge for values near uint max (~2^128).</p>
+</div>
+
+<div class="finding info">
+<h3>I-03: No Access Control on Pool Initialization</h3>
+<p><span class="severity info-text">INFORMATIONAL</span> &nbsp;|&nbsp; <code>initialize-pool</code></p>
+<p>Anyone can create pools for any maturity and set initial price ratios. A malicious actor could front-run legitimate pool creation with a skewed ratio.</p>
+</div>
+
+<h2>Top Recommendations</h2>
+<ol>
+<li><strong>Implement time-weighted swap curve</strong> (H-01) — Core value proposition of a yield tokenization AMM.</li>
+<li><strong>Add maturity validation and dead pool recovery</strong> (M-01 + M-02) — Prevent expired pools and handle edge cases.</li>
+<li><strong>Migrate to Clarity 4</strong> (M-03) — Use <code>as-contract?</code> for defense-in-depth.</li>
+</ol>
+
+<hr>
+<p class="meta">Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> — <a href="https://cocoa007.github.io/clarity-audit">Full audit portfolio</a></p>
+</body>
+</html>

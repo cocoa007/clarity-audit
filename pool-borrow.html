@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Audit: Zest Protocol pool-borrow — cocoa007.btc</title>
+<style>
+  :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --heading: #f0f6fc; --link: #58a6ff; --critical: #f85149; --high: #db6d28; --medium: #d29922; --low: #3fb950; --info: #8b949e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 960px; margin: 0 auto; }
+  h1, h2, h3 { color: var(--heading); margin-top: 1.5rem; }
+  h1 { font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h2 { font-size: 1.4rem; margin-top: 2rem; }
+  h3 { font-size: 1.1rem; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .severity { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; color: #fff; }
+  .severity.critical { background: var(--critical); }
+  .severity.high { background: var(--high); }
+  .severity.medium { background: var(--medium); }
+  .severity.low { background: var(--low); color: #000; }
+  .severity.info { background: var(--info); }
+  pre { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; font-size: 0.85rem; margin: 0.5rem 0; }
+  code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 0.9em; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--heading); }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .summary-item { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; text-align: center; }
+  .summary-item .count { font-size: 2rem; font-weight: bold; color: var(--heading); }
+  .toc { list-style: none; padding: 0; }
+  .toc li { padding: 0.25rem 0; }
+  .meta { color: var(--info); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<h1>🔒 Security Audit: Zest Protocol <code>pool-borrow</code></h1>
+
+<div class="card">
+  <p><strong>Contract:</strong> <code>Zest-Protocol/zest-contracts — onchain/contracts/borrow/production/pool/pool-borrow.clar</code></p>
+  <p><strong>Source:</strong> <a href="https://github.com/Zest-Protocol/zest-contracts/tree/3564bc3">GitHub @ 3564bc3</a></p>
+  <p><strong>Clarity Version:</strong> 2 (epoch 2.4) — <span style="color: var(--medium);">pre-Clarity 4, -0.5 penalty applied</span></p>
+  <p><strong>Lines of Code:</strong> 998</p>
+  <p><strong>Audit Date:</strong> 2026-02-26</p>
+  <p><strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007.btc</a></p>
+  <p><strong>Confidence:</strong> Medium — single-contract review, multi-contract dependencies not fully traceable on-chain</p>
+  <p class="meta"><strong>Note:</strong> The provided contract address <code>SP2VCQJHN7SP2CZCE5AM8GSKA5RYKNXVHX3DKJZPS.pool-borrow</code> failed to resolve on Hiro API. Audit performed against the production source in the GitHub repository.</p>
+</div>
+
+<h2>Priority Score</h2>
+<div class="card">
+<table>
+  <tr><th>Metric</th><th>Weight</th><th>Score</th><th>Rationale</th></tr>
+  <tr><td>Financial risk</td><td>3</td><td>3</td><td>DeFi lending — holds and transfers user funds</td></tr>
+  <tr><td>Deployment likelihood</td><td>2</td><td>3</td><td>Deployed on mainnet (Zest Protocol is live)</td></tr>
+  <tr><td>Code complexity</td><td>2</td><td>3</td><td>998 lines, multi-contract system (oracles, reserves, liquidation)</td></tr>
+  <tr><td>User exposure</td><td>1.5</td><td>3</td><td>Known DeFi project on Stacks with significant TVL</td></tr>
+  <tr><td>Novelty</td><td>1.5</td><td>2</td><td>Aave-style lending on Clarity — novel implementation</td></tr>
+</table>
+<p><strong>Score: (9+6+6+4.5+3)/10 = 2.85</strong> (Clarity v2 penalty: 2.85 − 0.5 = <strong>2.35</strong>) ✅ Above 1.8 threshold</p>
+</div>
+
+<h2>Executive Summary</h2>
+<div class="card">
+<p>The <code>pool-borrow</code> contract is the core entry point for Zest Protocol's lending system, implementing supply, withdraw, borrow, repay, liquidation, flash loans, and e-mode functionality — closely modeled on Aave v3. The contract delegates most state management and calculations to <code>pool-0-reserve-v2-0</code> and related data contracts.</p>
+<p>The audit identified <strong>0 Critical</strong>, <strong>2 High</strong>, <strong>3 Medium</strong>, <strong>2 Low</strong>, and <strong>3 Informational</strong> findings. The most significant issues relate to flash loan repayment not being atomically enforced and the use of pre-Clarity 4 <code>as-contract</code> patterns in the broader system.</p>
+</div>
+
+<h2>Findings Summary</h2>
+<div class="summary-grid">
+  <div class="summary-item"><div class="count" style="color:var(--critical)">0</div>Critical</div>
+  <div class="summary-item"><div class="count" style="color:var(--high)">2</div>High</div>
+  <div class="summary-item"><div class="count" style="color:var(--medium)">3</div>Medium</div>
+  <div class="summary-item"><div class="count" style="color:var(--low)">2</div>Low</div>
+  <div class="summary-item"><div class="count" style="color:var(--info)">3</div>Informational</div>
+</div>
+
+<h2>Table of Contents</h2>
+<ul class="toc">
+  <li><a href="#H-01">H-01: Flash Loan Two-Step Design Allows Non-Atomic Execution</a></li>
+  <li><a href="#H-02">H-02: Approved-Contract Gate Is Sole Access Control for All Core Operations</a></li>
+  <li><a href="#M-01">M-01: Oracle Validation Only Checks Contract Address, Not Response Freshness</a></li>
+  <li><a href="#M-02">M-02: Flash Loan Fee Can Round to Zero for Small Amounts</a></li>
+  <li><a href="#M-03">M-03: Liquidation Does Not Verify Caller Identity (Permissionless via Approved Contract)</a></li>
+  <li><a href="#L-01">L-01: User ID Map Allows Duplicate Entries Per User</a></li>
+  <li><a href="#L-02">L-02: set-reserve Allows Full Reserve State Override</a></li>
+  <li><a href="#I-01">I-01: Pre-Clarity 4 — Uses as-contract in Downstream Contracts</a></li>
+  <li><a href="#I-02">I-02: Interest Rate Logic Fully Delegated — Not Auditable From This Contract</a></li>
+  <li><a href="#I-03">I-03: No Reentrancy Risk in Clarity</a></li>
+</ul>
+
+<!-- H-01 -->
+<div class="card" id="H-01">
+<h3><span class="severity high">HIGH</span> H-01: Flash Loan Two-Step Design Allows Non-Atomic Execution</h3>
+<p><strong>Location:</strong> <code>flashloan-liquidation-step-1</code> (line ~465) and <code>flashloan-liquidation-step-2</code> (line ~487)</p>
+<p><strong>Description:</strong> Flash loans are split into two separate public functions: step-1 transfers funds out, and step-2 expects repayment + fees. Unlike Aave's flash loan (which is a single atomic callback), there is no enforcement within this contract that step-2 is ever called, or called in the same transaction as step-1. The repayment enforcement depends entirely on the approved contract (caller) orchestrating the sequence correctly.</p>
+<pre><code>;; Step 1 — sends funds out, no repayment check
+(define-public (flashloan-liquidation-step-1 ...)
+  ...
+  (try! (contract-call? .pool-0-reserve-v2-0 transfer-to-user asset receiver amount))
+  (ok u0))
+
+;; Step 2 — expects funds back, but is a separate call
+(define-public (flashloan-liquidation-step-2 ...)
+  ...
+  (try! (contract-call? asset transfer (+ amount amount-fee) receiver .pool-vault none))
+  ...)</code></pre>
+<p><strong>Impact:</strong> If an approved contract calls step-1 but fails to call step-2 (due to a bug or malicious design), pool funds are drained without repayment. The security of flash loans rests entirely on the correctness of approved caller contracts.</p>
+<p><strong>Recommendation:</strong> Implement a single-function flash loan that: (1) records pre-balance, (2) transfers funds, (3) calls the borrower's callback, (4) verifies post-balance ≥ pre-balance + fees — all atomically. Alternatively, add a guard in step-1 that marks a pending flash loan and requires step-2 to clear it within the same block.</p>
+</div>
+
+<!-- H-02 -->
+<div class="card" id="H-02">
+<h3><span class="severity high">HIGH</span> H-02: Approved-Contract Gate Is Sole Access Control for All Core Operations</h3>
+<p><strong>Location:</strong> <code>is-approved-contract</code> (line ~998), used in supply, withdraw, borrow, repay, liquidation-call, flashloan, set-e-mode, set-user-use-reserve-as-collateral</p>
+<p><strong>Description:</strong> Every major operation checks <code>(try! (is-approved-contract contract-caller))</code>. This means the entire protocol's security depends on the <code>approved-contracts</code> map managed by the configurator. If the configurator approves a malicious or buggy contract, all user funds are at risk. The configurator itself is a single principal set at deploy time with no timelock, multisig, or governance vote.</p>
+<pre><code>(define-data-var configurator principal tx-sender)
+
+(define-public (set-approved-contract (contract principal) (enabled bool))
+  (begin
+    (asserts! (is-configurator tx-sender) ERR_UNAUTHORIZED)
+    (ok (map-set approved-contracts contract enabled))))</code></pre>
+<p><strong>Impact:</strong> Single point of failure. Configurator compromise = total fund loss. No timelock means malicious contracts can be approved and exploited in one block.</p>
+<p><strong>Recommendation:</strong> (1) Add a timelock to <code>set-approved-contract</code> requiring a delay before activation. (2) Use a multisig or governance contract as the configurator. (3) Consider an emergency pause mechanism separate from the configurator.</p>
+</div>
+
+<!-- M-01 -->
+<div class="card" id="M-01">
+<h3><span class="severity medium">MEDIUM</span> M-01: Oracle Validation Only Checks Contract Address, Not Response Freshness</h3>
+<p><strong>Location:</strong> borrow (line ~180), withdraw (line ~126), liquidation-call (line ~305)</p>
+<p><strong>Description:</strong> The contract validates that the oracle passed matches the stored oracle address (<code>asserts! (is-eq (contract-of oracle) (get oracle reserve-state))</code>), but never validates oracle response freshness (staleness), confidence intervals, or error conditions. Price freshness must be enforced inside each oracle implementation.</p>
+<pre><code>(asserts! (is-eq (contract-of oracle) (get oracle reserve-state)) ERR_INVALID_ORACLE)
+;; No staleness check on oracle.get-asset-price result</code></pre>
+<p><strong>Impact:</strong> If an oracle returns stale or manipulated prices, users could borrow against inflated collateral or avoid liquidation. This risk is mitigated if individual oracle contracts enforce freshness, but pool-borrow has no defense if they don't.</p>
+<p><strong>Recommendation:</strong> Add a staleness/confidence check at the pool-borrow level, or document and enforce that all oracle implementations must revert on stale data. Consider adding a max-price-age parameter to reserve configuration.</p>
+</div>
+
+<!-- M-02 -->
+<div class="card" id="M-02">
+<h3><span class="severity medium">MEDIUM</span> M-02: Flash Loan Fee Can Round to Zero for Small Amounts</h3>
+<p><strong>Location:</strong> <code>flashloan-liquidation-step-1</code> and <code>flashloan-liquidation-step-2</code></p>
+<p><strong>Description:</strong> Flash loan fees use integer division: <code>(/ (* amount total-fee-bps) u10000)</code>. For small amounts, this rounds down to zero. The contract checks <code>(and (> amount-fee u0) (> protocol-fee u0))</code> which prevents zero-fee flash loans — but this means small flash loans are completely blocked rather than charging a minimum fee.</p>
+<pre><code>(amount-fee (/ (* amount total-fee-bps) u10000))
+(protocol-fee (/ (* amount-fee protocol-fee-bps) u10000))
+...
+(asserts! (and (> amount-fee u0) (> protocol-fee u0)) ERR_NOT_ZERO)</code></pre>
+<p><strong>Impact:</strong> Small flash loans are blocked entirely. The <code>protocol-fee</code> rounds down even more aggressively (fee of a fee). For example, if total-fee-bps=9 and protocol-fee-bps=1000, an amount of 1111 gives amount-fee=0, blocking the loan.</p>
+<p><strong>Recommendation:</strong> Add a minimum fee: <code>(max u1 (/ (* amount total-fee-bps) u10000))</code>. Alternatively, document that flash loans have a minimum amount threshold.</p>
+</div>
+
+<!-- M-03 -->
+<div class="card" id="M-03">
+<h3><span class="severity medium">MEDIUM</span> M-03: Liquidation Does Not Verify Caller Identity Beyond Approved Contract</h3>
+<p><strong>Location:</strong> <code>liquidation-call</code> (line ~305)</p>
+<p><strong>Description:</strong> Unlike supply/withdraw/borrow/repay which check <code>(is-eq tx-sender owner)</code> or <code>(is-eq payer tx-sender)</code>, the <code>liquidation-call</code> function has no tx-sender check. Any user calling through an approved contract can liquidate any undercollateralized position. This is likely intentional (permissionless liquidation is standard in Aave-style protocols), but it means liquidation bot behavior is entirely controlled by the approved contract and the liquidation-manager.</p>
+<p><strong>Impact:</strong> Liquidation correctness (health factor check, bonus caps, etc.) is entirely in <code>liquidation-manager-v2-1</code>, which is outside this contract's scope. If the liquidation manager has bugs, this contract provides no additional safety checks.</p>
+<p><strong>Recommendation:</strong> Add a health-factor pre-check in pool-borrow before delegating to liquidation-manager, as a defense-in-depth measure. Document that liquidation is intentionally permissionless.</p>
+</div>
+
+<!-- L-01 -->
+<div class="card" id="L-01">
+<h3><span class="severity low">LOW</span> L-01: User ID Map Allows Duplicate Entries Per User</h3>
+<p><strong>Location:</strong> <code>supply</code> function (line ~70)</p>
+<p><strong>Description:</strong> Every supply call executes <code>(map-insert users-id (var-get last-user-id) owner)</code> and increments the counter. <code>map-insert</code> only fails silently if the key exists, but the key is always a fresh incrementing ID — so a user who supplies multiple times gets multiple entries.</p>
+<pre><code>(map-insert users-id (var-get last-user-id) owner)
+(var-set last-user-id (+ u1 (var-get last-user-id)))</code></pre>
+<p><strong>Impact:</strong> The <code>users-id</code> map grows unboundedly and contains duplicate user entries. While this doesn't affect core protocol logic, any off-chain indexer relying on this map for unique user enumeration will get inflated counts.</p>
+<p><strong>Recommendation:</strong> Track whether a user has been registered before (e.g., a <code>user-registered</code> map) and only insert on first supply.</p>
+</div>
+
+<!-- L-02 -->
+<div class="card" id="L-02">
+<h3><span class="severity low">LOW</span> L-02: set-reserve Allows Full Reserve State Override</h3>
+<p><strong>Location:</strong> <code>set-reserve</code> (line ~815)</p>
+<p><strong>Description:</strong> The configurator can call <code>set-reserve</code> to replace the entire reserve state tuple for any asset, including critical accounting fields like <code>total-borrows-variable</code>, <code>last-liquidity-cumulative-index</code>, and <code>accrued-to-treasury</code>. This allows the configurator to silently manipulate protocol accounting.</p>
+<p><strong>Impact:</strong> A compromised configurator could zero out borrows, manipulate interest indices, or inflate treasury accruals. While the configurator is already trusted, this function provides more power than typical admin functions need.</p>
+<p><strong>Recommendation:</strong> Split into parameter-specific setters (like <code>set-borrowing-enabled</code> already exists) and restrict <code>set-reserve</code> to emergency-only usage, ideally behind a timelock.</p>
+</div>
+
+<!-- I-01 -->
+<div class="card" id="I-01">
+<h3><span class="severity info">INFO</span> I-01: Pre-Clarity 4 — Downstream Contracts Use <code>as-contract</code></h3>
+<p><strong>Description:</strong> The contract is Clarity v2. The broader system (pool-0-reserve-v2-0, pool-vault, z-tokens) likely uses <code>as-contract</code> for fund transfers, which provides blanket asset access. Clarity 4's <code>as-contract?</code> with explicit allowances (<code>with-stx</code>, <code>with-ft</code>) would be strictly safer.</p>
+<p><strong>Recommendation:</strong> When upgrading, migrate to Clarity 4 and use <code>as-contract?</code> with explicit asset allowances to limit the blast radius of any contract-level exploit.</p>
+</div>
+
+<!-- I-02 -->
+<div class="card" id="I-02">
+<h3><span class="severity info">INFO</span> I-02: Interest Rate Logic Fully Delegated</h3>
+<p><strong>Description:</strong> All interest rate calculations, index updates, and balance compounding are delegated to <code>pool-0-reserve-v2-0</code> and the interest-rate-strategy contracts. This contract trusts their outputs completely. A full audit would need to cover those contracts to verify interest accrual correctness.</p>
+<p><strong>Recommendation:</strong> Audit <code>pool-0-reserve-v2-0</code>, <code>math-v2-0</code>, and the interest rate strategy contracts as a follow-up.</p>
+</div>
+
+<!-- I-03 -->
+<div class="card" id="I-03">
+<h3><span class="severity info">INFO</span> I-03: No Reentrancy Risk in Clarity</h3>
+<p><strong>Description:</strong> Clarity prevents reentrancy by design — dynamic dispatch is restricted and a contract cannot call back into itself during execution. The Aave-style flash loan reentrancy risk (a major concern in Solidity) does not apply here.</p>
+</div>
+
+<h2>Access Control Summary</h2>
+<div class="card">
+<table>
+  <tr><th>Function</th><th>tx-sender check</th><th>contract-caller check</th><th>Notes</th></tr>
+  <tr><td>supply</td><td>✅ owner == tx-sender</td><td>✅ approved-contract</td><td></td></tr>
+  <tr><td>withdraw</td><td>✅ owner == tx-sender</td><td>✅ approved-contract</td><td></td></tr>
+  <tr><td>borrow</td><td>✅ owner == tx-sender</td><td>✅ approved-contract</td><td></td></tr>
+  <tr><td>repay</td><td>✅ payer == tx-sender</td><td>✅ approved-contract</td><td>Allows repay on behalf of others</td></tr>
+  <tr><td>liquidation-call</td><td>❌ none</td><td>✅ approved-contract</td><td>Permissionless (standard for lending)</td></tr>
+  <tr><td>flashloan-*</td><td>❌ none</td><td>✅ approved-contract</td><td>Relies on approved contract for atomicity</td></tr>
+  <tr><td>set-e-mode</td><td>✅ user == tx-sender</td><td>✅ approved-contract</td><td></td></tr>
+  <tr><td>set-user-use-reserve-as-collateral</td><td>✅ who == tx-sender</td><td>✅ approved-contract</td><td></td></tr>
+  <tr><td>Admin functions (init, set-reserve, etc.)</td><td>✅ configurator</td><td>❌ not checked</td><td>Single-admin pattern</td></tr>
+</table>
+</div>
+
+<h2>Oracle Dependencies</h2>
+<div class="card">
+<p>The contract accepts oracles as trait parameters and validates them against stored oracle addresses per reserve. Oracle contracts in the repo include implementations for: Pyth, stSTX, sBTC, aeUSDC, DIKO, USDA, USDH, sUSDT, ALEX, and STX-BTC price feeds.</p>
+<p>Price feeds are critical for: borrow collateral checks, withdrawal balance-decrease validation, liquidation eligibility, and isolated mode debt ceiling enforcement.</p>
+<p><strong>Risk:</strong> All price-dependent operations trust the oracle output without freshness checks at this layer. See M-01.</p>
+</div>
+
+<h2>Documented Limitations</h2>
+<div class="card">
+<ul>
+  <li>This is an Aave v3–style lending protocol ported to Clarity. Many design decisions mirror Aave intentionally.</li>
+  <li>The configurator (deployer) has broad administrative powers — this is standard for DeFi protocols in their early stages but represents centralization risk.</li>
+  <li>Multi-contract system: this audit covers only <code>pool-borrow</code>. Full security assessment requires auditing pool-0-reserve-v2-0, liquidation-manager-v2-1, math-v2-0, all oracle implementations, and z-token contracts.</li>
+</ul>
+</div>
+
+<h2>Recommendations (Priority Order)</h2>
+<div class="card">
+<ol>
+  <li><strong>Redesign flash loans to be atomic</strong> — single function with callback pattern and post-balance verification (H-01)</li>
+  <li><strong>Add timelock and multisig to configurator</strong> — protect against single-key compromise (H-02)</li>
+  <li><strong>Add oracle staleness checks</strong> — either at pool-borrow level or enforce via oracle trait requirements (M-01)</li>
+  <li><strong>Migrate to Clarity 4</strong> when available — use <code>as-contract?</code> with explicit asset allowances (I-01)</li>
+  <li><strong>Audit downstream contracts</strong> — pool-0-reserve-v2-0 and liquidation-manager are critical dependencies (I-02)</li>
+</ol>
+</div>
+
+<hr style="margin-top: 2rem; border-color: var(--border);">
+<p class="meta" style="margin-top: 1rem;">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> —
+  <a href="https://cocoa007.github.io/clarity-audit">Full audit portfolio</a>
+</p>
+
+</body>
+</html>

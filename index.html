@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">43</div>
+    <div class="num">44</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">58</div>
+    <div class="num">59</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">399</div>
+    <div class="num">407</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -243,14 +243,14 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
-    <a href="/clarity-audit/charisma-kraqen-lotto.html">Charisma Kraqen Lotto — NFT Lottery</a>
+    <a href="/clarity-audit/ststxbtc-tracking-v2.html">StackingDAO ststxbtc-tracking-v2 — sBTC Reward Tracking</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
   <div class="card-meta">
-    <span class="repo"><a href="https://explorer.hiro.so/txid/SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE.kraqen-lotto?chain=mainnet">SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+    <span class="repo"><a href="https://github.com/StackingDAO/contracts/tree/29dc1e58774e2971497cffb40a5f4f1db653c64b/contracts/core">StackingDAO/contracts @ 29dc1e5</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
   </div>
-  <p class="summary">Charisma ecosystem NFT lottery — users earn energy from EDK quests to mint 1–4 NFTs at 1 STX each, capped at 1,000 total. <strong>High: EDK whitelist check occurs after external call, enabling side-effect exploitation. Medium: zero-mint silently consumes EDK energy; transfer uses tx-sender anti-pattern.</strong> Clean 168-line SIP-009 with DAO governance.</p>
+  <p class="summary">sBTC reward tracking for stSTXbtc holders using cumulative reward-per-token model. <strong>High: division by zero in <code>add-rewards</code> when total supply is zero.</strong> Permissionless claim/save allows forced reward lifecycle for any holder. Pre-Clarity 4 with blanket <code>as-contract</code>.</p>
   <p class="date">February 27, 2026</p>
 </div>
 

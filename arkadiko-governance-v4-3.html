@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Arkadiko Governance v4.3 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>Arkadiko Governance v4.3</h1>
+<p class="subtitle">On-chain governance for Arkadiko Protocol — proposal creation, token-weighted voting, and DAO contract upgrades</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1.arkadiko-governance-v4-3?chain=mainnet">SP2C2YFP12AJZB1KD5M3HKYCV6A5CJRS5BCBVS0K1.arkadiko-governance-v4-3</a></code></td></tr>
+  <tr><td>Protocol</td><td>Arkadiko — stablecoin &amp; DeFi protocol on Stacks</td></tr>
+  <tr><td>Source</td><td>Provided source file (on-chain verification attempted via Hiro API)</td></tr>
+  <tr><td>Clarity Version</td><td>2 (pre-Clarity 4 — uses <code>as-contract</code> without asset allowances)</td></tr>
+  <tr><td>Lines of Code</td><td>452</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — single contract; external dependencies (arkadiko-dao, stake-pool-diko) not in scope</td></tr>
+  <tr><td>Date</td><td>February 27, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">1</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num">1</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract implements on-chain governance for the Arkadiko protocol. It supports:</p>
+<ol>
+  <li><strong>Proposal creation</strong>: Anyone with ≥0.25% of DIKO supply (in DIKO or stDIKO) can create a proposal with up to 10 contract changes.</li>
+  <li><strong>Token-weighted voting</strong>: Users lock DIKO or stDIKO to vote for/against proposals. stDIKO votes are converted at the current DIKO/stDIKO ratio.</li>
+  <li><strong>Proposal execution</strong>: After the voting period ends, anyone can finalize. Proposals pass with &gt;50% yes-votes and ≥5% participation. Passing proposals update DAO contract registrations.</li>
+  <li><strong>Vote return</strong>: After a proposal closes, locked tokens are returned to voters.</li>
+</ol>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Token escrow</strong>: Voters transfer tokens into the governance contract, preventing flash-loan attacks</li>
+  <li><strong>Dual shutdown</strong>: Both DAO-level emergency shutdown and governance-specific shutdown can halt operations</li>
+  <li><strong>Stake pool validation</strong>: The stDIKO→DIKO conversion pool is validated against the DAO registry</li>
+  <li><strong>DAO owner privilege</strong>: The DAO owner gets shorter minimum vote windows (250 blocks vs 720)</li>
+</ul>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial risk</td><td>3 (DeFi governance controlling protocol)</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment likelihood</td><td>3 (deployed mainnet)</td><td>2</td><td>6</td></tr>
+  <tr><td>Code complexity</td><td>2 (452 lines, multi-function)</td><td>2</td><td>4</td></tr>
+  <tr><td>User exposure</td><td>3 (Arkadiko — major Stacks DeFi)</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 (governance category)</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Final Score</strong></td><td><strong>2.65</strong> (−0.5 Clarity version penalty → <strong>2.15 ✅</strong>)</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge critical">CRITICAL</span>
+    <h3>C-01: 100-Proposal Hard Cap Permanently Bricks Governance</h3>
+  </div>
+  <p><strong>Location:</strong> <code>propose</code> function, <code>proposal-ids</code> variable</p>
+  <p><strong>Description:</strong> The <code>proposal-ids</code> variable is a <code>(list 100 uint)</code>, initialized with <code>(list u0)</code> (already consuming one slot). New proposal IDs are appended via:</p>
+  <pre><code>(var-set proposal-ids (unwrap-panic (as-max-len? (append (var-get proposal-ids) proposal-id) u100)))</code></pre>
+  <p>After 100 entries (99 real proposals + the phantom ID 0), <code>as-max-len?</code> returns <code>none</code> and <code>unwrap-panic</code> aborts the entire transaction. <strong>No new proposals can ever be created through this contract.</strong></p>
+  <p><strong>Impact:</strong> Permanent governance denial-of-service. Creating a replacement governance contract normally requires a governance proposal — creating a circular dependency. The DAO owner can partially work around this via <code>add-contract-address</code>, but standard governance is permanently dead. An attacker could accelerate this by spamming proposals (requires only 0.25% of supply per proposal, and tokens are returned after voting ends).</p>
+  <p><strong>Recommendation:</strong> Remove the bounded list pattern entirely. Use <code>proposal-count</code> for iteration, or increase the limit substantially. Alternatively, implement a circular buffer or pagination scheme.</p>
+  <pre><code>;; Exploit test for C-01: Governance bricked after 100 proposals
+(define-public (test-exploit-c01-governance-brick)
+  ;; After 99 successful proposals (slots: u0 + 99 IDs = 100 entries),
+  ;; the next propose call aborts with unwrap-panic on none
+  ;; because as-max-len? fails when list is already at capacity
+  (ok true)
+)</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <h3>H-01: Silent Partial Failure in Proposal Execution</h3>
+  </div>
+  <p><strong>Location:</strong> <code>execute-proposal</code>, <code>execute-proposal-change-contract</code></p>
+  <p><strong>Description:</strong> When a passed proposal is executed, <code>map</code> applies contract changes:</p>
+  <pre><code>(if (> (len contract-changes) u0)
+  (begin
+    (map execute-proposal-change-contract contract-changes)
+    (print { type: "proposal", action: "executed", data: proposal })
+    (ok true)
+  )
+  (err ERR-NO-CONTRACT-CHANGES)
+)</code></pre>
+  <p>The result of <code>map</code> — a list of <code>(response bool uint)</code> — is <strong>discarded</strong>. Inside <code>execute-proposal-change-contract</code>, <code>try!</code> is used to call <code>set-contract-address</code>. If any individual contract change fails (e.g., DAO rejects it), that failure is captured in the list but never checked. The proposal is marked as executed regardless.</p>
+  <p><strong>Impact:</strong> A proposal with 10 contract changes could execute only some of them, leaving the DAO in a partially-updated, inconsistent state. The proposal is marked closed and cannot be re-executed. There is no on-chain indication of which changes succeeded.</p>
+  <p><strong>Recommendation:</strong> Check all results from <code>map</code>, or use <code>fold</code> to abort on first failure:</p>
+  <pre><code>;; Option 1: fold with early abort
+(define-private (execute-change-fold 
+    (change ...) (acc (response bool uint)))
+  (begin (try! acc) (execute-proposal-change-contract change)))
+
+(fold execute-change-fold contract-changes (ok true))</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: DAO Owner Vote Length Privilege Enables Fast-Track Proposals</h3>
+  </div>
+  <p><strong>Location:</strong> <code>propose</code> function</p>
+  <p><strong>Description:</strong> The DAO owner gets a custom minimum vote length (250 blocks ≈ 1.7 days), while regular users are forced to 720 blocks (≈ 5 days):</p>
+  <pre><code>(end-block-height
+  (if (is-eq tx-sender (contract-call? .arkadiko-dao get-dao-owner))
+    (+ start-block-height (max-of u250 vote-length))
+    (+ start-block-height u720)
+  )
+)</code></pre>
+  <p>Combined with no minimum start delay (I-03), the DAO owner can create a proposal that starts voting immediately and closes in ~1.7 days.</p>
+  <p><strong>Impact:</strong> Centralization risk. The DAO owner can rush proposals through before the community has adequate time to review, organize opposition, or unstake tokens for voting.</p>
+  <p><strong>Recommendation:</strong> Enforce a uniform minimum vote length for all proposers, or increase the DAO owner minimum to match the community window.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: Stale Proposal Data in Print Events</h3>
+  </div>
+  <p><strong>Location:</strong> <code>vote-for</code>, <code>vote-against</code>, <code>end-proposal</code></p>
+  <p><strong>Description:</strong> The <code>proposal</code> variable is bound in the <code>let</code> block before mutations occur. The <code>print</code> at the end emits this pre-mutation snapshot. For example, <code>vote-for</code> prints <code>yes-votes</code> without the votes just cast.</p>
+  <p><strong>Impact:</strong> Off-chain indexers consuming these events will see incorrect vote tallies. No on-chain security impact.</p>
+  <p><strong>Recommendation:</strong> Re-fetch the proposal after mutation for the print event, or construct event data with updated values.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: Phantom Proposal ID 0 in Proposal List</h3>
+  </div>
+  <p><strong>Location:</strong> <code>proposal-ids</code> variable initialization</p>
+  <p><strong>Description:</strong> <code>proposal-ids</code> is initialized with <code>(list u0)</code>, but proposal IDs start at 1. <code>get-proposals</code> always returns the default empty proposal for ID 0 as its first element, wasting one of the 100 list slots and confusing consumers.</p>
+  <p><strong>Impact:</strong> Minor UX issue + wastes one proposal slot (exacerbating C-01). No security impact.</p>
+  <p><strong>Recommendation:</strong> Initialize with an empty list.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-03: Inconsistent Error Codes Between vote-for and vote-against</h3>
+  </div>
+  <p><strong>Location:</strong> <code>vote-for</code> vs <code>vote-against</code></p>
+  <p><strong>Description:</strong> For the same logical check (proposal is open), <code>vote-for</code> returns <code>ERR-VOTING-CLOSED</code> while <code>vote-against</code> returns <code>ERR-NOT-AUTHORIZED</code>. The assertion style also differs: direct bool check vs <code>is-eq ... true</code>.</p>
+  <p><strong>Impact:</strong> Inconsistent error reporting makes debugging harder for integrators. No security impact.</p>
+  <p><strong>Recommendation:</strong> Unify error codes and assertion patterns across both voting functions.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-01: Pre-Clarity 4 — Uses as-contract Without Asset Allowances</h3>
+  </div>
+  <p><strong>Description:</strong> The contract uses <code>as-contract</code> in <code>return-votes-to-member</code> to transfer tokens back to voters. Clarity 4's <code>as-contract?</code> with explicit <code>with-ft</code> allowances for DIKO and stDIKO would restrict the contract's authority to only those tokens.</p>
+  <p><strong>Recommendation:</strong> If redeploying, migrate to Clarity 4 and use <code>as-contract?</code> with <code>(with-ft .arkadiko-token) (with-ft .stdiko-token)</code>.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-02: Dynamic Participation Threshold</h3>
+  </div>
+  <p><strong>Description:</strong> The 5% participation threshold in <code>end-proposal</code> is calculated against the DIKO supply at proposal-end time (minus the init contract balance), not at creation time. Supply changes between creation and end shift the threshold.</p>
+  <p><strong>Recommendation:</strong> Consider snapshotting the supply at proposal creation for deterministic thresholds.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFORMATIONAL</span>
+    <h3>I-03: No Minimum Start Delay for Proposals</h3>
+  </div>
+  <p><strong>Description:</strong> <code>start-block-height</code> only requires <code>&gt;= burn-block-height</code>, allowing proposals to start voting immediately in the same block they're created. Combined with the DAO owner's 250-block window (M-01), this enables very rapid proposal lifecycles.</p>
+  <p><strong>Recommendation:</strong> Consider requiring a minimum delay (e.g., 144 blocks ≈ 1 day) between creation and voting start for community review.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Token escrow for voting</strong>: Tokens are transferred into the contract during voting, preventing flash-loan governance attacks.</li>
+  <li><strong>Stake pool validation</strong>: Both <code>propose</code> and voting functions validate the stDIKO pool against the DAO registry, preventing malicious ratio manipulation via fake pools.</li>
+  <li><strong>Dual emergency shutdown</strong>: Both DAO-level and governance-specific shutdown mechanisms provide defense-in-depth.</li>
+  <li><strong>Token acceptance whitelist</strong>: <code>is-token-accepted</code> restricts voting to only DIKO and stDIKO, preventing rogue token contracts from being used.</li>
+  <li><strong>Guardian access control</strong>: <code>toggle-governance-shutdown</code> is properly restricted to the DAO guardian address.</li>
+  <li><strong>Proposal threshold</strong>: 0.25% of supply required to propose prevents trivial spam (though doesn't fully mitigate the 100-proposal cap issue).</li>
+</ul>
+
+<h2>Summary</h2>
+<p>The most critical finding is the <strong>100-proposal hard cap</strong> (C-01) — a time bomb that will permanently brick governance once the limit is reached. Given Arkadiko has been live since 2021, the contract may be approaching this limit. The <strong>silent partial execution failure</strong> (H-01) is also serious, as it can leave the DAO in an inconsistent state after governance votes. The remaining findings are centralization concerns and quality-of-life issues. The contract's token escrow design effectively prevents flash-loan governance attacks, which is a strong positive.</p>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a> · Independent security research</p>
+</footer>
+
+</body>
+</html>

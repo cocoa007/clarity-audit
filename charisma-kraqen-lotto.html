@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: Charisma Kraqen Lotto — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #fff; }
+.badge.info { background: var(--text-muted); color: var(--bg); }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.summary-card .count { font-size: 2rem; font-weight: 700; }
+.summary-card .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+.confidence { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; }
+.confidence.medium { background: var(--yellow); color: #000; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="patterns.html">Patterns</a>
+  <a href="anti-patterns.html">Anti-Patterns</a>
+</div>
+
+<h1>Charisma Kraqen Lotto — NFT Lottery</h1>
+<p class="subtitle">Independent security audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> — 2026-02-27</p>
+
+<h2>Overview</h2>
+<table>
+<tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE.kraqen-lotto?chain=mainnet">SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE.kraqen-lotto</a></code></td></tr>
+<tr><td>Deployer</td><td><code>SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE</code></td></tr>
+<tr><td>Clarity Version</td><td>Pre-Clarity 4</td></tr>
+<tr><td>Source</td><td><a href="https://api.hiro.so/v2/contracts/source/SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE/kraqen-lotto">Hiro API (on-chain)</a></td></tr>
+<tr><td>GitHub</td><td><a href="https://github.com/pointblankdev/charisma-web/blob/main/dungeon-master/contracts/kraqen-lotto.clar">pointblankdev/charisma-web</a></td></tr>
+<tr><td>Lines of Code</td><td>168</td></tr>
+<tr><td>Confidence</td><td><span class="confidence medium">Medium</span> — single-contract audit; EDK external dependencies not fully inspected</td></tr>
+</table>
+
+<p><strong>Description:</strong> A SIP-009 NFT lottery for the Charisma ecosystem. Users call <code>tap</code> with an Energy Distribution Kit (EDK) contract to earn energy and automatically mint 1–4 NFTs per transaction. Each mint costs 1 STX sent to <code>dungeon-master</code>. The collection is limited to 1,000 NFTs. Part of the Charisma DAO "quest" system where on-chain activities produce energy that converts to collectibles.</p>
+
+<h3>Documented Limitations</h3>
+<ul>
+<li>Governance token minting to the OWNER (5 CHA per mint) is commented out in the deployed code.</li>
+<li>Relies on external whitelisted EDK contracts for energy calculation — energy values are trusted from EDKs.</li>
+<li>Part of the Charisma DAO ecosystem; <code>dungeon-master</code> governs admin functions.</li>
+</ul>
+
+<h2>Findings Summary</h2>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="count" style="color:var(--red)">0</div><div class="label">Critical</div></div>
+  <div class="summary-card"><div class="count" style="color:#da3633">1</div><div class="label">High</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--yellow)">2</div><div class="label">Medium</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--blue)">1</div><div class="label">Low</div></div>
+  <div class="summary-card"><div class="count" style="color:var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<table>
+<tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+<tr><td>H-01</td><td><span class="badge high">High</span></td><td>EDK Whitelist Check After External Call Enables Side-Effect Exploitation</td></tr>
+<tr><td>M-01</td><td><span class="badge medium">Medium</span></td><td>Zero-Mint Transaction Consumes EDK Energy Silently</td></tr>
+<tr><td>M-02</td><td><span class="badge medium">Medium</span></td><td><code>transfer</code> Uses <code>tx-sender</code> Instead of <code>contract-caller</code></td></tr>
+<tr><td>L-01</td><td><span class="badge low">Low</span></td><td>Mint Charges STX After NFT Creation</td></tr>
+<tr><td>I-01</td><td><span class="badge info">Info</span></td><td>Pre-Clarity 4 Contract</td></tr>
+<tr><td>I-02</td><td><span class="badge info">Info</span></td><td>Commented-Out Governance Token Minting</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<!-- H-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge high">High</span>
+  <strong>H-01: EDK Whitelist Check After External Call Enables Side-Effect Exploitation</strong>
+</div>
+<p><strong>Location:</strong> <code>tap</code> function</p>
+<p><strong>Description:</strong> The <code>tap</code> function calls the EDK contract's <code>tap</code> method <em>before</em> verifying the EDK is whitelisted. While the whitelist check will ultimately reject non-whitelisted EDKs, the external call has already executed by that point. More critically, for whitelisted-but-compromised EDKs, the returned <code>energy</code> value directly controls how many NFTs are minted (and how much STX the user pays), with no upper bound validation beyond the 4-NFT-per-tx cap.</p>
+<pre><code>(define-public (tap (land-id uint) (edk-contract &lt;edk-trait&gt;))
+    (let
+        (
+            ;; External call happens FIRST
+            (tapped-out (unwrap-panic (contract-call? edk-contract tap land-id)))
+            (energy (get energy tapped-out))
+            (nfts-to-mint (min (/ energy ENERGY_PER_NFT) MAX_NFTS_PER_TX))
+        )
+        ;; Whitelist check happens AFTER
+        (asserts! (is-whitelisted-edk (contract-of edk-contract)) ERR_INVALID_EDK)
+        (mint-multiple tx-sender nfts-to-mint)
+    )
+)</code></pre>
+<p><strong>Impact:</strong> A non-whitelisted EDK can execute arbitrary side effects in its <code>tap</code> function before being rejected. For whitelisted EDKs, a compromised contract could return inflated energy values, causing users to unexpectedly pay up to 4 STX per transaction. The EDK's <code>tap</code> function may also consume user resources (energy, tokens) in the EDK's own state before the result is used here.</p>
+<p><strong>Recommendation:</strong> Move the whitelist assertion before the external call:</p>
+<pre><code>(asserts! (is-whitelisted-edk (contract-of edk-contract)) ERR_INVALID_EDK)
+(let ((tapped-out (unwrap-panic (contract-call? edk-contract tap land-id))) ...)</code></pre>
+<p>Also consider allowing users to specify a <code>max-nfts</code> parameter to cap their spend.</p>
+</div>
+
+<!-- M-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">Medium</span>
+  <strong>M-01: Zero-Mint Transaction Consumes EDK Energy Silently</strong>
+</div>
+<p><strong>Location:</strong> <code>tap</code> function, <code>mint-multiple</code></p>
+<p><strong>Description:</strong> If the EDK returns energy less than 1,000 (the <code>ENERGY_PER_NFT</code> threshold), <code>nfts-to-mint</code> evaluates to 0. The <code>mint-multiple</code> function with count 0 falls through all <code>if</code> branches and returns <code>(err u500)</code>. However, the EDK's <code>tap</code> function was already called and may have consumed the user's energy or resources in the EDK contract's state — the user loses resources but receives no NFT.</p>
+<pre><code>(nfts-to-mint (min (/ energy ENERGY_PER_NFT) MAX_NFTS_PER_TX))
+;; If energy &lt; 1000: nfts-to-mint = 0 → mint-multiple returns (err u500)
+;; But EDK.tap() already executed and consumed user's energy</code></pre>
+<p><strong>Impact:</strong> Users with insufficient energy lose their accumulated energy in the EDK without receiving any NFTs. The <code>(err u500)</code> return does abort the STX transfers and NFT mints, but the EDK's internal state change from <code>tap</code> already occurred within that call's scope. If the EDK's tap is idempotent or revertible on error, impact is lower.</p>
+<p><strong>Recommendation:</strong> Add a minimum energy assertion: <code>(asserts! (&gt;= nfts-to-mint u1) (err u501))</code> — but this doesn't prevent the EDK call. Ideally, restructure to check energy requirements before calling the EDK, or document this as expected behavior.</p>
+</div>
+
+<!-- M-02 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge medium">Medium</span>
+  <strong>M-02: <code>transfer</code> Uses <code>tx-sender</code> Instead of <code>contract-caller</code></strong>
+</div>
+<p><strong>Location:</strong> <code>transfer</code> function</p>
+<p><strong>Description:</strong> The SIP-009 transfer function authenticates using <code>tx-sender</code> rather than <code>contract-caller</code>. This is a known anti-pattern in Clarity NFT contracts. When an intermediary contract calls <code>transfer</code>, <code>tx-sender</code> remains the original transaction signer, which could allow unintended transfers through contract composition attacks.</p>
+<pre><code>(define-public (transfer (token-id uint) (sender principal) (recipient principal))
+  (begin
+    ;; #[filter(sender)]
+    (asserts! (is-eq tx-sender sender) ERR_NOT_TOKEN_OWNER)
+    (nft-transfer? kraqen-lotto token-id sender recipient)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> A malicious contract could trick a user into signing a transaction that routes through the attacker's contract, which then calls <code>transfer</code> with the user as <code>sender</code>. The <code>#[filter(sender)]</code> annotation provides post-condition protection at the transaction level, mitigating exploitability. Risk is moderate given the annotation.</p>
+<p><strong>Recommendation:</strong> Use <code>(or (is-eq tx-sender sender) (is-eq contract-caller sender))</code> for robust auth, or switch entirely to <code>contract-caller</code>.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge low">Low</span>
+  <strong>L-01: Mint Charges STX After NFT Creation</strong>
+</div>
+<p><strong>Location:</strong> <code>mint</code> function</p>
+<p><strong>Description:</strong> The mint function creates the NFT via <code>nft-mint?</code> before transferring STX via <code>stx-transfer?</code>. While Clarity's atomic transactions ensure both succeed or both revert, the ordering doesn't follow the checks-effects-interactions pattern. Users without sufficient STX will have their transaction revert after compute is spent.</p>
+<pre><code>(try! (nft-mint? kraqen-lotto token-id recipient))
+(try! (stx-transfer? STX_PER_MINT tx-sender .dungeon-master))</code></pre>
+<p><strong>Impact:</strong> Low — transactions are atomic in Clarity. No funds at risk. Minor gas waste on reverted transactions.</p>
+<p><strong>Recommendation:</strong> Swap ordering to transfer STX first, or add a balance check upfront.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">Info</span>
+  <strong>I-01: Pre-Clarity 4 Contract</strong>
+</div>
+<p><strong>Location:</strong> Contract-wide</p>
+<p><strong>Description:</strong> This contract predates Clarity 4. While it doesn't use <code>as-contract</code>, future versions or related contracts in the Charisma ecosystem should leverage Clarity 4's <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-nft</code>) for stricter safety guarantees.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+<div class="finding-header">
+  <span class="badge info">Info</span>
+  <strong>I-02: Commented-Out Governance Token Minting</strong>
+</div>
+<p><strong>Location:</strong> <code>mint</code> function</p>
+<p><strong>Description:</strong> The line <code>(try! (contract-call? .dme000-governance-token dmg-mint CHA_AMOUNT OWNER))</code> is commented out. This was designed to mint 5 CHA governance tokens to the collection creator per NFT mint. Its absence means the OWNER receives no CHA, which may be intentional (perhaps the governance token contract wasn't ready at deployment) or an oversight.</p>
+<pre><code>;; Mint 1 governance token to the OWNER
+;; (try! (contract-call? .dme000-governance-token dmg-mint CHA_AMOUNT OWNER))</code></pre>
+<p><strong>Impact:</strong> Informational. The OWNER misses out on CHA token rewards. Users still pay 1 STX to <code>dungeon-master</code>.</p>
+</div>
+
+<h2>Architecture Notes</h2>
+
+<h3>Quest-Based NFT Minting</h3>
+<p>The contract uses Charisma's "quest" pattern: users interact with EDK contracts that generate energy, which is then converted into NFT mints. This creates a gamification layer where on-chain activities (land interactions) produce collectibles. The pattern is elegant but introduces trust dependencies on whitelisted EDK contracts.</p>
+
+<h3>Hardcoded Mint-Multiple Pattern</h3>
+<p>Rather than using a loop (which Clarity doesn't natively support), the contract uses a cascading <code>if</code> tree in <code>mint-multiple</code> to handle 1–4 mints. This is a common Clarity pattern that's gas-efficient and avoids recursion complexity, though it's verbose and error-prone to maintain.</p>
+
+<h3>DAO Integration</h3>
+<p>Admin functions (<code>set-whitelisted-edk</code>, <code>set-token-uri</code>) require DAO authorization via <code>dungeon-master</code>. This is the standard Charisma/ExecutorDAO pattern — clean separation between governance and contract logic.</p>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><strong>Collection cap:</strong> Hard limit of 1,000 NFTs prevents unbounded minting</li>
+<li><strong>Per-tx cap:</strong> Maximum 4 NFTs per transaction limits per-call exposure</li>
+<li><strong>DAO-governed whitelist:</strong> EDK contracts must be explicitly whitelisted by the DAO</li>
+<li><strong>Clean SIP-009 implementation:</strong> Standard NFT interface with metadata URI support</li>
+<li><strong>Simple economics:</strong> Fixed 1 STX per mint — predictable cost structure</li>
+</ul>
+
+<footer>
+<p>Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> · <a href="index.html">Full audit portfolio</a></p>
+<p>This audit is provided as-is with no guarantees. It represents a best-effort review at a point in time and should not be considered a comprehensive security certification.</p>
+</footer>
+
+</body>
+</html>
