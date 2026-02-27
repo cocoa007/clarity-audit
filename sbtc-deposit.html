@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sBTC Deposit Audit — cocoa007</title>
+<title>Audit: sBTC sbtc-deposit — cocoa007</title>
 <style>
 :root {
   --bg: #0d1117;
@@ -27,8 +27,8 @@ body {
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-h1 { font-size: 2rem; margin-bottom: 0.25rem; color: var(--accent); }
-.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
 h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
 p, li { margin-bottom: 0.75rem; }
@@ -36,89 +36,79 @@ ul, ol { padding-left: 1.5rem; }
 pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
 code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
 pre code { background: none; padding: 0; }
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
-.stat-card .number { font-size: 1.8rem; font-weight: bold; }
-.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
-.severity-critical { color: #ff4444; font-weight: bold; }
-.severity-high { color: var(--red); font-weight: bold; }
-.severity-medium { color: var(--yellow); font-weight: bold; }
-.severity-low { color: var(--blue); font-weight: bold; }
-.severity-info { color: var(--text-muted); font-weight: bold; }
-.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
-.finding h3 { margin-top: 0; }
-.finding-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
-nav { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-nav a { margin-right: 1.5rem; }
-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
 th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
-th { background: var(--surface); }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.summary-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
 </style>
 </head>
 <body>
+<div class="nav">
+  <a href="index.html">← All Audits</a>
+  <a href="anti-patterns.html">Anti-Patterns</a>
+</div>
 
-<nav>
-  <a href="/clarity-audit/">← All Audits</a>
-  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
-  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
-</nav>
-
-<h1>sBTC Deposit — Security Audit</h1>
+<h1>sBTC Deposit Contract Audit</h1>
 <p class="subtitle">
   <code>SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit</code><br>
-  Audited: 2026-02-27 · Clarity version: pre-Clarity 4 · Confidence: <strong style="color: var(--yellow);">Medium</strong>
+  Protocol: sBTC · Network: Mainnet · Date: 2026-02-27 · Auditor: cocoa007.btc
 </p>
 
-<h2>Overview</h2>
-<p>The sBTC deposit contract is the entry point for the <a href="https://www.stacks.co/sbtc">sBTC protocol</a> — the Bitcoin-backed token on Stacks. It validates deposit parameters from trusted signers and mints sBTC to recipients. The contract is part of a multi-contract system including <code>sbtc-registry</code> (state management) and <code>sbtc-token</code> (SIP-010 token).</p>
-
-<p><strong>Source:</strong> <a href="https://explorer.hiro.so/txid/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit?chain=mainnet">On-chain (Hiro Explorer)</a></p>
-
-<p><strong>Architecture:</strong> The deposit flow is: (1) User sends BTC to the sBTC peg address on Bitcoin, (2) sBTC signers observe the deposit and call <code>complete-deposit-wrapper</code> on Stacks, (3) The contract validates the deposit, mints sBTC via <code>sbtc-token</code>, and records it in <code>sbtc-registry</code>. The signer set (multisig) is fully trusted — no SPV proof of Bitcoin transactions is performed on-chain.</p>
-
-<h2>Priority Score</h2>
-<table>
-  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
-  <tr><td>Financial Risk</td><td>3 — Core sBTC minting, real BTC deposits</td><td>3</td><td>9</td></tr>
-  <tr><td>Deployment Likelihood</td><td>3 — Deployed on mainnet, actively processing deposits</td><td>2</td><td>6</td></tr>
-  <tr><td>Code Complexity</td><td>2 — ~115 lines, multi-contract interaction, batch processing</td><td>2</td><td>4</td></tr>
-  <tr><td>User Exposure</td><td>3 — sBTC is the primary Bitcoin bridge on Stacks</td><td>1.5</td><td>4.5</td></tr>
-  <tr><td>Novelty</td><td>2 — Bitcoin peg bridge contract, unique mechanism</td><td>1.5</td><td>3</td></tr>
-</table>
-<p><strong>Score: 2.65 / 3.0</strong> (2.15 after Clarity version penalty) — well above 1.8 threshold.</p>
-
-<h2>Findings Summary</h2>
-
-<div class="stat-grid">
-  <div class="stat-card"><div class="number" style="color: #ff4444;">0</div><div class="label">Critical</div></div>
-  <div class="stat-card"><div class="number" style="color: var(--red);">1</div><div class="label">High</div></div>
-  <div class="stat-card"><div class="number" style="color: var(--yellow);">2</div><div class="label">Medium</div></div>
-  <div class="stat-card"><div class="number" style="color: var(--blue);">2</div><div class="label">Low</div></div>
-  <div class="stat-card"><div class="number" style="color: var(--text-muted);">3</div><div class="label">Informational</div></div>
+<div class="summary-box">
+  <strong>Findings:</strong> 0 Critical · 1 High · 2 Medium · 2 Low · 3 Informational<br>
+  <strong>Score:</strong> 2.15 / 3.0 (Financial: 3, Deploy: 3, Complexity: 2, Exposure: 3, Novelty: 2, Clarity 4 penalty: -0.5)<br>
+  <strong>Confidence:</strong> Medium (read-only audit; multi-contract system with off-chain signer components)<br>
+  <strong>Source:</strong> <a href="https://github.com/boomcrypto/clarity-deployed-contracts/blob/main/contracts/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4/sbtc-deposit.clar">GitHub</a>
 </div>
+
+<h2>Architecture</h2>
+<p>The sBTC deposit flow works as follows:</p>
+<ol>
+  <li>User sends BTC to the sBTC peg address on Bitcoin</li>
+  <li>sBTC signers (off-chain multisig) observe the deposit and call <code>complete-deposit-wrapper</code> on Stacks</li>
+  <li>The contract validates the deposit, mints sBTC to the recipient, and records it in <code>sbtc-registry</code></li>
+</ol>
+<p><strong>Trust model:</strong> The signer set is fully trusted to submit correct deposit data. The contract validates: caller is current signer principal, amount ≥ dust limit (546 sats), TXID length = 32 bytes, no replay (deposit not already completed), burn header hash matches (Bitcoin fork protection).</p>
+<p><strong>Key contracts:</strong> <code>sbtc-deposit</code> (validates and mints), <code>sbtc-registry</code> (stores state, manages roles), <code>sbtc-token</code> (SIP-010 fungible token with protocol-gated mint/burn).</p>
 
 <h2>Findings</h2>
 
 <div class="finding">
-  <h3><span class="severity-high">H-01</span> — No Guard Against maxFee ≥ Amount — Deposits Become Unprocessable</h3>
-  <p class="finding-meta">Location: <code>complete-deposit-wrapper</code> — missing validation</p>
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <strong>H-01: No Guard Against maxFee ≥ Amount — Deposits Become Unprocessable</strong>
+  </div>
+  <p><strong>Location:</strong> <code>complete-deposit-wrapper</code> — missing validation</p>
   <p>The contract accepts any <code>amount ≥ 546</code> (dust limit) but has no concept of fees or minimum net amount. In the sBTC protocol, Bitcoin deposits include a <code>max_fee</code> parameter set by the user. If <code>max_fee >= amount</code>, the sBTC signers will skip the deposit because there would be zero or negative sBTC to mint after fees.</p>
-  <p>This results in <strong>permanently stuck BTC</strong>: the Bitcoin is sent to the peg address, but signers will never call <code>complete-deposit-wrapper</code> for it because the economics don't work. The BTC cannot be recovered until the reclaim locktime expires.</p>
-  <p><strong>Real-world impact:</strong> We personally experienced this — 5,000 sats stuck in a deposit where maxFee = amount. The signers simply never process it. The BTC sits locked until the reclaim script timelock expires (typically ~150 blocks after the deposit lock period).</p>
+  <p>This results in <strong>permanently stuck BTC</strong>: the Bitcoin is sent to the peg address, but signers will never call <code>complete-deposit-wrapper</code> for it. The BTC cannot be recovered until the reclaim height (set at deposit time).</p>
+  <p><strong>Real-world impact:</strong> We personally experienced this — 5,000 sats stuck in a deposit where maxFee = amount. The signers simply never process it. Recovery requires waiting ~6 days for the reclaim block height.</p>
   <p><strong>Recommendation:</strong></p>
   <ul>
-    <li>The deposit request script on Bitcoin should enforce <code>max_fee &lt; amount - dust_limit</code> at the script level</li>
-    <li>Signers should process these deposits by minting <code>amount - max_fee</code> (even if tiny) rather than silently skipping them</li>
-    <li>A reclaim/refund mechanism should exist for deposits that signers cannot or will not process</li>
-    <li>Front-end UIs should validate <code>max_fee &lt; amount</code> before broadcasting</li>
+    <li>The deposit request script on Bitcoin should enforce <code>max_fee < amount - dust_limit</code></li>
+    <li>Signers should process these deposits by minting <code>amount - max_fee</code> (even if tiny) rather than silently skipping</li>
+    <li>Front-end UIs should validate <code>max_fee < amount</code> before broadcasting</li>
   </ul>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-medium">M-01</span> — Batch Deposit Failure Aborts All Subsequent Deposits</h3>
-  <p class="finding-meta">Location: <code>complete-individual-deposits-helper</code></p>
-  <p>The <code>complete-deposits-wrapper</code> uses <code>fold</code> with a helper function. If any individual deposit fails (replay, bad burn hash, etc.), the error propagates and <strong>all subsequent deposits in the batch are skipped</strong>.</p>
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <strong>M-01: Batch Deposit Failure Aborts All Subsequent Deposits</strong>
+  </div>
+  <p><strong>Location:</strong> <code>complete-individual-deposits-helper</code></p>
+  <p>The <code>complete-deposits-wrapper</code> uses <code>fold</code> with a helper. If any individual deposit fails (replay, bad burn hash), the error propagates and <strong>all subsequent deposits in the batch are skipped</strong>.</p>
 <pre><code>(match helper-response
   index
     (begin
@@ -130,72 +120,75 @@ th { background: var(--surface); }
   err-response
     (err err-response)
 )</code></pre>
-  <p><strong>Impact:</strong> A single invalid deposit in a batch blocks all deposits after it. Signers must carefully order/filter deposits, or retry with the failing deposit removed. This is a DoS vector on deposit throughput.</p>
-  <p><strong>Recommendation:</strong> Use a "skip on error" pattern — return <code>(ok)</code> with an error log for failed individual deposits, allowing the fold to continue processing remaining deposits.</p>
+  <p>A single invalid deposit in a batch blocks all deposits after it. Signers must carefully filter deposits or retry with the failing one removed.</p>
+  <p><strong>Recommendation:</strong> Use a "skip on error" pattern — return <code>(ok)</code> with an error log for failed deposits, allowing the fold to continue.</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-medium">M-02</span> — No Maximum Amount Cap on Deposits</h3>
-  <p class="finding-meta">Location: <code>complete-deposit-wrapper</code> — amount validation</p>
-  <p>The contract only enforces <code>amount >= dust-limit</code> (546 sats) with no upper bound. A compromised or buggy signer could mint an arbitrary amount of sBTC in a single transaction.</p>
-  <p><strong>Impact:</strong> If the signer key is compromised, an attacker can mint unlimited sBTC. While this is inherent to the trust model, a sanity cap would limit blast radius.</p>
-  <p><strong>Recommendation:</strong> Add a reasonable per-deposit cap as a safety rail (e.g., 2,100,000,000,000,000 sats = 21M BTC). This limits damage from key compromise or bugs.</p>
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <strong>M-02: No Maximum Amount Cap on Deposits</strong>
+  </div>
+  <p><strong>Location:</strong> <code>complete-deposit-wrapper</code> — amount validation</p>
+  <p>Only enforces <code>amount >= dust-limit</code> with no upper bound. A compromised signer could mint arbitrary sBTC in a single transaction. While inherent to the trust model, a sanity cap would limit blast radius.</p>
+  <p><strong>Recommendation:</strong> Add a per-deposit cap as defense-in-depth (e.g., 21M BTC equivalent in sats).</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-low">L-01</span> — Error Code Collision in Batch Deposits</h3>
-  <p class="finding-meta">Location: <code>complete-individual-deposits-helper</code></p>
-  <p>The error encoding is <code>ERR_DEPOSIT_INDEX_PREFIX + 10 + index</code>. <code>ERR_DEPOSIT_INDEX_PREFIX</code> is <code>u303</code>. For large batches, these could theoretically collide with other protocol error codes.</p>
-  <p><strong>Recommendation:</strong> Use a dedicated error range (e.g., <code>u10000 + index</code>) to avoid any possible collision.</p>
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <strong>L-01: Error Code Collision in Batch Deposits</strong>
+  </div>
+  <p>Error encoding is <code>ERR_DEPOSIT_INDEX_PREFIX + 10 + index</code> (base 303). For large batches this could collide with other error codes, though the list is capped at 500 items.</p>
+  <p><strong>Recommendation:</strong> Use a dedicated error range (e.g., <code>u10000 + index</code>).</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-low">L-02</span> — No Event Emission in Deposit Contract</h3>
-  <p class="finding-meta">Location: <code>complete-deposit-wrapper</code></p>
-  <p>The deposit contract itself emits no <code>print</code> events. Events are only emitted by <code>sbtc-registry.complete-deposit</code>. If the registry call fails after minting, the mint event exists but no deposit-completion event is emitted.</p>
-  <p><strong>Recommendation:</strong> Emit a print event in the deposit contract itself for better observability.</p>
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <strong>L-02: No Event Emission in Deposit Contract</strong>
+  </div>
+  <p>The deposit contract emits no <code>print</code> events. Events are only emitted by <code>sbtc-registry.complete-deposit</code>. If the registry call fails after minting, no deposit-completion event is emitted.</p>
+  <p><strong>Recommendation:</strong> Emit a print event in the deposit contract for observability.</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-info">I-01</span> — Pre-Clarity 4 Contract Patterns</h3>
-  <p class="finding-meta">Location: Contract-wide</p>
-  <p>The contract uses <code>.sbtc-registry</code> and <code>.sbtc-token</code> relative references and does not use Clarity 4's <code>as-contract?</code> with explicit asset allowances. Future upgrades should adopt Clarity 4 patterns for improved safety.</p>
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-01: Pre-Clarity 4 Patterns</strong>
+  </div>
+  <p>Uses legacy <code>.sbtc-registry</code> relative references. Does not use Clarity 4's <code>as-contract?</code> with explicit asset allowances. Upgrade path should adopt Clarity 4.</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-info">I-02</span> — Signer Principal is Single Point of Trust</h3>
-  <p class="finding-meta">Location: Access control</p>
-  <p>The <code>current-signer-principal</code> is a single address representing the multisig output. On-chain it appears as a single principal. Key rotation is handled by <code>sbtc-registry.rotate-keys</code> (governance-only). This is the intended design but represents total trust concentration.</p>
-  <p><strong>Recommendation:</strong> Consider time-locked minting caps as defense-in-depth.</p>
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-02: Signer Principal is Single Point of Trust</strong>
+  </div>
+  <p>The <code>current-signer-principal</code> is checked via <code>is-eq tx-sender</code>. This represents the multisig signer set. Standard for sBTC design but worth noting — key compromise enables unlimited minting.</p>
 </div>
 
 <div class="finding">
-  <h3><span class="severity-info">I-03</span> — No Recipient Validation</h3>
-  <p class="finding-meta">Location: <code>complete-deposit-wrapper</code></p>
-  <p>The <code>recipient</code> parameter is an unchecked <code>principal</code>. Signers could (accidentally or maliciously) mint sBTC to any address, including the contract itself or burn addresses.</p>
-  <p><strong>Recommendation:</strong> Consider basic validation (e.g., recipient is a standard principal, not a contract principal).</p>
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-03: No Recipient Validation</strong>
+  </div>
+  <p>The <code>recipient</code> parameter is an unchecked <code>principal</code>. Signers could mint sBTC to any address including contracts or burn addresses. Low likelihood given trusted signers.</p>
 </div>
 
-<h2>Cross-Contract Analysis</h2>
-<p>The deposit contract interacts with two companion contracts:</p>
+<h2>Cross-Contract Notes</h2>
 <ul>
-  <li><strong>sbtc-registry</strong> — Role-based access via <code>active-protocol-contracts</code> map. Bidirectional protocol caller check. <code>map-insert</code> for deposit status ensures replay protection.</li>
-  <li><strong>sbtc-token</strong> — Protocol functions gated by registry. <code>protocol-mint</code> has no supply cap (by design — sBTC supply = pegged BTC). SIP-010 <code>transfer</code> correctly validates sender authorization.</li>
+  <li><strong>sbtc-registry:</strong> Role-based access via <code>active-protocol-contracts</code> map with bidirectional check — well-designed. <code>map-insert</code> for deposit-status provides correct replay protection.</li>
+  <li><strong>sbtc-token:</strong> Protocol functions gated by <code>sbtc-registry.is-protocol-caller</code>. No supply cap by design (sBTC supply = pegged BTC). SIP-010 transfer correctly validates sender authorization.</li>
 </ul>
 
 <h2>Overall Assessment</h2>
-<p>The sbtc-deposit contract is <strong>well-structured and minimal</strong> — it does one thing (validate and mint deposits) with appropriate access control. The main risks are:</p>
-<ol>
-  <li><strong>Protocol-level gap:</strong> The maxFee ≥ amount issue (H-01) leads to permanent fund loss with no reclaim path — this is the most impactful real-world finding</li>
-  <li><strong>Batch processing:</strong> The all-or-nothing batch semantics (M-01) could cause operational issues under load</li>
-  <li><strong>Trust concentration:</strong> The entire system trusts the signer set — standard for sBTC's design but worth noting</li>
-</ol>
-<p>The contract is lean (~90 lines of logic) which limits attack surface. No reentrancy risks (Clarity prevents this by design). No <code>as-contract</code> usage means no asset authority concerns.</p>
+<p>The sbtc-deposit contract is <strong>well-structured and minimal</strong> (~90 lines of logic). It does one thing — validate and mint deposits — with appropriate access control. No reentrancy risks (Clarity prevents this). No <code>as-contract</code> usage means no asset authority concerns.</p>
+<p>The most impactful finding (H-01) is a <strong>protocol-level issue</strong>: the lack of protection against deposits where maxFee ≥ amount, leading to permanently stuck BTC until the reclaim height. This is validated by personal experience — 5,000 sats stuck for 6+ days.</p>
+<p>The batch processing issue (M-01) could affect deposit throughput during high-volume periods. The missing amount cap (M-02) is defense-in-depth for the trust model.</p>
 
 <footer>
-  <p>Audited by <a href="https://github.com/cocoa007">cocoa007.btc</a> ☕ · <a href="https://cocoa007.github.io/clarity-audit/">All Audits</a></p>
-  <p>BTC: <code>bc1qv8dt3v9kx3l7r9mnz2gj9r9n9k63frn6w6zmrt</code></p>
+  <p>Audit #73 · <a href="https://github.com/cocoa007/clarity-audit">cocoa007/clarity-audit</a> · <a href="https://cocoa007.github.io/clarity-audit/">All Audits</a></p>
 </footer>
-
 </body>
 </html>
