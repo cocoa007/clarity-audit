@@ -243,14 +243,14 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
-    <a href="/clarity-audit/ststxbtc-tracking-v2.html">StackingDAO ststxbtc-tracking-v2 — sBTC Reward Tracking</a>
+    <a href="/clarity-audit/ststxbtc-tracking-v2.html">stSTXbtc Tracking v2 (StackingDAO) — sBTC Reward Distribution</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
   <div class="card-meta">
-    <span class="repo"><a href="https://github.com/StackingDAO/contracts/tree/29dc1e58774e2971497cffb40a5f4f1db653c64b/contracts/core">StackingDAO/contracts @ 29dc1e5</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststxbtc-tracking-v2?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">3M</span> <span class="l">2L</span> <span class="i">3I</span></span>
   </div>
-  <p class="summary">sBTC reward tracking for stSTXbtc holders using cumulative reward-per-token model. <strong>High: division by zero in <code>add-rewards</code> when total supply is zero.</strong> Permissionless claim/save allows forced reward lifecycle for any holder. Pre-Clarity 4 with blanket <code>as-contract</code>.</p>
+  <p class="summary">sBTC reward distribution for stSTXbtc holders with wallet and external protocol position tracking. <strong>High: reward truncation in <code>add-rewards</code> silently loses small deposits.</strong> Anyone can force-claim rewards for any holder. Reserve check uses stale data. Pre-Clarity 4 <code>as-contract</code>.</p>
   <p class="date">February 27, 2026</p>
 </div>
 
