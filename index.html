@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/ststxbtc-tracking-v2.html">StackingDAO ststxbtc-tracking-v2 — sBTC Reward Tracking</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://github.com/StackingDAO/contracts/tree/29dc1e58774e2971497cffb40a5f4f1db653c64b/contracts/core">StackingDAO/contracts @ 29dc1e5</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">sBTC reward tracking for stSTXbtc holders using cumulative reward-per-token model. <strong>High: division by zero in <code>add-rewards</code> when total supply is zero.</strong> Permissionless claim/save allows forced reward lifecycle for any holder. Pre-Clarity 4 with blanket <code>as-contract</code>.</p>
+  <p class="date">February 27, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/gamma-marketplace-v5.html">Gamma marketplace-v5 — NFT Marketplace with Escrow</a>
     <span class="confidence">🟢 HIGH</span>
   </div>
