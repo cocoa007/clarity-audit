@@ -16,6 +16,7 @@ Independent audit notes and pattern documentation for Stacks/Clarity smart contr
 | [market-factory-v18-bias](https://cocoa007.github.io/clarity-audit/market-factory.html) | `SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA` | 10 (1 critical, 3 medium) |
 | [quests-contract](https://cocoa007.github.io/clarity-audit/quests.html) | `SushilBro/quests-contract` | 10 (3 critical, 3 medium) |
 | [P2P-Lending-Pool](https://cocoa007.github.io/clarity-audit/p2p-lending.html) | `esthhdam-stack/P2P-Lending-Pool` | 12 (3 critical, 3 high, 3 medium, 3 low) |
+| [sbtc-deposit](https://cocoa007.github.io/clarity-audit/sbtc-deposit.html) | `SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4` | 8 (0 critical, 1 high, 2 medium, 2 low, 3 info) |
 
 ## Patterns documented
 
