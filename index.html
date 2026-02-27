@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/sbtc-deposit.html">sBTC Deposit — Bitcoin Peg Deposit Contract</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit?chain=mainnet">SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Core deposit contract for sBTC — the Bitcoin-backed token on Stacks. <strong>High: no guard against maxFee ≥ amount causes permanently stuck BTC with no reclaim path.</strong> Batch deposit failure aborts all subsequent deposits. No per-deposit amount cap. Well-structured ~90-line contract with proper access control via signer set.</p>
+  <p class="date">February 27, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/zest-incentives.html">Zest Protocol incentives.clar — Rewards/Incentives</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
@@ -928,19 +941,6 @@ footer {
   </div>
   <p class="summary">Never calls stx-transfer? — entire insurance mechanism is pure bookkeeping with no real funds. Withdrawal math is identity function.</p>
   <p class="date">February 21, 2026</p>
-</div>
-
-<div class="audit-card">
-  <div class="card-header">
-    <a href="/clarity-audit/sbtc-deposit.html">sBTC Deposit Contract</a>
-    <span class="confidence">🟡 MEDIUM</span>
-  </div>
-  <div class="card-meta">
-    <span class="repo"><a href="https://raw.githubusercontent.com/boomcrypto/clarity-deployed-contracts/main/contracts/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4/sbtc-deposit.clar">SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-deposit</a></span>
-    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
-  </div>
-  <p class="summary">No guard against maxFee ≥ amount causes permanently stuck BTC with no reclaim path. Batch deposit failure aborts all subsequent deposits. No per-deposit amount cap.</p>
-  <p class="date">February 27, 2026</p>
 </div>
 
 <div class="audit-card">
