@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zest Protocol incentives.clar — Rewards/Incentives Audit | cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 {
+  font-size: 1.3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--surface);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+pre code { background: none; padding: 0; }
+.finding {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+.finding-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+}
+.stat-card .num { font-size: 1.5rem; font-weight: 700; }
+.stat-card .num.high-color { color: #da3633; }
+.stat-card .num.med-color { color: var(--yellow); }
+.stat-card .num.low-color { color: var(--blue); }
+.stat-card .num.info-color { color: var(--text-muted); }
+.stat-card .label { color: var(--text-muted); font-size: 0.8rem; }
+.meta-table { margin: 1rem 0; }
+.meta-table td { padding: 0.25rem 1rem 0.25rem 0; vertical-align: top; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; }
+.nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Patterns</a>
+</nav>
+
+<h1>Zest Protocol incentives.clar — Rewards/Incentives</h1>
+<p class="subtitle">Independent security audit by <a href="https://github.com/cocoa007">cocoa007</a></p>
+
+<table class="meta-table">
+  <tr><td>Source</td><td><a href="https://github.com/Zest-Protocol/zest-contracts/tree/3564bc38906e464ec4de774122bb9bbaee20ddc6">Zest-Protocol/zest-contracts</a> @ <code>3564bc3</code></td></tr>
+  <tr><td>Path</td><td><code>onchain/contracts/borrow/production/rewards/incentives.clar</code></td></tr>
+  <tr><td>Lines</td><td>383</td></tr>
+  <tr><td>Clarity</td><td>Pre-Clarity 4 (uses legacy <code>as-contract</code>)</td></tr>
+  <tr><td>Confidence</td><td>🟡 MEDIUM — multi-contract system, external dependencies not fully verified</td></tr>
+  <tr><td>Date</td><td>February 27, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num high-color">1</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num med-color">2</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num low-color">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num info-color">3</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This contract manages reward distribution for Zest Protocol liquidity providers. Users who supply sBTC to Zest's lending pool receive zsbtc LP tokens. The incentives contract tracks a cumulative reward index (similar to Aave/Compound interest accrual) and distributes wSTX rewards proportional to LP holdings over time.</p>
+<p>The contract delegates extensively to external contracts: <code>rewards-data</code> / <code>rewards-data-1</code> for state storage, <code>pool-0-reserve-v2-0</code> for index calculations, and <code>math-v2-0</code> for fixed-point arithmetic. Only the sBTC→wSTX reward pair is currently implemented; other pairs silently return zero.</p>
+
+<h2>Architecture</h2>
+<ul>
+  <li><strong>Owner-gated admin</strong>: <code>set-price</code>, <code>set-precision</code>, <code>set-liquidity-rate</code>, <code>withdraw-assets</code>, <code>initialize-reward-program-data</code></li>
+  <li><strong>Approved-contract ACL</strong>: <code>claim-rewards</code> / <code>claim-rewards-to-vault</code> require <code>contract-caller</code> in allowlist + <code>who == tx-sender</code></li>
+  <li><strong>Vault accumulator</strong>: Unclaimed rewards accumulate in a vault (via <code>rewards-data-1</code>); user claims flush the vault</li>
+  <li><strong>Cumulative index model</strong>: Linear interest accrual per block, compounded into a cumulative index</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge high">HIGH</span>
+    <strong>H-01: First-Claim Retroactive Reward Windfall</strong>
+  </div>
+  <p><strong>Location:</strong> <code>get-user-program-index-eval</code></p>
+  <p>When a user holds zsbtc LP tokens but has never claimed rewards (no stored program index), the function returns <code>one</code> (1e8 — the base index). The cumulated balance formula divides the current normalized income by this base index, effectively granting the user rewards for the <em>entire program history</em>, not just their holding period.</p>
+  <pre><code>(match (get-user-program-index who supplied-asset reward-asset)
+    index (ok index)
+    (let ((balance (try! (contract-call? lp-supplied-asset get-balance who))))
+        (if (&gt; balance u0)
+            (ok one)  ;; ← base index = ALL historical rewards
+            (ok (get last-liquidity-cumulative-index ...))
+        )
+    )
+)</code></pre>
+  <p><strong>Attack scenario:</strong></p>
+  <ol>
+    <li>Supply a large amount of sBTC to Zest lending → receive zsbtc</li>
+    <li>Immediately call <code>claim-rewards</code></li>
+    <li>Receive wSTX rewards proportional to the entire program lifetime × balance</li>
+    <li>Withdraw sBTC from lending</li>
+  </ol>
+  <p><strong>Impact:</strong> New large depositors can drain wSTX rewards intended for long-term holders. The reward pool's wSTX balance acts as the ceiling — the attacker extracts up to the full contract balance.</p>
+  <p><strong>Recommendation:</strong> For users with no stored index, always return the current <code>last-liquidity-cumulative-index</code> regardless of balance. This ensures they only earn rewards from their first interaction onward:</p>
+  <pre><code>;; Fix: always use current index for uninitialized users
+(if (&gt; balance u0)
+    (ok (get last-liquidity-cumulative-index
+        (unwrap! (get-reward-program-income supplied-asset reward-asset) err-not-found)))
+    (ok (get last-liquidity-cumulative-index ...))
+)</code></pre>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <strong>M-01: Owner-Controlled Price Oracle Enables Reward Manipulation</strong>
+  </div>
+  <p><strong>Location:</strong> <code>set-price</code>, <code>convert-to</code></p>
+  <p>The contract owner can set arbitrary prices for any asset. The <code>convert-to</code> function uses these prices to calculate reward amounts (converting between sBTC denomination and wSTX denomination). A compromised or malicious owner could set extreme price ratios to inflate rewards for specific users or deflate them to effectively steal from the reward pool.</p>
+  <p><strong>Impact:</strong> Owner can manipulate reward payouts by adjusting price ratios. No bounds checking, no deviation limits, no freshness requirements.</p>
+  <p><strong>Recommendation:</strong> Use an external oracle (Pyth/DIA — Zest's v0-3-market already does this) or add max-deviation checks against the previous price.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <strong>M-02: Pre-Clarity 4 <code>as-contract</code> Blanket Authority</strong>
+  </div>
+  <p><strong>Location:</strong> <code>withdraw-assets</code>, <code>send-rewards</code></p>
+  <p>Both functions use legacy <code>as-contract</code> which grants unrestricted authority over ALL assets held by the contract. The <code>withdraw-assets</code> function is particularly concerning — it accepts an arbitrary <code>&lt;ft&gt;</code> trait parameter, meaning the owner can call it with any fungible token contract (including malicious implementations) under the contract's full authority.</p>
+  <pre><code>(define-public (withdraw-assets (asset &lt;ft&gt;) (amount uint) (who principal))
+    (begin
+        (asserts! (is-contract-owner tx-sender) ERR_UNAUTHORIZED)
+        (as-contract (contract-call? asset transfer amount tx-sender who none))))</code></pre>
+  <p><strong>Impact:</strong> Malicious trait implementation could execute unexpected operations under contract identity. Owner can drain any token held by the contract.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4 <code>as-contract?</code> with explicit asset allowances: <code>(with-ft .zsbtc-v2-0)</code>, <code>(with-ft 'SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.wstx)</code>.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <strong>L-01: Only sBTC/wSTX Reward Pair Implemented</strong>
+  </div>
+  <p><strong>Location:</strong> <code>update-claim-state</code></p>
+  <p>The claim logic only handles the case where <code>supplied-asset = sbtc-token</code>. All other asset pairs silently return <code>(ok u0)</code>. Users calling <code>claim-rewards</code> with non-sBTC supplied assets receive no rewards and no error indication.</p>
+  <p><strong>Recommendation:</strong> Return an explicit error for unsupported asset pairs to prevent silent claim failures.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <strong>L-02: <code>unwrap-panic</code> in Index Update</strong>
+  </div>
+  <p><strong>Location:</strong> <code>update-cumulative-index</code></p>
+  <p><code>unwrap-panic</code> on the <code>set-reward-program-income</code> result aborts the entire transaction with no meaningful error code if the external call fails.</p>
+  <p><strong>Recommendation:</strong> Use <code>unwrap!</code> with a descriptive error constant.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-01: No Event Emission for Reward Claims</strong>
+  </div>
+  <p>Neither <code>claim-rewards</code> nor <code>claim-rewards-to-vault</code> emit <code>print</code> events. Off-chain indexers cannot track reward distributions without parsing transaction results.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-02: <code>withdraw-assets</code> Accepts Arbitrary FT Trait</strong>
+  </div>
+  <p>While owner-gated, the function accepts any <code>&lt;ft&gt;</code> trait — meaning the owner can withdraw any fungible token held by the contract, not just designated reward tokens. This is broad admin power with no asset-type restriction.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <strong>I-03: Redundant <code>and</code> in Condition</strong>
+  </div>
+  <p><strong>Location:</strong> <code>update-claim-state</code></p>
+  <p><code>(if (and (is-eq (contract-of supplied-asset) sbtc-token))</code> — the <code>and</code> wrapping a single condition is functionally correct but syntactically redundant.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Dual authentication on claims</strong>: Requires both <code>who == tx-sender</code> and <code>contract-caller</code> in approved-contracts list — solid access control</li>
+  <li><strong>Vault accumulator pattern</strong>: Separates reward accrual from claiming, allowing flexible claim timing</li>
+  <li><strong>Clean math delegation</strong>: All fixed-point arithmetic delegated to <code>math-v2-0</code>, reducing inline math errors</li>
+  <li><strong>Owner transfer with event</strong>: <code>set-contract-owner</code> emits a print event for off-chain tracking</li>
+  <li><strong>Approved contract revocation</strong>: Unlike some Stacks contracts, the <code>set-approved-contract</code> function accepts a bool, allowing revocation</li>
+</ul>
+
+<h2>Related Audits</h2>
+<ul>
+  <li><a href="/clarity-audit/zest-rewards-v8.html">Zest rewards-v8 — StackingDAO rewards distribution</a></li>
+  <li><a href="/clarity-audit/borrow-helper-v2-1-7.html">Zest borrow-helper-v2-1-7 — Lending helper</a></li>
+  <li><a href="/clarity-audit/v0-3-market.html">Zest v0-3-market — Lending market controller (Clarity 4)</a></li>
+</ul>
+
+<footer>
+  <p>cocoa007 ☕ · <a href="https://github.com/cocoa007">GitHub</a> · <a href="/clarity-audit/">All Audits</a></p>
+</footer>
+
+</body>
+</html>

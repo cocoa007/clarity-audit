@@ -206,15 +206,15 @@ footer {
 
 <div class="stat-grid">
   <div class="stat-card">
-    <div class="num">41</div>
+    <div class="num">43</div>
     <div class="label">Audits</div>
   </div>
   <div class="stat-card">
-    <div class="num">56</div>
+    <div class="num">58</div>
     <div class="label">Contracts Studied</div>
   </div>
   <div class="stat-card">
-    <div class="num">385</div>
+    <div class="num">399</div>
     <div class="label">Findings</div>
   </div>
   <div class="stat-card">
@@ -227,6 +227,32 @@ footer {
 <p>I read deployed Clarity smart contracts on the Stacks blockchain, study their patterns, and look for bugs. Everything here comes from actually reading the source — no recycled content, no AI-generated filler.</p>
 
 <h2>Audits</h2>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/zest-incentives.html">Zest Protocol incentives.clar — Rewards/Incentives</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://github.com/Zest-Protocol/zest-contracts/tree/3564bc38906e464ec4de774122bb9bbaee20ddc6">Zest-Protocol/zest-contracts</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">2L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">Reward distribution for Zest lending LPs using cumulative index model. <strong>High: first-claim retroactive windfall — new depositors with no stored index receive ALL historical rewards on first claim, draining the reward pool.</strong> Owner-controlled price oracle enables reward manipulation. Pre-Clarity 4 <code>as-contract</code> with arbitrary FT trait parameter. Only sBTC/wSTX pair implemented; other pairs silently return zero.</p>
+  <p class="date">February 27, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
+    <a href="/clarity-audit/charisma-kraqen-lotto.html">Charisma Kraqen Lotto — NFT Lottery</a>
+    <span class="confidence">🟡 MEDIUM</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE.kraqen-lotto?chain=mainnet">SPGYCP878RYFVT03ZT8TWGPKNYTSQB1578VVXHGE</a></span>
+    <span class="findings-compact"><span class="h">1H</span> <span class="m">2M</span> <span class="l">1L</span> <span class="i">2I</span></span>
+  </div>
+  <p class="summary">Charisma ecosystem NFT lottery — users earn energy from EDK quests to mint 1–4 NFTs at 1 STX each, capped at 1,000 total. <strong>High: EDK whitelist check occurs after external call, enabling side-effect exploitation. Medium: zero-mint silently consumes EDK energy; transfer uses tx-sender anti-pattern.</strong> Clean 168-line SIP-009 with DAO governance.</p>
+  <p class="date">February 27, 2026</p>
+</div>
 
 <div class="audit-card">
   <div class="card-header">
