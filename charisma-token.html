@@ -78,7 +78,8 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
   <tr><td>Lines of Code</td><td>226</td></tr>
   <tr><td>SHA-256</td><td><code>4cbb8c40d54f67887194c4b63987ffbb4645d0474df60ef5795f89d03fa2635c</code></td></tr>
   <tr><td>Confidence</td><td>🟢 HIGH — self-contained wrapper contract, all logic auditable inline; external dependencies (dungeon-master, red-pill-nft, dme000-governance-token) noted but not reviewed</td></tr>
-  <tr><td>Date</td><td>February 24, 2026</td></tr>
+  <tr><td>Deploy post-condition-mode</td><td><code>allow</code> — see finding I-04</td></tr>
+  <tr><td>Date</td><td>February 27, 2026 (updated from February 24)</td></tr>
 </table>
 
 <div class="stat-grid">
@@ -86,7 +87,7 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
   <div class="stat-card"><div class="num">1</div><div class="label">High</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">Medium</div></div>
   <div class="stat-card"><div class="num">2</div><div class="label">Low</div></div>
-  <div class="stat-card"><div class="num">3</div><div class="label">Informational</div></div>
+  <div class="stat-card"><div class="num">4</div><div class="label">Informational</div></div>
 </div>
 
 <h2>Overview</h2>
@@ -222,6 +223,18 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
   <p><strong>Location:</strong> <code>(define-constant unlock-block block-height)</code></p>
   <p><strong>Description:</strong> The unlock block is permanently set to the block height at deployment. Combined with the cumulative block-counter, this means the "unlock" threshold is always <code>deploy-block + total-tx-count</code>. This is the intended design for rate-limiting but means the contract's behavior depends on when it was deployed — redeploying at a later block height would effectively reset the rate limit.</p>
   <p><strong>Recommendation:</strong> Informational. Document this behavior for integrators.</p>
+</div>
+
+<!-- I-04 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-04: Contract deployed with <code>post-condition-mode: allow</code></h3>
+  </div>
+  <p><strong>Location:</strong> Deployment transaction</p>
+  <p><strong>Description:</strong> The contract was deployed with <code>post-condition-mode</code> set to <code>allow</code>, meaning the deploy transaction itself had no post-condition restrictions on asset transfers. For a contract deployment this is typically benign — the deploy tx doesn't transfer assets — but it indicates the deployer did not enforce post-conditions at the transaction level. More importantly, any <em>future</em> transaction calling this contract can choose its own post-condition mode. The contract's <code>unwrap</code> function uses <code>as-contract</code> to transfer governance tokens, and callers should use <code>post-condition-mode: deny</code> with appropriate post-conditions to ensure the contract only moves the expected amount.</p>
+  <p><strong>Impact:</strong> Informational. The deploy-time post-condition mode does not affect the security of subsequent calls — each transaction sets its own mode. However, wallets and frontends integrating this contract should enforce <code>deny</code> mode with explicit post-conditions on wrap/unwrap calls.</p>
+  <p><strong>Recommendation:</strong> Document recommended post-conditions for integrators. For wrap: expect exactly N governance tokens transferred from user, N CHA minted. For unwrap: expect exactly N CHA burned, N governance tokens transferred to user.</p>
 </div>
 
 <h2>Positive Observations</h2>
