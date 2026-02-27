@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conxian Concentrated Liquidity Pool Audit — Clarity Audit Notes</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+.severity { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; margin-right: 0.5rem; }
+.severity.critical { background: var(--red); color: #fff; }
+.severity.high { background: #da3633; color: #fff; }
+.severity.medium { background: var(--yellow); color: #000; }
+.severity.low { background: var(--blue); color: #000; }
+.severity.info { background: var(--text-muted); color: #000; }
+.severity.good { background: var(--green); color: #000; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.finding { border-left: 3px solid var(--border); padding: 0.75rem 1rem; margin: 1rem 0; background: var(--surface); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 600; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover, .nav a.active { color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/" class="active">Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>Conxian Protocol — Concentrated Liquidity Pool</h1>
+<p class="subtitle">
+  <a href="https://github.com/Conxian/Conxian">Conxian/Conxian</a> ·
+  Commit: <code>0c5d76f</code> · DeFi / AMM · February 27, 2026
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">1</div>
+    <div class="label">Contract</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">197</div>
+    <div class="label">Lines</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">13</div>
+    <div class="label">Findings</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">4</div>
+    <div class="label">Critical</div>
+  </div>
+</div>
+
+<h2>Overview</h2>
+
+<p>A concentrated liquidity AMM pool contract inspired by Uniswap V3. It supports pool creation, position minting/burning, token swaps with fee collection, and protocol fee distribution via a revenue distributor contract.</p>
+
+<p><strong>This contract is a skeleton — not a functional AMM.</strong> It maintains accounting data structures but lacks the actual token transfer logic needed for a working pool. Every core operation (mint, burn, swap, collect) is critically broken. The "concentrated liquidity" mechanism (ticks, sqrt-price) is entirely decorative — no price math exists.</p>
+
+<h2>Findings Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+  <tr><td>C-01</td><td><span class="severity critical">CRITICAL</span></td><td>Swap sends tokens without receiving input tokens</td></tr>
+  <tr><td>C-02</td><td><span class="severity critical">CRITICAL</span></td><td>Mint does not transfer tokens into the pool</td></tr>
+  <tr><td>C-03</td><td><span class="severity critical">CRITICAL</span></td><td>Burn does not return tokens to the user</td></tr>
+  <tr><td>C-04</td><td><span class="severity critical">CRITICAL</span></td><td>No access control on set-pool-fee</td></tr>
+  <tr><td>H-01</td><td><span class="severity high">HIGH</span></td><td>No access control on create-pool or initialize</td></tr>
+  <tr><td>H-02</td><td><span class="severity high">HIGH</span></td><td>collect never transfers fees or resets accumulators</td></tr>
+  <tr><td>H-03</td><td><span class="severity high">HIGH</span></td><td>Fee growth per position is never updated</td></tr>
+  <tr><td>M-01</td><td><span class="severity medium">MEDIUM</span></td><td>Ticks and sqrt-price are decorative — no price math</td></tr>
+  <tr><td>M-02</td><td><span class="severity medium">MEDIUM</span></td><td>Swap uses 1:1 exchange instead of AMM curve</td></tr>
+  <tr><td>M-03</td><td><span class="severity medium">MEDIUM</span></td><td>Uses legacy as-contract instead of Clarity 4 as-contract?</td></tr>
+  <tr><td>L-01</td><td><span class="severity low">LOW</span></td><td>add-liquidity is a no-op</td></tr>
+  <tr><td>I-01</td><td><span class="severity info">INFO</span></td><td>Pool token principals stored but never validated</td></tr>
+  <tr><td>I-02</td><td><span class="severity info">INFO</span></td><td>No events or print statements</td></tr>
+</table>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-01: Swap Sends Tokens Without Receiving Input Tokens</h3>
+
+<p>The swap function transfers <code>amount-out</code> to the caller via <code>contract-call?</code> but never transfers <code>amount-in</code> from the caller to the contract. Any user can call swap and receive tokens for free.</p>
+
+<pre><code>;; Sends tokens OUT but never receives tokens IN:
+(as-contract
+  (if zero-for-one
+    (try! (contract-call? token1-trait transfer amount-out (as-contract tx-sender) recipient none))
+    (try! (contract-call? token0-trait transfer amount-out (as-contract tx-sender) recipient none))
+  )
+)
+;; Missing: inbound transfer of amount-in from tx-sender to the contract</code></pre>
+
+<p><strong>Impact:</strong> Total loss of all tokens held by the contract. Anyone can drain the pool in a single transaction.</p>
+
+<p><strong>Fix:</strong> Add an inbound transfer of <code>amount-in</code> from <code>tx-sender</code> to the contract before the outbound transfer.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-02: Mint Does Not Transfer Tokens Into the Pool</h3>
+
+<p>The mint function increases the position's liquidity and the pool's total liquidity counter, but never calls any token transfer to receive tokens from the minter.</p>
+
+<pre><code>(map-set positions position-key
+  (merge current-pos { liquidity: (+ (get liquidity current-pos) amount) }))
+(map-set pools pool-id
+  (merge pool { liquidity: (+ (get liquidity pool) amount) }))
+;; No token transfer from tx-sender to contract</code></pre>
+
+<p><strong>Impact:</strong> Pool liquidity is phantom — numbers go up but no real tokens back them. The accounting is completely disconnected from actual token balances.</p>
+
+<p><strong>Fix:</strong> Accept token traits as parameters and transfer appropriate amounts of token0 and token1 based on tick range and current price.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-03: Burn Does Not Return Tokens to the User</h3>
+
+<p>The burn function decreases position and pool liquidity counters but never transfers tokens back to the user.</p>
+
+<pre><code>(map-set pools pool-id
+  (merge pool { liquidity: (- (get liquidity pool) amount) }))
+;; No token transfer back to tx-sender</code></pre>
+
+<p><strong>Impact:</strong> Users who somehow deposited tokens could never withdraw them — permanent loss of funds.</p>
+
+<p><strong>Fix:</strong> Calculate token amounts owed based on liquidity and tick range, then transfer from the contract to the caller.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity critical">CRITICAL</span> C-04: No Access Control on set-pool-fee</h3>
+
+<p>Any user can change the fee of any pool. No authorization check exists.</p>
+
+<pre><code>(define-public (set-pool-fee (pool-id uint) (new-fee uint))
+  (begin
+    (let ((pool (unwrap! (map-get? pools pool-id) (err ERR_INSUFFICIENT_LIQUIDITY))))
+      (map-set pools pool-id (merge pool { fee: new-fee }))
+      (ok true)
+    )
+  )
+)</code></pre>
+
+<p><strong>Impact:</strong> An attacker can set the fee to <code>u1000000</code> (100%), making <code>amount-out</code> = 0, or set fee to <code>u0</code> to bypass fee collection entirely.</p>
+
+<p><strong>Fix:</strong> Add access control — restrict to the pool creator or a governance/admin principal.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-01: No Access Control on create-pool or initialize</h3>
+
+<p>Anyone can create unlimited pools with arbitrary parameters including fake token principals, zero prices, or extreme fees. The <code>initialize</code> function is just a wrapper around <code>create-pool</code> with no additional guards.</p>
+
+<p><strong>Impact:</strong> Pool ID namespace pollution. Users could be tricked into interacting with malicious pools.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-02: collect Never Transfers Fees or Resets Accumulators</h3>
+
+<p>The collect function returns fee growth values as a response tuple but never transfers tokens to the caller and never resets the values.</p>
+
+<pre><code>(define-public (collect (pool-id uint) (tick-lower int) (tick-upper int))
+  (let (...)
+    (ok {
+      collected-0: (get fee-growth-inside-0 position),
+      collected-1: (get fee-growth-inside-1 position)
+    })
+  )
+)</code></pre>
+
+<p><strong>Impact:</strong> LP fees are never distributable, even if fee tracking were implemented.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity high">HIGH</span> H-03: Fee Growth Per Position Is Never Updated</h3>
+
+<p>The swap function adds <code>lp-fee</code> to the pool's total liquidity counter instead of distributing it to position fee accumulators. <code>fee-growth-inside-0</code> and <code>fee-growth-inside-1</code> remain at <code>u0</code> forever.</p>
+
+<pre><code>;; Fees incorrectly added to liquidity counter:
+(map-set pools pool-id
+  (merge pool { liquidity: (+ (get liquidity pool) lp-fee) }))</code></pre>
+
+<p><strong>Impact:</strong> LPs never earn fees from swaps. The fee mechanism is completely non-functional.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-01: Ticks and sqrt-price Are Decorative</h3>
+
+<p>The contract stores <code>tick</code>, <code>tick-lower</code>, <code>tick-upper</code>, and <code>sqrt-price</code> but never uses them in any calculation. Swaps don't update price. Mint/burn don't calculate token amounts based on tick ranges. The concentrated liquidity mechanism is entirely absent.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-02: Swap Uses 1:1 Exchange Instead of AMM Curve</h3>
+
+<p>Output is calculated as <code>amount-out = amount-in - total-fee</code> — a naive 1:1 swap minus fees. A real concentrated liquidity pool requires output based on <code>sqrt-price</code>, liquidity depth, and the constant-product invariant.</p>
+
+<pre><code>(amount-out (- amount-in total-fee))</code></pre>
+</div>
+
+<div class="finding">
+<h3><span class="severity medium">MEDIUM</span> M-03: Uses Legacy as-contract</h3>
+
+<p>The contract uses pre-Clarity 4 <code>as-contract</code> which grants blanket asset access. Any token trait passed to <code>swap</code> or <code>collect-protocol-fees</code> could execute arbitrary logic under the contract's authority.</p>
+
+<p><strong>Fix:</strong> Migrate to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-ft</code>/<code>with-stx</code> allowances. Implement a token allowlist.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity low">LOW</span> L-01: add-liquidity Is a No-Op</h3>
+
+<pre><code>(define-public (add-liquidity (amount0 uint) (amount1 uint) (token0 principal) (token1 principal))
+  (ok true)
+)</code></pre>
+
+<p>Dead code. May mislead integrators.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-01: Pool Token Principals Not Validated Against Traits</h3>
+
+<p>A pool's <code>token0</code>/<code>token1</code> principals are stored at creation but never checked against the actual trait implementations passed to <code>swap</code>. A pool created with token0=X could be swapped with a different token trait.</p>
+</div>
+
+<div class="finding">
+<h3><span class="severity info">INFO</span> I-02: No Events</h3>
+
+<p>The contract emits no <code>print</code> events, making off-chain indexing of pool creation, swaps, mints, and burns impossible.</p>
+</div>
+
+<h2>Verdict</h2>
+
+<p><strong>Do not deploy.</strong> This contract is a skeleton with no functional AMM logic. Every core operation is critically broken — swaps drain the pool for free, mint/burn move no tokens, fees are never distributed, and anyone can change pool parameters. The concentrated liquidity mechanism (ticks, sqrt-price) exists only as data structure fields with no actual price math.</p>
+
+<p>The contract requires a complete rewrite. Study production Clarity AMM implementations (ALEX <code>amm-pool-v2-01</code>, Velar <code>univ2-core</code>, Bitflow <code>stableswap</code>) before attempting concentrated liquidity, which is significantly more complex than constant-product AMMs.</p>
+
+<footer>
+  <p><a href="/clarity-audit/">← Back to all audits</a> · cocoa007 ☕ · February 27, 2026</p>
+</footer>
+
+</body>
+</html>
