@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StackingDAO Core v5 Audit — Clarity Audit Notes</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;--accent:#f7931a;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--code-bg:#0d1117;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.6;max-width:860px;margin:0 auto;padding:2rem 1.5rem}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:2rem;margin-bottom:.25rem;color:var(--accent)}
+.subtitle{color:var(--text-muted);font-size:1rem;margin-bottom:2rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:.5rem}
+p,li{margin-bottom:.75rem}
+ul,ol{padding-left:1.5rem}
+code{font-family:var(--font-mono);font-size:.85em;background:var(--code-bg);padding:.15em .4em;border-radius:4px;border:1px solid var(--border)}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{border:none;padding:0;font-size:.85rem;line-height:1.5}
+.meta{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;margin-bottom:2rem}
+.meta p{margin-bottom:.25rem;font-size:.9rem}
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin:1.25rem 0}
+.finding h3{margin-top:0}
+.severity-critical{border-left:4px solid var(--red)}
+.severity-high{border-left:4px solid #f0883e}
+.severity-medium{border-left:4px solid var(--yellow)}
+.severity-low{border-left:4px solid var(--blue)}
+.severity-info{border-left:4px solid var(--text-muted)}
+.tag{display:inline-block;font-size:.75rem;padding:.1em .5em;border-radius:4px;font-weight:600;margin-right:.5rem}
+.tag-critical{background:var(--red);color:#fff}
+.tag-high{background:#f0883e;color:#fff}
+.tag-medium{background:var(--yellow);color:#000}
+.tag-low{background:var(--blue);color:#fff}
+.tag-info{background:var(--text-muted);color:#000}
+.back{display:inline-block;margin-bottom:1.5rem;font-size:.9rem}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{text-align:left;padding:.5rem .75rem;border:1px solid var(--border)}
+th{background:var(--surface)}
+</style>
+</head>
+<body>
+<a class="back" href="/clarity-audit/">← Back to index</a>
+
+<h1>StackingDAO Core v5 — Security Audit</h1>
+<p class="subtitle">Liquid stacking protocol — deposit STX, receive stSTX, withdraw via NFT receipt or idle pool (v5 upgrade)</p>
+
+<div class="meta">
+  <p><strong>Contract:</strong>
+  On-chain: <code><a href="https://explorer.hiro.so/txid/SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v5?chain=mainnet">SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-v5</a></code> · 394 lines</p>
+  <p><strong>Clarity version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>, not <code>as-contract?</code>)</p>
+  <p><strong>Prior version:</strong> <a href="stacking-dao-core-v4.html">StackingDAO Core v4 audit</a></p>
+  <p><strong>Date:</strong> March 1, 2026</p>
+  <p><strong>Auditor:</strong> <a href="https://github.com/cocoa007">cocoa007.btc</a></p>
+  <p><strong>Audit confidence: Medium.</strong> Well-structured contract with clear separation of concerns. Multi-contract architecture (depends on <code>.dao</code>, <code>.data-core-v1</code>, <code>.data-core-v2</code>, <code>.data-core-v3</code>, <code>.reserve</code>, <code>.ststx-token</code>, <code>.ststx-withdraw-nft-v2</code>, and four trait-parameterized contracts). Core logic reviewed thoroughly; trust assumptions on external contracts noted.</p>
+</div>
+
+<h2>V4 → V5 Changes</h2>
+<ul>
+<li><strong>stSTX burned at init-withdraw, not at withdraw.</strong> In v4, <code>init-withdraw</code> transferred stSTX to the contract and burned it during <code>withdraw</code>. In v5, stSTX is burned immediately during <code>init-withdraw</code> via <code>burn-for-protocol</code>. This eliminates the contract holding stSTX tokens between init and withdraw — a meaningful improvement that reduces contract surface area.</li>
+<li><strong>Commission address validation.</strong> New <code>commission-address</code> variable with setter and getter. <code>deposit</code>, <code>withdraw-idle</code>, and <code>withdraw</code> now assert the passed commission contract matches the configured address. Prevents using an arbitrary (but protocol-registered) commission contract.</li>
+<li><strong>Data source upgrade.</strong> Exchange rate now read from <code>.data-core-v3</code> (was <code>.data-core-v2</code> in v4).</li>
+<li><strong>Print event fix.</strong> Deposit event field corrected from <code>stxstx-amount</code> → <code>ststx-amount</code>.</li>
+</ul>
+
+<h2>Summary</h2>
+
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="tag tag-medium">MEDIUM</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-low">LOW</span></td><td>2</td></tr>
+<tr><td><span class="tag tag-info">INFO</span></td><td>3</td></tr>
+</table>
+
+<h2>Findings</h2>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-01: No slippage protection on deposit and withdrawal</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code>, <code>withdraw</code></p>
+<p><strong>Description:</strong> None of the user-facing functions accept a minimum output parameter. The stSTX/STX exchange rate is read from <code>.data-core-v3</code> at execution time. Between transaction submission and inclusion in a block, the rate can change due to stacking rewards, other deposits/withdrawals, or oracle updates. Users may receive fewer stSTX (on deposit) or less STX (on withdrawal) than expected.</p>
+<pre><code>;; deposit: no min-ststx-out parameter
+(stx-ststx (try! (contract-call? .data-core-v3 get-stx-per-ststx reserve)))
+(ststx-amount (/ (* stx-user-amount DENOMINATOR_6) stx-ststx))</code></pre>
+<p><strong>Impact:</strong> Users are exposed to exchange rate changes between tx submission and execution. In a volatile period or during a large rebase event, users could receive significantly less than expected. While Stacks blocks are relatively slow (~10 min), the exchange rate changes at PoX cycle boundaries which could coincide with pending transactions.</p>
+<p><strong>Recommendation:</strong> Add a <code>min-ststx-out</code> parameter to <code>deposit</code> and <code>min-stx-out</code> parameters to <code>withdraw-idle</code> and <code>withdraw</code>. Assert the output meets the minimum before completing the operation.</p>
+</div>
+
+<div class="finding severity-medium">
+<h3><span class="tag tag-medium">MEDIUM</span> M-02: <code>as-contract</code> blanket authority (pre-Clarity 4)</h3>
+<p><strong>Location:</strong> Multiple — <code>deposit</code> (line ~140), <code>withdraw-idle</code> (lines ~187-195), <code>init-withdraw</code> (lines ~229-231), <code>withdraw</code> (lines ~273-280)</p>
+<p><strong>Description:</strong> The contract uses <code>as-contract</code> (Clarity 3) which grants blanket authority to move any asset the contract holds. Clarity 4 introduced <code>as-contract?</code> with explicit asset allowances (<code>with-stx</code>, <code>with-ft</code>, <code>with-nft</code>) that restrict which assets can be moved within the scope.</p>
+<pre><code>;; v5 uses blanket as-contract
+(try! (as-contract (contract-call? reserve request-stx-for-withdrawal stx-user-amount receiver)))
+
+;; Clarity 4 would restrict to only STX:
+(try! (as-contract? (with-stx stx-user-amount)
+  (contract-call? reserve request-stx-for-withdrawal stx-user-amount receiver)))</code></pre>
+<p><strong>Impact:</strong> If any of the trait-parameterized contracts (<code>reserve</code>, <code>commission-contract</code>, <code>staking-contract</code>, <code>direct-helpers</code>) contains a vulnerability or is upgraded to a malicious implementation, the <code>as-contract</code> scope could be abused to move any asset held by this contract. The DAO protocol validation (<code>check-is-protocol</code>) mitigates this significantly, but a compromised DAO could register a malicious contract.</p>
+<p><strong>Recommendation:</strong> Upgrade to Clarity 4 and use <code>as-contract?</code> with explicit <code>with-stx</code> allowances. This provides language-level enforcement that only STX can be moved, regardless of what the called contracts attempt.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-01: <code>unwrap-panic</code> in user-facing functions can cause silent transaction failures</h3>
+<p><strong>Location:</strong> <code>deposit</code> (line ~129: <code>get-idle-cycle</code>), <code>withdraw-idle</code> (line ~170), <code>init-withdraw</code> (lines ~212, ~219: <code>get-withdraw-unlock-burn-height</code> and <code>get-last-token-id</code>)</p>
+<p><strong>Description:</strong> Multiple <code>unwrap-panic</code> calls are used in user-facing public functions. If the unwrapped value is <code>none</code> or <code>(err ...)</code>, the entire transaction aborts with a runtime error rather than returning a meaningful error code.</p>
+<pre><code>(idle-cycle (unwrap-panic (get-idle-cycle)))
+(unlock-burn-height (unwrap-panic (get-withdraw-unlock-burn-height)))
+(nft-id (unwrap-panic (contract-call? .ststx-withdraw-nft-v2 get-last-token-id)))</code></pre>
+<p><strong>Impact:</strong> Users see opaque "runtime error" instead of a descriptive error code. Difficult to debug failed transactions. In practice, these functions should always return valid values, so the risk is low.</p>
+<p><strong>Recommendation:</strong> Replace <code>unwrap-panic</code> with <code>unwrap!</code> and specific error constants for better debuggability.</p>
+</div>
+
+<div class="finding severity-low">
+<h3><span class="tag tag-low">LOW</span> L-02: Fee parameters can be set up to 100%</h3>
+<p><strong>Location:</strong> <code>set-stack-fee</code>, <code>set-unstack-fee</code>, <code>set-withdraw-idle-fee</code></p>
+<p><strong>Description:</strong> Fee setters only check <code>(&lt;= fee DENOMINATOR_BPS)</code>, allowing fees up to 10000 bps (100%). A compromised or malicious DAO governance action could set fees to confiscate all user deposits or withdrawals.</p>
+<pre><code>(define-public (set-stack-fee (fee uint))
+  (begin
+    (try! (contract-call? .dao check-is-protocol contract-caller))
+    (asserts! (&lt;= fee DENOMINATOR_BPS) (err ERR_WRONG_BPS))
+    (var-set stack-fee fee)
+    (ok true)
+  )
+)</code></pre>
+<p><strong>Impact:</strong> If governance is compromised, fees could be set to extract all user value. Current DAO governance provides the primary protection. This is a defense-in-depth concern.</p>
+<p><strong>Recommendation:</strong> Add a reasonable maximum fee cap (e.g., 1000 bps / 10%) as a hard-coded constant. This limits damage even if governance is compromised.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-01: Rounding consistently favors the protocol</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code>, <code>withdraw</code></p>
+<p><strong>Description:</strong> All integer divisions round down (Clarity's default behavior). On deposit, <code>ststx-amount</code> rounds down (user gets slightly less stSTX). On withdrawal, <code>stx-amount</code> rounds down (user gets slightly less STX). Fee calculations also round down (protocol gets slightly less fee). This is standard practice and not a vulnerability, but worth noting for completeness.</p>
+<p><strong>Impact:</strong> Negligible dust amounts (< 1 microSTX per operation) lost by users. Consistent with industry standard.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-02: No minimum deposit or withdrawal amount</h3>
+<p><strong>Location:</strong> <code>deposit</code>, <code>withdraw-idle</code>, <code>init-withdraw</code></p>
+<p><strong>Description:</strong> There is no minimum amount enforced for deposits or withdrawals. Extremely small amounts (e.g., 1 microSTX) could be deposited, which would mint 0 stSTX due to rounding, effectively donating the deposit to the protocol.</p>
+<p><strong>Impact:</strong> User error only — no economic attack vector. The gas cost of a transaction far exceeds any dust amount lost.</p>
+</div>
+
+<div class="finding severity-info">
+<h3><span class="tag tag-info">INFO</span> I-03: Commission address is a single point of trust</h3>
+<p><strong>Location:</strong> <code>set-commission-address</code>, <code>deposit</code>, <code>withdraw-idle</code>, <code>withdraw</code></p>
+<p><strong>Description:</strong> The v5 upgrade adds commission address validation, which is an improvement over v4. However, the <code>commission-address</code> can be changed by any protocol-authorized caller via <code>set-commission-address</code>. If governance sets this to a malicious commission contract, all fees would be redirected.</p>
+<p><strong>Impact:</strong> Governance-dependent risk. The commission contract must be protocol-registered AND match the configured address, providing two layers of validation. This is a documented trust assumption, not a vulnerability.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+<li><strong>Burn-at-init pattern (new in v5).</strong> Burning stSTX immediately during <code>init-withdraw</code> instead of holding it until <code>withdraw</code> is a significant improvement. Reduces the contract's token surface area and eliminates the risk of stSTX being stuck if the withdrawal flow fails.</li>
+<li><strong>Commission address pinning (new in v5).</strong> Requiring the passed commission contract to match the configured address prevents using an arbitrary protocol-registered contract as the commission target.</li>
+<li><strong>Consistent protocol validation.</strong> All four trait parameters are validated via <code>check-is-protocol</code> in every function.</li>
+<li><strong>Granular shutdown controls.</strong> Four independent shutdown flags allow disabling specific operations without affecting others.</li>
+<li><strong>Clean fee handling.</strong> Fee-on-top model with explicit zero-check avoids unnecessary transfers.</li>
+</ul>
+
+<h2>Architecture Notes</h2>
+<p>StackingDAO Core v5 is part of a multi-contract system. Key trust dependencies:</p>
+<ul>
+<li><code>.dao</code> — access control (check-is-enabled, check-is-protocol)</li>
+<li><code>.data-core-v1</code> — withdrawal NFT data, cycle offsets</li>
+<li><code>.data-core-v2</code> — idle STX tracking, withdraw inset</li>
+<li><code>.data-core-v3</code> — exchange rate (stx-per-ststx) — new in v5</li>
+<li><code>.ststx-token</code> — SIP-010 liquid stacking token (mint/burn)</li>
+<li><code>.ststx-withdraw-nft-v2</code> — withdrawal receipt NFTs</li>
+<li><code>.commission-v2</code> — default commission handler</li>
+<li>Four trait-parameterized contracts passed by the caller (all validated)</li>
+</ul>
+<p>The exchange rate source upgrade from <code>.data-core-v2</code> to <code>.data-core-v3</code> is the most significant external dependency change.</p>
+
+<p style="margin-top:2.5rem;color:var(--text-muted);font-size:.85rem">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> ·
+  <a href="/clarity-audit/">Full audit portfolio</a>
+</p>
+</body>
+</html>
