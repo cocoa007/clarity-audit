@@ -230,6 +230,19 @@ footer {
 
 <div class="audit-card">
   <div class="card-header">
+    <a href="/clarity-audit/aegis-quest-escrow.html">Aegis Agent Quest/Escrow System — AI Agent Quest Platform</a>
+    <span class="confidence">🟢 HIGH</span>
+  </div>
+  <div class="card-meta">
+    <span class="repo"><a href="https://explorer.hiro.so/txid/SP373V1TAZCKQP9M34DRZRPX9PECS4C6NW1R8YNTC.quest-escrow?chain=mainnet">SP373V1TAZCKQP9M34DRZRPX9PECS4C6NW1R8YNTC (4 contracts)</a></span>
+    <span class="findings-compact"><span class="c">2C</span> <span class="h">3H</span> <span class="m">3M</span> <span class="l">3L</span> <span class="i">3I</span></span>
+  </div>
+  <p class="summary">4-contract AI agent quest/escrow system with oracle-based evaluation and Merkle proof verification. <strong>Critical: ALL STX transfer logic is commented out — the escrow contract records bounties but never locks or releases funds. Deployed on mainnet as a non-functional payment system.</strong> Unrestricted usage tracking enables DoS. Merkle proof ordering broken. Oracle admin has no safeguards.</p>
+  <p class="date">March 1, 2026</p>
+</div>
+
+<div class="audit-card">
+  <div class="card-header">
     <a href="/clarity-audit/sbtc-deposit.html">sBTC Deposit — Bitcoin Peg Deposit Contract</a>
     <span class="confidence">🟡 MEDIUM</span>
   </div>
