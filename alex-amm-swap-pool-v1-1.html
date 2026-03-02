@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALEX amm-swap-pool-v1-1 — AMM Swap Pool Audit | cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 {
+  font-size: 1.3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin: 1rem 0;
+}
+code { font-family: var(--font-mono); font-size: 0.9em; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+}
+th { background: var(--surface); }
+.severity-critical { color: var(--red); font-weight: bold; }
+.severity-high { color: #ff7b72; font-weight: bold; }
+.severity-medium { color: var(--yellow); font-weight: bold; }
+.severity-low { color: var(--blue); }
+.severity-info { color: var(--text-muted); }
+.finding {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  background: var(--surface);
+}
+.finding h3 { margin-top: 0; }
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+.badge-high { background: rgba(255, 123, 114, 0.15); color: #ff7b72; border: 1px solid rgba(255, 123, 114, 0.3); }
+.badge-medium { background: rgba(210, 153, 34, 0.15); color: var(--yellow); border: 1px solid rgba(210, 153, 34, 0.3); }
+.badge-low { background: rgba(88, 166, 255, 0.15); color: var(--blue); border: 1px solid rgba(88, 166, 255, 0.3); }
+.badge-info { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); border: 1px solid rgba(139, 148, 158, 0.3); }
+.meta-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.summary-card {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.summary-card .count {
+  font-size: 2rem;
+  font-weight: bold;
+}
+.back-link { margin-bottom: 1.5rem; display: block; }
+</style>
+</head>
+<body>
+<a class="back-link" href="index.html">← Back to Audit Index</a>
+<h1>ALEX amm-swap-pool-v1-1</h1>
+<p class="subtitle">Weighted/Stable AMM Swap Pool — Independent Security Audit by cocoa007.btc</p>
+
+<div class="meta-box">
+  <strong>Contract:</strong> <code>SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1</code><br>
+  <strong>Source:</strong> <a href="https://explorer.hiro.so/txid/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.amm-swap-pool-v1-1?chain=mainnet">Stacks Explorer</a> |
+  <a href="https://api.hiro.so/v2/contracts/source/SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9/amm-swap-pool-v1-1">Hiro API</a><br>
+  <strong>Deploy Height:</strong> 104237<br>
+  <strong>Clarity Version:</strong> Pre-Clarity 4 (uses <code>as-contract</code>)<br>
+  <strong>Date:</strong> 2026-03-02<br>
+  <strong>Auditor:</strong> cocoa007.btc<br>
+  <strong>Confidence:</strong> Medium
+</div>
+
+<h2>Findings Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="count severity-critical">0</div>Critical</div>
+  <div class="summary-card"><div class="count severity-high">2</div>High</div>
+  <div class="summary-card"><div class="count severity-medium">4</div>Medium</div>
+  <div class="summary-card"><div class="count severity-low">3</div>Low</div>
+  <div class="summary-card"><div class="count severity-info">4</div>Info</div>
+</div>
+
+<table>
+<tr><th>ID</th><th>Severity</th><th>Title</th></tr>
+<tr><td>H-01</td><td class="severity-high">High</td><td>Pool owner can set unlimited fee rates (no cap validation)</td></tr>
+<tr><td>H-02</td><td class="severity-high">High</td><td><code>as-contract</code> used without asset restrictions (pre-Clarity 4)</td></tr>
+<tr><td>M-01</td><td class="severity-medium">Medium</td><td>Zero-output swaps possible — user pays fees, receives nothing</td></tr>
+<tr><td>M-02</td><td class="severity-medium">Medium</td><td>Fee accounting relies on external vault segregation</td></tr>
+<tr><td>M-03</td><td class="severity-medium">Medium</td><td>Pool owner can freeze trading via start/end block manipulation</td></tr>
+<tr><td>M-04</td><td class="severity-medium">Medium</td><td>Permissionless pool creation with non-functional defaults</td></tr>
+<tr><td>L-01</td><td class="severity-low">Low</td><td>No minimum liquidity lock on first deposit</td></tr>
+<tr><td>L-02</td><td class="severity-low">Low</td><td>Saturating subtraction in <code>reduce-position</code></td></tr>
+<tr><td>L-03</td><td class="severity-low">Low</td><td>Oracle resilient price manipulable via single swap</td></tr>
+<tr><td>I-01</td><td class="severity-info">Info</td><td><code>unwrap-panic</code> in reduce-position</td></tr>
+<tr><td>I-02</td><td class="severity-info">Info</td><td>Multi-hop swaps drop intermediate slippage protection</td></tr>
+<tr><td>I-03</td><td class="severity-info">Info</td><td>No events for admin parameter changes</td></tr>
+<tr><td>I-04</td><td class="severity-info">Info</td><td>Pre-Clarity 4 — recommend migration to <code>as-contract?</code></td></tr>
+</table>
+
+<h2>Architecture</h2>
+<p>The contract implements a configurable AMM with two curve modes controlled by a <code>switch-threshold</code>:</p>
+<ul>
+  <li><strong>High factor</strong> (≥ threshold): Linear+product invariant: <code>(1-t)(x+y) + t·x·y</code></li>
+  <li><strong>Low factor</strong> (&lt; threshold): Power-mean invariant: <code>x^(1-t) + y^(1-t)</code></li>
+</ul>
+<p>Dependencies: <code>.alex-vault-v1-1</code> (custodial vault), <code>.token-amm-swap-pool-v1-1</code> (LP token), <code>.trait-sip-010</code> (SIP-010 trait).</p>
+<p>Includes a full fixed-point math library (exp, ln, pow) with 8-decimal precision.</p>
+
+<h2>Detailed Findings</h2>
+
+<div class="finding">
+  <h3><span class="badge badge-high">HIGH</span> H-01: Unlimited Fee Rates</h3>
+  <p><strong>Location:</strong> <code>set-fee-rate-x</code>, <code>set-fee-rate-y</code></p>
+  <p>The pool owner or contract owner can set fee rates to any <code>uint</code> value with no upper bound. A fee rate ≥ 100% causes the entire user input to be consumed as fees, yielding zero output.</p>
+<pre>(define-public (set-fee-rate-x (token-x principal) (token-y principal) (factor uint) (fee-rate-x uint))
+    (let ((pool (try! (get-pool-details token-x token-y factor))))
+        (asserts! (or (is-eq tx-sender (get pool-owner pool)) (is-ok (check-is-owner))) ERR-NOT-AUTHORIZED)
+        ;; NO UPPER BOUND CHECK
+        (map-set pools-data-map { ... } (merge pool { fee-rate-x: fee-rate-x }))
+        (ok true)))</pre>
+  <p><strong>Impact:</strong> Effective rug pull — users lose 100% of input. Pool owner can front-run to set fees to max, steal swap inputs, then reset.</p>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&lt;= fee-rate-x u10000000) ERR-FEE-TOO-HIGH)</code> (cap at 10%).</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-high">HIGH</span> H-02: <code>as-contract</code> Without Asset Restrictions</h3>
+  <p><strong>Location:</strong> <code>add-to-position</code>, <code>reduce-position</code>, <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p>Uses pre-Clarity 4 <code>as-contract</code> which grants blanket asset authority to the contract principal for the enclosed expression. Clarity 4's <code>as-contract?</code> with <code>with-ft</code>/<code>with-stx</code> can restrict exactly which assets and amounts are authorized.</p>
+<pre>(as-contract (try! (contract-call? .alex-vault-v1-1 transfer-ft token-y-trait dy sender)))
+(as-contract (try! (contract-call? .token-amm-swap-pool-v1-1 mint-fixed ... sender)))</pre>
+  <p><strong>Impact:</strong> Broader attack surface if vault or LP token contracts have vulnerabilities.</p>
+  <p><strong>Recommendation:</strong> Migrate to Clarity 4; use <code>as-contract?</code> with explicit <code>with-ft</code> allowances.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-medium">MEDIUM</span> M-01: Zero-Output Swaps</h3>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p>Small inputs can result in <code>dy = 0</code> after fees. The guard <code>(and (&gt; dy u0) ...)</code> silently skips the output transfer — user pays input + gas, receives nothing.</p>
+<pre>(and (&gt; dy u0) (as-contract (try! (contract-call? .alex-vault-v1-1 transfer-ft token-y-trait dy sender))))</pre>
+  <p><strong>Recommendation:</strong> Add <code>(asserts! (&gt; dy u0) ERR-INVALID-LIQUIDITY)</code> before the conditional transfer.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-medium">MEDIUM</span> M-02: Fee Accounting Vault Dependency</h3>
+  <p><strong>Location:</strong> <code>swap-x-for-y</code>, <code>swap-y-for-x</code></p>
+  <p>Non-rebated fees are sent to the vault reserve via <code>add-to-reserve</code>, but the pool's tracked <code>balance-x</code> only includes <code>dx-net-fees + fee-rebate</code>. This creates an implicit dependency on the vault correctly segregating reserve from pool balances.</p>
+  <p><strong>Impact:</strong> If vault accounting is compromised, pool balances become unreliable.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-medium">MEDIUM</span> M-03: Pool Owner Can Freeze Trading</h3>
+  <p><strong>Location:</strong> <code>set-start-block</code>, <code>set-end-block</code></p>
+  <p>Pool owner can set <code>start-block &gt; end-block</code>, causing <code>check-pool-status</code> to always fail. Swaps are blocked; withdrawals still work (<code>reduce-position</code> doesn't check pool status).</p>
+  <p><strong>Recommendation:</strong> Validate <code>start-block &lt;= end-block</code> in both setters.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-medium">MEDIUM</span> M-04: Permissionless Pool Creation</h3>
+  <p><strong>Location:</strong> <code>create-pool</code></p>
+  <p>Anyone can create pools with any SIP-010 pair. Pools are created with <code>max-in-ratio: u0</code> and <code>max-out-ratio: u0</code>, making the pool non-functional until configured. Malicious token contracts can be paired.</p>
+  <p><strong>Recommendation:</strong> Restrict pool creation to contract owner or require valid initial parameters.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-low">LOW</span> L-01: No Minimum Liquidity Lock</h3>
+  <p>First LP deposit has no minimum locked liquidity, unlike Uniswap V2. Mitigated by requirement that both dx &gt; 0 and dy &gt; 0.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-low">LOW</span> L-02: Saturating Subtraction in <code>reduce-position</code></h3>
+  <p>Uses <code>(if (&lt;= balance-x dx) u0 (- balance-x dx))</code> pattern. Rounding could cause computed withdrawal to exceed tracked balance, leaving phantom dust in vault.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-low">LOW</span> L-03: Oracle Price Manipulation</h3>
+  <p>Oracle EMA updated on every swap. If <code>oracle-average</code> is set low, the resilient price tracks spot price closely and can be manipulated in a single block.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-info">INFO</span> I-01: <code>unwrap-panic</code> Usage</h3>
+  <p><code>reduce-position</code> uses <code>unwrap-panic</code> for LP token balance query. If the LP contract is unreachable, the tx panics with no useful error.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-info">INFO</span> I-02: Multi-Hop Slippage Gap</h3>
+  <p><code>swap-helper-a/b/c</code> pass <code>none</code> for intermediate slippage. Only the final leg has user-specified min output. Intermediate legs are sandwich-able.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-info">INFO</span> I-03: No Admin Events</h3>
+  <p>Parameter changes (fee rates, ownership, oracle settings) don't emit <code>print</code> events, hindering off-chain monitoring.</p>
+</div>
+
+<div class="finding">
+  <h3><span class="badge badge-info">INFO</span> I-04: Pre-Clarity 4</h3>
+  <p>Recommend migration to Clarity 4 for <code>as-contract?</code> with explicit asset allowances.</p>
+</div>
+
+<h2>Access Control</h2>
+<table>
+<tr><th>Role</th><th>Capabilities</th></tr>
+<tr><td><code>contract-owner</code></td><td>Pause, transfer ownership (immediate, no timelock), set fee-rebate, set pool-owner, set switch-threshold</td></tr>
+<tr><td><code>pool-owner</code></td><td>Set start/end block, max-in/out ratio, oracle settings, thresholds, fee rates</td></tr>
+<tr><td>Anyone</td><td>Create pool, add/remove liquidity, swap</td></tr>
+</table>
+
+<h2>Recommendations</h2>
+<ol>
+  <li><strong>Cap fee rates</strong> — Maximum fee validation in setters (H-01)</li>
+  <li><strong>Require dy &gt; 0 on swaps</strong> — Prevent zero-output (M-01)</li>
+  <li><strong>Migrate to Clarity 4</strong> — <code>as-contract?</code> with explicit allowances (H-02)</li>
+  <li><strong>Add timelock to ownership transfer</strong></li>
+  <li><strong>Validate start-block ≤ end-block</strong> (M-03)</li>
+  <li><strong>Add division-by-zero guards</strong> in math library</li>
+  <li><strong>Emit events for admin actions</strong> (I-03)</li>
+</ol>
+
+<hr style="margin-top: 3rem; border-color: var(--border);">
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">
+  Independent audit by <a href="https://github.com/cocoa007">cocoa007.btc</a> —
+  <a href="index.html">Full audit portfolio</a>
+</p>
+</body>
+</html>
