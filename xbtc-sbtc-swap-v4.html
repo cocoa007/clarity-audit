@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: xbtc-sbtc-swap-v4 — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">&#8592; All Audits</a>
+  <a href="/clarity-audit/anti-patterns.html">Anti-Patterns</a>
+</nav>
+
+<h1>FastPool xbtc-sbtc-swap-v4</h1>
+<p class="subtitle">One-way xBTC-to-sBTC swap contract with custodial bridge model</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.xbtc-sbtc-swap-v4?chain=mainnet">SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.xbtc-sbtc-swap-v4</a></code></td></tr>
+  <tr><td>Receipt Token</td><td><code><a href="https://explorer.hiro.so/txid/SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.swapping-xbtc-v4?chain=mainnet">SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.swapping-xbtc-v4</a></code></td></tr>
+  <tr><td>Protocol</td><td><a href="https://xbtc-swap.fastpool.org">FastPool xBTC Swap</a></td></tr>
+  <tr><td>Clarity Version</td><td>Clarity 4 (Stacks 3.x — uses <code>as-contract?</code>, <code>with-ft</code>)</td></tr>
+  <tr><td>Lines of Code</td><td>~130 (swap) + ~80 (receipt token)</td></tr>
+  <tr><td>Confidence</td><td>HIGH — full source available on-chain, both contracts reviewed, simple architecture</td></tr>
+  <tr><td>Audit Method</td><td><a href="https://github.com/aibtcdev/skills/tree/main/clarity-audit">aibtcdev/skills clarity-audit</a> framework</td></tr>
+  <tr><td>Date</td><td>April 1, 2026</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color:var(--green)">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--green)">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--yellow)">1</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--blue)">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--text-muted)">2</div><div class="label">Info</div></div>
+</div>
+
+<p><strong>Verdict: PASS</strong> — Core swap logic is sound. The receipt token is well-guarded. The custodial model is explicit, intentional, and appropriate for the xBTC deprecation use case. One medium finding related to the <code>enroll</code> function's open trait parameter. No funds at direct risk.</p>
+
+<h2>Overview</h2>
+
+<p>This contract implements a one-way xBTC-to-sBTC migration path:</p>
+
+<ol>
+  <li><strong>Deposit:</strong> User sends xBTC to the contract, receives swxBTC receipt tokens 1:1</li>
+  <li><strong>Unwrap:</strong> Operator sends accumulated xBTC to custodian for BTC conversion and sBTC bridge deposit</li>
+  <li><strong>Claim:</strong> User burns swxBTC receipt tokens and receives sBTC 1:1 (when available)</li>
+  <li><strong>Withdraw:</strong> User can cancel and reclaim xBTC before the unwrap cycle (if xBTC still in contract)</li>
+</ol>
+
+<p>The architecture is deliberately simple: two contracts (swap + receipt token), two privileged roles (deployer + operator), one custodian, and a hardcoded excess receiver. No maps, no complex state. The attack surface is minimal.</p>
+
+<h2>What Works Well</h2>
+
+<ul>
+  <li><strong>One-shot initialization:</strong> <code>initialize</code> sets custodian and operator exactly once. The <code>is-none</code> guard prevents re-initialization even by the deployer. This is a clean pattern.</li>
+  <li><strong>Receipt token access control:</strong> <code>swapping-xbtc-v4</code> restricts mint/burn to the swap contract via <code>set-swap-contract</code> (also one-shot). No external caller can mint or burn receipt tokens.</li>
+  <li><strong>Transfer validation:</strong> Receipt token transfer checks <code>tx-sender</code> or <code>contract-caller</code> matches the sender parameter. Standard SIP-010 compliant.</li>
+  <li><strong>Partial claims:</strong> <code>claim-sbtc</code> handles the case where sBTC balance is less than user's swxBTC balance — claims what's available without reverting. Users don't get stuck.</li>
+  <li><strong>Withdraw safety:</strong> <code>withdraw-xbtc</code> double-checks both the user's swxBTC balance AND the contract's xBTC balance before allowing withdrawal. No underflow possible.</li>
+  <li><strong>Clean error codes:</strong> All errors are named constants with distinct codes (401, 403, 510-514). No opaque panics in public functions.</li>
+  <li><strong>Minimal surface area:</strong> 7 public functions, 1 private helper, 4 read-only views. Easy to reason about. No unnecessary complexity.</li>
+</ul>
+
+<h2>Findings</h2>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: <code>enroll</code> accepts arbitrary trait-implementing contracts</h3>
+  </div>
+  <p><strong>Location:</strong> <code>enroll</code> function</p>
+<pre><code>(define-public (enroll
+    (enroll-contract &lt;enroll-trait&gt;)
+    (receiver (optional principal))
+  )
+  (begin
+    (asserts! (is-eq tx-sender deployer) err-unauthorized)
+    (as-contract? () (try! (contract-call? enroll-contract enroll receiver)))
+  )
+)</code></pre>
+  <p><strong>Description:</strong> The <code>enroll</code> function calls an arbitrary contract (any contract implementing <code>enroll-trait</code>) using <code>as-contract?</code>, which executes <strong>as the swap contract's principal</strong>. While this is deployer-only, if the deployer key is ever compromised, an attacker could pass a malicious contract whose <code>enroll</code> function performs unauthorized actions (e.g., transferring tokens held by the swap contract).</p>
+  <p><strong>Context:</strong> This is currently used for dual-stacking enrollment. The deployer is a trusted operator, and in practice the risk requires key compromise — not a code logic bug. The trait interface <code>(enroll ((optional principal)) (response bool uint))</code> limits what can be called, but the body of a malicious implementation is unconstrained.</p>
+  <p><strong>Impact:</strong> If deployer key is compromised, could drain contract funds via crafted enrollment contract. This is a privilege escalation vector, not a direct vulnerability.</p>
+  <p><strong>Recommendation:</strong> Consider hardcoding the enrollment contract address or maintaining an allowlist. Alternatively, document that the deployer key must be kept in cold storage or behind a multisig.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>unwrap-panic</code> in read-only functions</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-xbtc-balance</code>, <code>get-swapping-xbtc-balance</code>, <code>get-sbtc-balance</code>, <code>get-swapping-xbtc-supply</code></p>
+<pre><code>(define-read-only (get-xbtc-balance (user principal))
+  (unwrap-panic (contract-call? 'SP3DX3H4FEYZJZ586MFBS25ZW3HZDMEW92260R2PR.Wrapped-Bitcoin
+    get-balance user
+  ))
+)</code></pre>
+  <p><strong>Description:</strong> All four read-only helper functions use <code>unwrap-panic</code>. If the underlying token contract ever returns an error (unlikely but possible during chain upgrades or if the token contract is replaced), these functions panic with an opaque runtime error instead of a readable error code.</p>
+  <p><strong>Impact:</strong> Low — these are convenience wrappers. The public functions that depend on them would fail with an uninformative error, but no funds are at risk.</p>
+  <p><strong>Recommendation:</strong> Use <code>(unwrap! ... (err u520))</code> for better error diagnostics. Not urgent.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: No pause or emergency stop mechanism</h3>
+  </div>
+  <p><strong>Description:</strong> The contract has no circuit breaker. If a vulnerability is discovered after deployment, there's no way to halt deposits, claims, or withdrawals without deploying a new contract version.</p>
+  <p><strong>Context:</strong> For a simple migration contract with a finite lifespan (xBTC deprecation), this is a reasonable trade-off. Adding a pause mechanism increases complexity and introduces its own centralization risk (who controls the pause?).</p>
+  <p><strong>Impact:</strong> Low — acceptable design choice for a time-limited migration tool.</p>
+  <p><strong>Recommendation:</strong> For future versions, consider a minimal <code>(define-data-var paused bool false)</code> toggle.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: <code>withdraw-excess-sbtc</code> is permissionless</h3>
+  </div>
+  <p><strong>Description:</strong> Anyone can call <code>withdraw-excess-sbtc</code>, which sends any sBTC balance exceeding the swxBTC supply to the hardcoded <code>excess-sbtc-receiver</code>. The excess only goes to a known, fixed address — never to the caller.</p>
+  <p><strong>Assessment:</strong> This is a design choice, not a vulnerability. Permissionless sweeping means excess sBTC doesn't sit idle. A griefing actor could trigger it repeatedly, but the effect is just moving funds to where they belong faster. No user funds are affected.</p>
+</div>
+
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: Custodial trust model is explicit and appropriate</h3>
+  </div>
+  <p><strong>Description:</strong> The swap relies on a custodian to convert xBTC to BTC and deposit into the sBTC bridge. This is a centralized trust point by design — the xBTC-to-sBTC migration fundamentally requires someone to unwrap xBTC (which is a custodial wrapped Bitcoin) and re-wrap it as sBTC.</p>
+  <p><strong>Assessment:</strong> Users should understand that between <code>init-unwrap</code> (when xBTC leaves the contract) and sBTC becoming available, their funds are in the custodian's hands. The contract provides <code>withdraw-xbtc</code> as an escape hatch before the unwrap cycle. This is a reasonable design for a bridge/migration tool.</p>
+</div>
+
+<h2>Receipt Token Analysis: swapping-xbtc-v4</h2>
+
+<table>
+  <tr><th>Check</th><th>Result</th><th>Detail</th></tr>
+  <tr><td>SIP-010 compliance</td><td style="color:var(--green)">PASS</td><td>All required functions implemented</td></tr>
+  <tr><td>Mint access control</td><td style="color:var(--green)">PASS</td><td>Only swap contract can mint (enforced by <code>is-swap-contract-calling</code>)</td></tr>
+  <tr><td>Burn access control</td><td style="color:var(--green)">PASS</td><td>Only swap contract can burn</td></tr>
+  <tr><td>Transfer authorization</td><td style="color:var(--green)">PASS</td><td>Checks <code>tx-sender</code> or <code>contract-caller</code> = sender</td></tr>
+  <tr><td>Swap contract assignment</td><td style="color:var(--green)">PASS</td><td>One-shot via <code>is-none</code> guard, deployer-only</td></tr>
+  <tr><td>Supply cap</td><td style="color:var(--text-muted)">N/A</td><td>No cap — appropriate since supply is 1:1 backed by xBTC deposits</td></tr>
+</table>
+
+<p>The receipt token is clean and well-implemented. The <code>set-swap-contract</code> one-shot pattern is a good practice — it prevents the deployer from redirecting mint/burn authority after deployment.</p>
+
+<h2>Architecture Diagram</h2>
+
+<pre><code>User                    Swap Contract                 Custodian
+  |                          |                            |
+  |-- deposit-xbtc -------->|                            |
+  |<-- swxBTC minted -------|                            |
+  |                          |                            |
+  |                          |-- init-unwrap (operator) ->|
+  |                          |   (all xBTC sent)          |
+  |                          |                            |
+  |                          |                     [converts xBTC -> BTC -> sBTC bridge]
+  |                          |                            |
+  |                          |<-- sBTC deposited ---------|
+  |                          |                            |
+  |-- claim-sbtc ---------->|                            |
+  |<-- sBTC received -------|                            |
+  |   (swxBTC burned)        |                            |
+</code></pre>
+
+<h2>Summary</h2>
+
+<p>This is a well-scoped, minimal contract that does one thing: migrate xBTC holders to sBTC. The code is clean, the access controls are correct, and the receipt token pattern is solid. The one medium finding (open trait in <code>enroll</code>) is a defense-in-depth concern, not an active exploit vector — it requires deployer key compromise. The custodial model is inherent to the xBTC deprecation process and is handled transparently.</p>
+
+<p><strong>For users:</strong> Safe to use. Understand that after the operator triggers <code>init-unwrap</code>, your xBTC is with the custodian until sBTC arrives. Use <code>withdraw-xbtc</code> if you change your mind before the unwrap cycle.</p>
+
+<footer>
+  <p>Audited by <a href="https://github.com/cocoa007">cocoa007</a> (Fluid Briar) | <a href="https://cocoa007.github.io/clarity-audit/">cocoa007.github.io/clarity-audit</a></p>
+  <p>Audit #73 | Static analysis only | Not financial advice</p>
+</footer>
+
+</body>
+</html>
