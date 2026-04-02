@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit: sBTC Token — cocoa007</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #f7931a;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #58a6ff;
+  --code-bg: #0d1117;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6; max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; color: var(--accent); }
+.subtitle { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; }
+h2 { font-size: 1.4rem; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p, li { margin-bottom: 0.75rem; }
+ul, ol { padding-left: 1.5rem; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; margin: 1rem 0; font-family: var(--font-mono); font-size: 0.85rem; }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface); padding: 2px 6px; border-radius: 3px; }
+pre code { background: none; padding: 0; }
+.nav { display: flex; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.nav a { color: var(--text-muted); font-size: 0.9rem; }
+.nav a:hover { color: var(--accent); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--surface); color: var(--text-muted); }
+
+.finding { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0; }
+.finding-header { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.critical { background: var(--red); color: #fff; }
+.badge.high { background: #da3633; color: #fff; }
+.badge.medium { background: var(--yellow); color: #000; }
+.badge.low { background: var(--blue); color: #000; }
+.badge.info { background: var(--text-muted); color: #000; }
+.finding h3 { margin-top: 0; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+.stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; }
+
+.meta-table { font-size: 0.9rem; }
+.meta-table td:first-child { color: var(--text-muted); white-space: nowrap; width: 160px; }
+
+footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/clarity-audit/">← All Audits</a>
+  <a href="/clarity-audit/patterns.html">Clarity Patterns</a>
+</nav>
+
+<h1>sBTC Token</h1>
+<p class="subtitle">Canonical sBTC fungible token contract on Stacks — the Bitcoin-pegged asset powering sBTC deposits, withdrawals, and DeFi</p>
+
+<table class="meta-table">
+  <tr><td>Contract</td><td><code><a href="https://explorer.hiro.so/txid/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet">SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token</a></code></td></tr>
+  <tr><td>Protocol</td><td>sBTC — trustless Bitcoin peg on Stacks</td></tr>
+  <tr><td>Source</td><td>Verified on-chain via Hiro API</td></tr>
+  <tr><td>Lines of Code</td><td>~157</td></tr>
+  <tr><td>Clarity Version</td><td>Pre-Clarity 4</td></tr>
+  <tr><td>Audit Date</td><td>April 2, 2026</td></tr>
+  <tr><td>Confidence</td><td>HIGH — compact, self-contained SIP-010 token; all findings verified against on-chain source</td></tr>
+</table>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num" style="color: var(--red);">0</div><div class="label">Critical</div></div>
+  <div class="stat-card"><div class="num" style="color: #da3633;">0</div><div class="label">High</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--yellow);">1</div><div class="label">Medium</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--blue);">2</div><div class="label">Low</div></div>
+  <div class="stat-card"><div class="num" style="color: var(--text-muted);">2</div><div class="label">Info</div></div>
+</div>
+
+<h2>Overview</h2>
+<p>This is the canonical sBTC fungible token contract deployed on Stacks mainnet. It implements the SIP-010 trait and adds a dual-token model: <code>sbtc-token</code> (liquid, transferable) and <code>sbtc-token-locked</code> (non-transferable, used for protocol-level locking). All privileged operations (mint, burn, lock, unlock, metadata changes) are gated via <code>.sbtc-registry</code> protocol caller checks using a <code>contract-flag</code> byte.</p>
+
+<p>The contract is remarkably compact for its importance — ~157 lines governing the entire sBTC supply on Stacks. The code is clean, well-structured, and delegates access control to the external registry. No maps or data structures beyond three metadata variables.</p>
+
+<h3>Architecture</h3>
+<ul>
+  <li><strong>Dual fungible tokens:</strong> <code>sbtc-token</code> (liquid) and <code>sbtc-token-locked</code> (locked) — locking burns liquid tokens and mints locked tokens, unlocking reverses the process</li>
+  <li><strong>Protocol functions:</strong> All mint/burn/lock/unlock operations require <code>.sbtc-registry is-protocol-caller</code> authorization via <code>contract-flag</code></li>
+  <li><strong>SIP-010 compliance:</strong> Standard <code>transfer</code>, <code>get-name</code>, <code>get-symbol</code>, <code>get-decimals</code>, <code>get-balance</code>, <code>get-total-supply</code>, <code>get-token-uri</code></li>
+  <li><strong>Batch operations:</strong> <code>transfer-many</code> (up to 200 transfers) and <code>protocol-mint-many</code> (up to 200 mints) for gas-efficient bulk operations</li>
+  <li><strong>Balance model:</strong> <code>get-balance</code> returns the sum of liquid + locked; <code>get-balance-available</code> and <code>get-balance-locked</code> return individual components</li>
+</ul>
+
+<h2>Findings</h2>
+
+<!-- M-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge medium">MEDIUM</span>
+    <h3>M-01: <code>transfer-many</code> allows any caller to transfer from arbitrary senders</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer-many</code> (line 84) → <code>transfer</code> (line 119)</p>
+  <p><strong>Description:</strong> The <code>transfer-many</code> function accepts a list of transfers where each item specifies its own <code>sender</code>. Each individual transfer is delegated to <code>transfer</code>, which correctly checks:</p>
+  <pre><code>(asserts! (or (is-eq tx-sender sender) (is-eq contract-caller sender)) ERR_NOT_OWNER)</code></pre>
+  <p>This means the <code>tx-sender</code> must equal each item's <code>sender</code>, OR the <code>contract-caller</code> must equal the <code>sender</code>. For direct calls, <code>tx-sender == contract-caller</code>, so users can only transfer their own tokens. However, when called via a contract, the <code>contract-caller</code> is the intermediary contract. If a user approves a contract to act on their behalf (e.g., a DEX router), that contract can use <code>transfer-many</code> to batch transfers from the user. This is by design and consistent with SIP-010 conventions.</p>
+  <p>The concern is that the <code>sender</code> field in each tuple could differ — a malicious contract could mix senders in a single <code>transfer-many</code> call. However, since <code>transfer</code> validates each item individually, the contract-caller must equal every specified sender, which means all items must have the same sender (the calling contract itself). This limits the actual attack surface.</p>
+  <p><strong>Impact:</strong> No direct exploit exists because the per-item <code>transfer</code> check prevents cross-sender abuse. However, the tuple design is misleading — it appears to allow heterogeneous sender batches but actually constrains all senders to be <code>tx-sender</code> or <code>contract-caller</code>. A contract acting as <code>contract-caller</code> can batch-transfer its own held tokens, which is expected behavior. The real risk is that a user interacting with a malicious contract inadvertently authorizes that contract as <code>contract-caller</code> to transfer their tokens via SIP-010's standard auth model.</p>
+  <p><strong>Recommendation:</strong> This is inherent to SIP-010's <code>contract-caller</code> auth model and not specific to this contract. Users should exercise caution when interacting with unverified contracts. Consider documenting that <code>transfer-many</code> enforces per-item sender validation.</p>
+</div>
+
+<!-- L-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-01: <code>protocol-mint-many</code> does not propagate individual mint failures</h3>
+  </div>
+  <p><strong>Location:</strong> <code>protocol-mint-many</code> (line 76) → <code>protocol-mint-many-iter</code> (line 72)</p>
+  <p><strong>Description:</strong> The batch mint function uses <code>map</code> over the recipients list:</p>
+  <pre><code>(define-public (protocol-mint-many (recipients (list 200 {amount: uint, recipient: principal})) (contract-flag (buff 1)))
+  (begin
+    (try! (contract-call? .sbtc-registry is-protocol-caller contract-flag contract-caller))
+    (ok (map protocol-mint-many-iter recipients))
+  )
+)</code></pre>
+  <p>The <code>map</code> function in Clarity does not short-circuit on error. The iterator <code>protocol-mint-many-iter</code> returns <code>(response bool uint)</code> from <code>ft-mint?</code>. If one mint fails (e.g., overflow), the <code>map</code> collects the error in the result list but continues processing. The outer function returns <code>(ok (list ...))</code> containing a mix of <code>(ok true)</code> and <code>(err ...)</code> values.</p>
+  <p><strong>Impact:</strong> A partial failure in a batch mint is silently absorbed into the result list. The caller must inspect each element to detect failures. In practice, <code>ft-mint?</code> only fails on uint overflow (supply exceeding u340282366920938463463374607431768211455), which is unrealistic for sBTC. However, the pattern diverges from <code>transfer-many</code>, which uses <code>fold</code> with early termination on error.</p>
+  <p><strong>Recommendation:</strong> Consider using <code>fold</code> with <code>unwrap!</code> (like <code>transfer-many-iter</code>) for consistent error-handling behavior across batch operations. Alternatively, document that callers should check the result list for individual failures.</p>
+</div>
+
+<!-- L-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge low">LOW</span>
+    <h3>L-02: <code>transfer-many</code> error indexing starts at u1000, limiting batch size diagnostics</h3>
+  </div>
+  <p><strong>Location:</strong> <code>transfer-many-iter</code> (line 93)</p>
+  <p><strong>Description:</strong> When an individual transfer within a batch fails, the error code is computed as:</p>
+  <pre><code>(err (+ ERR_TRANSFER_INDEX_PREFIX index))</code></pre>
+  <p>Where <code>ERR_TRANSFER_INDEX_PREFIX = u1000</code>. This means error u1000 = first transfer failed, u1001 = second, etc. This is a well-designed pattern for debugging batch failures. However, the prefix u1000 overlaps with potential error codes from the broader sBTC protocol (e.g., if sbtc-registry returns error codes in the thousands).</p>
+  <p><strong>Impact:</strong> Minimal. The error code space is large enough that collisions are unlikely in practice. The u1000+ range clearly indicates a batch index error, and the index is easily extracted by subtracting the prefix.</p>
+  <p><strong>Recommendation:</strong> No change needed. The pattern is clean and practical.</p>
+</div>
+
+<!-- I-01 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-01: Mutable token metadata (name, symbol, URI) controlled by protocol</h3>
+  </div>
+  <p><strong>Location:</strong> <code>protocol-set-name</code>, <code>protocol-set-symbol</code>, <code>protocol-set-token-uri</code></p>
+  <p><strong>Description:</strong> Token name, symbol, and URI are stored as <code>data-var</code> rather than constants, and can be changed by any protocol-authorized caller. While this provides flexibility for rebranding or URI migration, it means the token's identity is not immutable.</p>
+  <p><strong>Impact:</strong> A compromised protocol caller could change the token name/symbol to something misleading. This is mitigated by the <code>sbtc-registry</code> access control — only authorized protocol contracts can make changes. Wallets and explorers that cache metadata would show stale values until refreshed.</p>
+  <p><strong>Recommendation:</strong> This is a deliberate design choice providing upgrade flexibility. The registry access control is appropriate. Off-chain systems should subscribe to contract events or periodically refresh metadata.</p>
+</div>
+
+<!-- I-02 -->
+<div class="finding">
+  <div class="finding-header">
+    <span class="badge info">INFO</span>
+    <h3>I-02: <code>get-balance</code> returns sum of liquid and locked — potential UX confusion</h3>
+  </div>
+  <p><strong>Location:</strong> <code>get-balance</code> (line 140)</p>
+  <p><strong>Description:</strong> The SIP-010 standard <code>get-balance</code> function returns:</p>
+  <pre><code>(ok (+ (ft-get-balance sbtc-token who) (ft-get-balance sbtc-token-locked who)))</code></pre>
+  <p>This includes locked tokens in the reported balance. Wallets and DeFi protocols querying <code>get-balance</code> will see a higher balance than what the user can actually transfer. The contract provides <code>get-balance-available</code> and <code>get-balance-locked</code> for granular queries, but these are non-standard extensions that third-party integrations may not know to use.</p>
+  <p><strong>Impact:</strong> Users may see inflated sBTC balances in wallets that only use <code>get-balance</code>. Attempting to transfer the full reported balance would fail if some tokens are locked. Well-integrated wallets (Leather, Xverse) are likely aware of the available/locked distinction.</p>
+  <p><strong>Recommendation:</strong> This is a reasonable design decision — the total balance is the most accurate representation of holdings. Wallet integrations should use <code>get-balance-available</code> for transfer UIs. Consider adding documentation or SIP-010 metadata pointing to the extended balance functions.</p>
+</div>
+
+<h2>Positive Observations</h2>
+<ul>
+  <li><strong>Minimal attack surface:</strong> At ~157 lines, this is one of the most compact critical contracts on Stacks. Less code = fewer bugs. No maps, no complex state transitions, no reentrancy vectors.</li>
+  <li><strong>Clean access control delegation:</strong> All privileged operations consistently delegate to <code>.sbtc-registry is-protocol-caller</code> with a <code>contract-flag</code> byte, enabling fine-grained permissioning per operation type without hardcoding specific callers.</li>
+  <li><strong>Dual-token lock model:</strong> Using separate fungible tokens for liquid and locked balances is elegant — it leverages Clarity's built-in FT accounting rather than maintaining a parallel balance map, eliminating an entire class of accounting bugs.</li>
+  <li><strong>Proper sender validation:</strong> <code>transfer</code> checks both <code>tx-sender</code> and <code>contract-caller</code> against the sender parameter, correctly implementing SIP-010 authorization semantics.</li>
+  <li><strong>Informative batch errors:</strong> <code>transfer-many</code> uses an index-prefixed error scheme (u1000+) that pinpoints exactly which transfer in a batch failed — a thoughtful debugging aid.</li>
+  <li><strong>Memo support:</strong> Transfer functions properly support optional 34-byte memos with print statements, enabling off-chain indexing and cross-chain message tagging.</li>
+</ul>
+
+<h2>Access Control Summary</h2>
+<table>
+  <tr><th>Function</th><th>Access</th><th>Notes</th></tr>
+  <tr><td><code>transfer</code></td><td>Owner / contract-caller</td><td>Standard SIP-010 — sender must be tx-sender or contract-caller</td></tr>
+  <tr><td><code>transfer-many</code></td><td>Owner / contract-caller</td><td>Per-item sender validation via <code>transfer</code></td></tr>
+  <tr><td><code>protocol-mint</code></td><td>Protocol only</td><td>Gated by <code>sbtc-registry is-protocol-caller</code></td></tr>
+  <tr><td><code>protocol-mint-many</code></td><td>Protocol only</td><td>Gated by <code>sbtc-registry is-protocol-caller</code></td></tr>
+  <tr><td><code>protocol-burn</code></td><td>Protocol only</td><td>Burns liquid tokens from specified owner</td></tr>
+  <tr><td><code>protocol-burn-locked</code></td><td>Protocol only</td><td>Burns locked tokens from specified owner</td></tr>
+  <tr><td><code>protocol-lock</code></td><td>Protocol only</td><td>Burns liquid, mints locked</td></tr>
+  <tr><td><code>protocol-unlock</code></td><td>Protocol only</td><td>Burns locked, mints liquid</td></tr>
+  <tr><td><code>protocol-set-name</code></td><td>Protocol only</td><td>Changes token display name</td></tr>
+  <tr><td><code>protocol-set-symbol</code></td><td>Protocol only</td><td>Changes token ticker symbol</td></tr>
+  <tr><td><code>protocol-set-token-uri</code></td><td>Protocol only</td><td>Changes token metadata URI</td></tr>
+</table>
+
+<h2>Priority Score</h2>
+<table>
+  <tr><th>Metric</th><th>Score</th><th>Weight</th><th>Weighted</th></tr>
+  <tr><td>Financial Risk</td><td>3 — canonical sBTC token, holds all sBTC on Stacks</td><td>3</td><td>9</td></tr>
+  <tr><td>Deployment Likelihood</td><td>3 — deployed on mainnet, actively used</td><td>2</td><td>6</td></tr>
+  <tr><td>Code Complexity</td><td>1 — ~157 lines, straightforward SIP-010 + lock model</td><td>2</td><td>2</td></tr>
+  <tr><td>User Exposure</td><td>3 — every sBTC holder and DeFi protocol depends on this</td><td>1.5</td><td>4.5</td></tr>
+  <tr><td>Novelty</td><td>2 — dual-token lock pattern, protocol-flag access control</td><td>1.5</td><td>3</td></tr>
+  <tr><td colspan="3"><strong>Total Score</strong></td><td><strong>2.45 / 3.0</strong></td></tr>
+</table>
+
+<footer>
+  <p>cocoa007 — <a href="/clarity-audit/">All Audits</a> · <a href="https://github.com/cocoa007">GitHub</a> · Independent audit — not affiliated with the sBTC protocol team</p>
+</footer>
+
+</body>
+</html>
