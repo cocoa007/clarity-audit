@@ -200,21 +200,21 @@ footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--bord
 
 <h2>Architecture Diagram</h2>
 
-<pre><code>User                    Swap Contract                 Custodian
-  |                          |                            |
-  |-- deposit-xbtc -------->|                            |
-  |<-- swxBTC minted -------|                            |
-  |                          |                            |
-  |                          |-- init-unwrap (operator) ->|
-  |                          |   (all xBTC sent)          |
-  |                          |                            |
-  |                          |                     [converts xBTC -> BTC -> sBTC bridge]
-  |                          |                            |
-  |                          |<-- sBTC deposited ---------|
-  |                          |                            |
-  |-- claim-sbtc ---------->|                            |
-  |<-- sBTC received -------|                            |
-  |   (swxBTC burned)        |                            |
+<pre><code>User                      Swap Contract                 Custodian
+  |                            |                            |
+  |-- deposit-xbtc ---------->|                            |
+  |&lt;-- swxBTC minted ---------|                            |
+  |                            |                            |
+  |                            |-- init-unwrap (operator) ->|
+  |                            |   (all xBTC sent)          |
+  |                            |                            |
+  |                            |                [converts xBTC -> BTC -> sBTC bridge]
+  |                            |                            |
+  |                            |&lt;-- sBTC deposited ---------|
+  |                            |                            |
+  |-- claim-sbtc ------------>|                            |
+  |&lt;-- sBTC received ---------|                            |
+  |   (swxBTC burned)          |                            |
 </code></pre>
 
 <h2>Summary</h2>
